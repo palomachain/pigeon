@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	chain "github.com/volumefi/conductor/client"
-	"github.com/volumefi/conductor/client/cronchain/types"
+	cronchain "github.com/volumefi/conductor/types/cronchain"
 )
 
 type Client struct {
@@ -13,13 +13,13 @@ type Client struct {
 }
 
 func (c Client) QueryMessagesForExecution(ctx context.Context) {
-	qc := types.NewQueryClient(c.L)
-	msgs, err := qc.QueuedMessagesForSigning(ctx, &types.QueryQueuedMessagesForSigningRequest{
+	qc := cronchain.NewQueryClient(c.L)
+	msgs, err := qc.QueuedMessagesForSigning(ctx, &cronchain.QueryQueuedMessagesForSigningRequest{
 		ValAddress:    "bob",
 		QueueTypeName: "m",
 	})
 	for _, msg := range msgs.GetMsgs() {
-		var m types.QueuedSignedMessageI
+		var m cronchain.QueuedSignedMessageI
 		err := c.L.Codec.Marshaler.UnpackAny(msg, &m)
 		if err != nil {
 			panic(err)

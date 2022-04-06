@@ -1,4 +1,4 @@
-package runner
+package conductor
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/volumefi/conductor/client/cronchain"
-	cronchaintypes "github.com/volumefi/conductor/client/cronchain/types"
-	"github.com/volumefi/conductor/client/terra/types"
+	cronchaintypes "github.com/volumefi/conductor/types/cronchain"
+	terratypes "github.com/volumefi/conductor/types/terra"
 
 	chain "github.com/volumefi/conductor/client"
 )
@@ -54,7 +54,7 @@ func Start2() {
 	var c cronchain.Client
 	byopmodule := byop.NewModule(
 		"testing",
-		(*types.MsgExecuteContract)(nil),
+		(*terratypes.MsgExecuteContract)(nil),
 	)
 	byopmodule.MsgsInterfaces = []byop.RegisterInterface{
 		{

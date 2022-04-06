@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
-	testdata_type "github.com/volumefi/conductor/testdata/types"
+	testdata "github.com/volumefi/conductor/types/testdata"
 )
 
 type testAccountInfo struct {
@@ -54,7 +54,7 @@ func mockAccFetcher(acc *authtypes.BaseAccount, err error) fakeAccountFetcher {
 func TestMessageSigningAndSignatureVerification(t *testing.T) {
 	var (
 		c   *LensClient = newClient()
-		msg testdata_type.SimpleMessage
+		msg testdata.SimpleMessage
 	)
 	c.Keybase = keyring.NewInMemory()
 	bobInfo := bob.addToKeybase(c.Keybase)

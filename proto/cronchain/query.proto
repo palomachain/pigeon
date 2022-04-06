@@ -1,0 +1,28 @@
+syntax = "proto3";
+package volumefi.cronchain.concensus;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/volumefi/conductor/types/cronchain";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Queries a list of QueuedMessagesForSigning items.
+	rpc QueuedMessagesForSigning(QueryQueuedMessagesForSigningRequest) returns (QueryQueuedMessagesForSigningResponse) {
+		option (google.api.http).get = "/volumefi/cronchain/concensus/queued_messages_for_signing";
+	}
+
+}
+
+message QueryQueuedMessagesForSigningRequest {
+  string valAddress = 1;
+  string queueTypeName = 2;
+}
+
+message QueryQueuedMessagesForSigningResponse {
+  repeated google.protobuf.Any msgs = 1;
+}
+
