@@ -7,11 +7,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
-	"github.com/volumefi/cronchain/runner/client/cronchain"
-	cronchaintypes "github.com/volumefi/cronchain/runner/client/cronchain/types"
-	"github.com/volumefi/cronchain/runner/client/terra/types"
+	"github.com/volumefi/conductor/client/cronchain"
+	cronchaintypes "github.com/volumefi/conductor/client/cronchain/types"
+	"github.com/volumefi/conductor/client/terra/types"
 
-	chain "github.com/volumefi/cronchain/runner/client"
+	chain "github.com/volumefi/conductor/client"
 )
 
 func Start() {

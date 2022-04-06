@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	chain "github.com/volumefi/cronchain/runner/client"
-	"github.com/volumefi/cronchain/runner/client/cronchain/types"
+	chain "github.com/volumefi/conductor/client"
+	"github.com/volumefi/conductor/client/cronchain/types"
 )
 
 type Client struct {

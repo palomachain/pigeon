@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
-	testdata_type "github.com/volumefi/cronchain/runner/testdata/types"
+	testdata_type "github.com/volumefi/conductor/testdata/types"
 )
 
 type testAccountInfo struct {
