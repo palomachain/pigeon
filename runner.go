@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
@@ -51,36 +52,25 @@ func Start() {
 }
 
 func Start2() {
+	// TODO: this is a temporary playing ground to test things in real life
 	var c cronchain.Client
-	byopmodule := byop.NewModule(
-		"testing",
-		(*terratypes.MsgExecuteContract)(nil),
-	)
-	byopmodule.MsgsInterfaces = []byop.RegisterInterface{
-		{
-			Name:  "volumefi.cronchain.concensus.QueuedSignedMessage",
-			Iface: (*cronchaintypes.QueuedSignedMessageI)(nil),
-			Msgs: []proto.Message{
-				&cronchaintypes.QueuedSignedMessage{},
+	// registering types into the interface registry for codec
+	byopmodule := byop.Module{
+		ModuleName: "runner",
+		MsgsImplementations: []byop.RegisterImplementation{
+			{
+				Iface: (*sdk.Msg)(nil),
+				Msgs: []proto.Message{
+					(*terratypes.MsgExecuteContract)(nil),
+					(*cronchaintypes.MsgAddMessagesSignatures)(nil),
+				},
 			},
-		},
-	}
-	byopmodule.MsgsImplementations = []byop.RegisterImplementation{
-		{
-			Iface: (*cronchaintypes.QueuedSignedMessageI)(nil),
-			Msgs: []proto.Message{
-				&cronchaintypes.QueuedSignedMessage{},
+			{
+				Iface: (*cronchaintypes.Signable)(nil),
+				Msgs: []proto.Message{
+					&cronchaintypes.SignSmartContractExecute{},
+				},
 			},
-		},
-	}
-	byopmodule.MsgsAmino = []byop.RegisterAmino{
-		{
-			ConcreteIface: &cronchaintypes.QueuedSignedMessage{},
-			Name:          "concensus/QueuedSignedMessage",
-		},
-		{
-			ConcreteIface: &cronchaintypes.Signer{},
-			Name:          "concensus/Signer",
 		},
 	}
 	modules := append(lens.ModuleBasics[:], byopmodule)
@@ -92,11 +82,10 @@ func Start2() {
 			RPCAddr:        "http://127.0.0.1:26657",
 			KeyringBackend: "test",
 			KeyDirectory:   "/home/vizualni/.cronchain/",
-			AccountPrefix:  "stake",
+			AccountPrefix:  "cosmos",
 			Modules:        modules,
 			Debug:          true,
 			GasAdjustment:  1.1,
-			GasPrices:      "0.2056735uusd,0luna",
 			SignModeStr:    "direct",
 		},
 		"doesn-tmatter",
@@ -107,6 +96,19 @@ func Start2() {
 		panic(err)
 	}
 	c.L = lensc
-	c.QueryMessagesForExecution(context.Background())
+	r := relayer{
+		cronchain: c,
+	}
 
+	err = r.signMessagesForExecution(context.Background(), "a")
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func loop() {
+	// get messages for execution
+	// get messages for signing
+	// get messages for attestation
 }

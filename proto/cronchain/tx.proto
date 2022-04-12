@@ -1,0 +1,24 @@
+syntax = "proto3";
+package volumefi.cronchain.concensus;
+
+option go_package = "github.com/volumefi/conductor/types/cronchain";
+
+service Msg {
+      rpc AddMessagesSignatures(MsgAddMessagesSignatures) returns (MsgAddMessagesSignaturesResponse);
+}
+
+message MsgAddMessagesSignatures {
+  string creator = 1;
+  repeated MsgSignedMessage signedMessages = 2;
+
+  message MsgSignedMessage {
+    uint64 id = 1;
+    string queueTypeName = 2;
+    bytes signature = 3;
+  }
+}
+
+
+message MsgAddMessagesSignaturesResponse {
+}
+
