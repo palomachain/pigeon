@@ -33,10 +33,25 @@ func (fnc serializeFnc) DeterministicSerialize(msg any) ([]byte, error) {
 	return fnc(msg)
 }
 
-// TODO: verify that this sorts keys and that it's deterministic!!!
-// keys should be lowercase and sorted.
 func jsonDeterministicEncoding(msg any) ([]byte, error) {
-	return json.Marshal(msg)
+	// take anything and create a json byte slice
+	js, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	var c any
+	// then unmarshal this back to Go!
+	err = json.Unmarshal(js, &c)
+	if err != nil {
+		return nil, err
+	}
+	// and finally, when calling the marshal on the new unmarshaled data
+	// it will be sorted!
+	js, err = json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	return js, nil
 }
 
 func signBytes(s signer, ser serializer, msg any, nonce []byte) ([]byte, []byte, error) {
