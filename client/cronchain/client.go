@@ -2,9 +2,11 @@ package cronchain
 
 import (
 	"context"
-	"errors"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
+	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	chain "github.com/volumefi/conductor/client"
@@ -19,10 +21,6 @@ type QueuedMessage[T cronchain.Signable] struct {
 	ID    uint64
 	Nonce []byte
 	Msg   T
-}
-
-type grpcInvoker interface {
-	Invoke()
 }
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
@@ -56,11 +54,12 @@ func queryMessagesForSigning[T cronchain.Signable](
 		var m cronchain.Signable
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &m)
 		if err != nil {
-			return nil, err
+			return nil, whoops.Wrap(err, ErrUnableToUnpackAny)
 		}
 		msgT, ok := m.(T)
 		if !ok {
-			return nil, errors.New("onmg")
+			var expectedType T
+			return nil, ErrIncorrectTypeSavedInMessage.Format(expectedType, m)
 		}
 		res = append(res, QueuedMessage[T]{
 			ID:    msg.GetId(),
@@ -78,7 +77,24 @@ type BroadcastMessageSignatureIn struct {
 	Signature     []byte
 }
 
+// BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
+// It build the message and sends it over.
 func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
+	return broadcastMessageSignatures(ctx, c.L, signatures...)
+}
+
+type msgSender interface {
+	SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error)
+}
+
+func broadcastMessageSignatures(
+	ctx context.Context,
+	ms msgSender,
+	signatures ...BroadcastMessageSignatureIn,
+) error {
+	if len(signatures) == 0 {
+		return nil
+	}
 	var signedMessages []*cronchain.MsgAddMessagesSignatures_MsgSignedMessage
 	for _, sig := range signatures {
 		signedMessages = append(signedMessages, &cronchain.MsgAddMessagesSignatures_MsgSignedMessage{
@@ -87,13 +103,10 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 			Signature:     sig.Signature,
 		})
 	}
-	info, _ := c.Keyring().Key(c.L.Config.Key)
-	addr, _ := c.L.DecodeBech32AccAddr(info.GetAddress().String())
 	msg := &cronchain.MsgAddMessagesSignatures{
-		Creator:        addr.String(),
 		SignedMessages: signedMessages,
 	}
-	_, err := c.L.SendMsg(ctx, msg)
+	_, err := ms.SendMsg(ctx, msg)
 	return err
 }
 

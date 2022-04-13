@@ -1,11 +1,11 @@
 package client
 
-type _err string
-
-func (e _err) Error() string { return string(e) }
+import (
+	"github.com/vizualni/whoops"
+)
 
 const (
-	ErrSignatureVerificationFailed              _err = "signature verification failed"
-	ErrSignatureDoesNotMatchItsRespectiveSigner _err = "signature does not match its respective signer"
-	ErrTooLittleOrTooManySignaturesProvided     _err = "too many or too little signatures provided"
+	ErrSignatureVerificationFailed              = whoops.String("signature verification failed")
+	ErrSignatureDoesNotMatchItsRespectiveSigner = whoops.String("signature does not match its respective signer")
+	ErrTooLittleOrTooManySignaturesProvided     = whoops.String("too many or too little signatures provided")
 )

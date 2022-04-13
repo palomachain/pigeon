@@ -24,3 +24,6 @@ func (msg SimpleMessage) ValidateBasic() error {
 func (msg SimpleMessage) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
+
+func (msg SimpleMessage) Signable()  {}
+func (msg SimpleMessage2) Signable() {}
