@@ -8,3 +8,7 @@ message SimpleMessage {
   string hello = 2;
   string world = 3;
 }
+
+message SimpleMessage2 {
+  string field = 1;
+}

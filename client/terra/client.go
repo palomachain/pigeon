@@ -18,6 +18,9 @@ type SmartContractExecution struct {
 
 type Client struct {
 	LensClient *chain.LensClient
+
+	// TODO
+	smartContractAddr string
 }
 
 // TODO: this is currently oversimplified. Once we start using this for real we will adapt.
