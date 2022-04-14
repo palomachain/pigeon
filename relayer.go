@@ -6,6 +6,7 @@ import (
 	"github.com/99designs/keyring"
 	"github.com/volumefi/conductor/client/cronchain"
 	cronchaintypes "github.com/volumefi/conductor/types/cronchain"
+	"github.com/volumefi/utils/signing"
 )
 
 type cronchainerClienter interface {
@@ -44,9 +45,9 @@ func (r relayer) signMessagesForExecution(ctx context.Context, queueTypeNames ..
 
 		for _, msg := range msgs {
 			// do the actual signing
-			signBytes, _, err := signBytes(
-				keyringSigner(r.cronchain.Keyring(), r.cronchain.L.Config.Key),
-				serializeFnc(jsonDeterministicEncoding),
+			signBytes, _, err := signing.SignBytes(
+				signing.KeyringSigner(r.cronchain.Keyring(), r.cronchain.L.Config.Key),
+				signing.SerializeFnc(signing.JsonDeterministicEncoding),
 				msg.Msg,
 				msg.Nonce,
 			)
