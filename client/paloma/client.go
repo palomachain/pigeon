@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 import (
 	"context"
@@ -25,7 +25,7 @@ type QueuedMessage[T cronchain.Signable] struct {
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
-func QueryMessagesForSigning[T cronchain.Signable](
+func 
 	ctx context.Context,
 	c Client,
 	valAddress string,
@@ -80,6 +80,13 @@ type BroadcastMessageSignatureIn struct {
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
 // It build the message and sends it over.
 func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
+	return broadcastMessageSignatures(ctx, c.L, signatures...)
+}
+
+
+func (c Client) QueryValidatorInfo(ctx context.Context) error {
+	qc := cronchain.NewQueryClient(c)
+	qc.ValidatorInfo()
 	return broadcastMessageSignatures(ctx, c.L, signatures...)
 }
 

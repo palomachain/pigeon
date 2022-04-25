@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 import (
 	"github.com/vizualni/whoops"

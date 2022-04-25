@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 import (
 	"context"
