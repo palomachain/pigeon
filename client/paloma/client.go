@@ -10,11 +10,15 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	chain "github.com/volumefi/conductor/client"
+	"github.com/volumefi/conductor/config"
 	cronchain "github.com/volumefi/conductor/types/cronchain"
 )
 
 type Client struct {
-	L *chain.LensClient
+	L            *chain.LensClient
+	palomaConfig config.Paloma
+
+	GRPCClient grpc.ClientConn
 }
 
 type QueuedMessage[T cronchain.Signable] struct {
@@ -31,7 +35,7 @@ func QueryMessagesForSigning[T cronchain.Signable](
 	valAddress string,
 	queueTypeName string,
 ) ([]QueuedMessage[T], error) {
-	return queryMessagesForSigning[T](ctx, c.L, c.L.Codec.Marshaler, valAddress, queueTypeName)
+	return queryMessagesForSigning[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
 }
 
 func queryMessagesForSigning[T cronchain.Signable](
@@ -83,10 +87,11 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 	return broadcastMessageSignatures(ctx, c.L, signatures...)
 }
 
+// QueryValidatorInfo returns info about the validator.
 func (c Client) QueryValidatorInfo(ctx context.Context) (*cronchain.Validator, error) {
-	qc := cronchain.NewQueryValsetClient(&c.L.ChainClient)
+	qc := cronchain.NewQueryValsetClient(c.GRPCClient)
 	valInfoRes, err := qc.ValidatorInfo(ctx, &cronchain.QueryValidatorInfoRequest{
-		ValAddr: c.L.Config.Key, // TODO: pass in key!!! this is name
+		ValAddr: "TODO CHANGE ME", // TODO: pass in key!!! this is name
 	})
 	if err != nil {
 		return nil, err
@@ -95,8 +100,10 @@ func (c Client) QueryValidatorInfo(ctx context.Context) (*cronchain.Validator, e
 	return valInfoRes.Validator, nil
 }
 
+// RegisterValidator registers itself with the network and sends it's public key that they are using for
+// signing messages.
 func (c Client) RegisterValidator(ctx context.Context, pubKey, signedPubKey []byte) error {
-	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+	txsvc := cronchain.NewValsetTxServiceClient(c.GRPCClient)
 
 	_, err := txsvc.RegisterConductor(ctx, &cronchain.MsgRegisterConductor{
 		PubKey:       pubKey,
@@ -112,11 +119,13 @@ type ChainInfoIn struct {
 	AccAddress string
 }
 
+// AddExternalChainInfo adds info about the external chain. It adds the chain's
+// account addresses that the runner owns.
 func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInfoIn) error {
 	if len(chainInfos) == 0 {
 		return nil
 	}
-	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+	txsvc := cronchain.NewValsetTxServiceClient(c.GRPCClient)
 
 	msg := &cronchain.MsgAddExternalChainInfoForValidator{}
 
