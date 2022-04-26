@@ -22,3 +22,30 @@ message MsgAddMessagesSignatures {
 message MsgAddMessagesSignaturesResponse {
 }
 
+
+service ValsetTxService {
+  rpc RegisterConductor(MsgRegisterConductor) returns (MsgRegisterConductorResponse);
+  rpc AddExternalChainInfoForValidator(MsgAddExternalChainInfoForValidator) returns (MsgAddExternalChainInfoForValidatorResponse);
+}
+
+message MsgRegisterConductor {
+  string creator = 1;
+  bytes pubKey = 2;
+  bytes signedPubKey = 3;
+}
+
+message MsgRegisterConductorResponse {
+}
+
+message MsgAddExternalChainInfoForValidator {
+  message ChainInfo {
+    string chainID = 1;
+    string address = 2;
+  }
+  string creator = 1;
+  repeated ChainInfo chainInfos = 2;
+}
+
+message MsgAddExternalChainInfoForValidatorResponse {
+}
+

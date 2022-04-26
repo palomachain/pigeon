@@ -3,7 +3,7 @@ package relayer
 import (
 	"context"
 
-	"github.com/volumefi/conductor/client/cronchain"
+	"github.com/volumefi/conductor/client/paloma"
 	cronchaintypes "github.com/volumefi/conductor/types/cronchain"
 	"github.com/volumefi/utils/signing"
 )
@@ -12,14 +12,14 @@ import (
 // signMessagesForExecution takes messages from a given list of queueTypeNames that require a signature.
 // It then signs each message and adds the signature into a list of signatures to be sent all at once
 // over to the cronchain.
-func (r relayer) signMessagesForExecution(ctx context.Context, queueTypeNames ...string) error {
-	var broadcastMessageSignatures []cronchain.BroadcastMessageSignatureIn
+func (r *Relayer) signMessagesForExecution(ctx context.Context, queueTypeNames ...string) error {
+	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
 	for _, queueTypeName := range queueTypeNames {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 		// fetch messages that need to be signed
-		msgs, err := cronchain.QueryMessagesForSigning[*cronchaintypes.SignSmartContractExecute](
+		msgs, err := paloma.QueryMessagesForSigning[*cronchaintypes.SignSmartContractExecute](
 			ctx,
 			r.palomaClient,
 			// TODO: take the address from the keyring
@@ -43,7 +43,7 @@ func (r relayer) signMessagesForExecution(ctx context.Context, queueTypeNames ..
 			}
 			broadcastMessageSignatures = append(
 				broadcastMessageSignatures,
-				cronchain.BroadcastMessageSignatureIn{
+				paloma.BroadcastMessageSignatureIn{
 					ID:            msg.ID,
 					QueueTypeName: queueTypeName,
 					Signature:     signBytes,

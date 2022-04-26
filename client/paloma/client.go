@@ -25,7 +25,7 @@ type QueuedMessage[T cronchain.Signable] struct {
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
-func 
+func QueryMessagesForSigning[T cronchain.Signable](
 	ctx context.Context,
 	c Client,
 	valAddress string,
@@ -83,11 +83,52 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 	return broadcastMessageSignatures(ctx, c.L, signatures...)
 }
 
+func (c Client) QueryValidatorInfo(ctx context.Context) (*cronchain.Validator, error) {
+	qc := cronchain.NewQueryValsetClient(&c.L.ChainClient)
+	valInfoRes, err := qc.ValidatorInfo(ctx, &cronchain.QueryValidatorInfoRequest{
+		ValAddr: c.L.Config.Key, // TODO: pass in key!!! this is name
+	})
+	if err != nil {
+		return nil, err
+	}
 
-func (c Client) QueryValidatorInfo(ctx context.Context) error {
-	qc := cronchain.NewQueryClient(c)
-	qc.ValidatorInfo()
-	return broadcastMessageSignatures(ctx, c.L, signatures...)
+	return valInfoRes.Validator, nil
+}
+
+func (c Client) RegisterValidator(ctx context.Context, pubKey, signedPubKey []byte) error {
+	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+
+	_, err := txsvc.RegisterConductor(ctx, &cronchain.MsgRegisterConductor{
+		PubKey:       pubKey,
+		SignedPubKey: signedPubKey,
+	})
+
+	return err
+
+}
+
+type ChainInfoIn struct {
+	ChainID    string
+	AccAddress string
+}
+
+func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInfoIn) error {
+	if len(chainInfos) == 0 {
+		return nil
+	}
+	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+
+	msg := &cronchain.MsgAddExternalChainInfoForValidator{}
+
+	for _, ci := range chainInfos {
+		msg.ChainInfos = append(msg.ChainInfos, &cronchain.MsgAddExternalChainInfoForValidator_ChainInfo{
+			ChainID: ci.ChainID,
+			Address: ci.AccAddress,
+		})
+	}
+
+	_, err := txsvc.AddExternalChainInfoForValidator(ctx, msg)
+	return err
 }
 
 type msgSender interface {

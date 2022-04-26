@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ const (
 	Name      = "sparrow"
 )
 
-type rootConfig struct {
+type Root struct {
 	Paloma Paloma
 	Terra  Terra
 }
@@ -34,11 +34,13 @@ type Terra struct {
 type keyringEnvKey string
 
 func (k keyringEnvKey) Type() string {
+	// TODO:
 	// envVal := os.Getenv(k)
 	return "test"
 }
 
 func (k keyringEnvKey) Password() string {
+	// TODO:
 	// envVal := os.Getenv(k)
 	return "test"
 }

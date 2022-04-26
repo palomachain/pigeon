@@ -2,28 +2,60 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/vizualni/whoops"
+	"github.com/volumefi/conductor/errors"
 )
 
 const (
+	// TODO: FILL IN THE REAL QUEUE TYPE NAMES
 	queueTypeNameMessageExecution = "a"
 	queueTypeNameValsetUpdate     = "b"
+
+	defaultErrorCountToExit = 5
+
+	defaultLoopTimeout = 10 * time.Second
 )
 
-func (r relayer) mainLoop(ctx context.Context) {
+func (r *Relayer) Start(ctx context.Context) error {
+	consecutiveFailures := whoops.Group{}
 	for {
 		select {
 		case <-ctx.Done():
-			return
-		case <-time.After(999 * time.Second):
-			r.loopLogic(ctx)
+			return ctx.Err()
+		case <-time.After(defaultLoopTimeout):
+			err := r.oneLoopCall(ctx)
+			if err == nil {
+				// resetting the failures
+				consecutiveFailures = whoops.Group{}
+				continue
+			}
+
+			if errors.IsUnrecoverable(err) {
+				return err
+			}
+
+			consecutiveFailures.Add(err)
+			if len(consecutiveFailures) >= defaultErrorCountToExit {
+				return errors.Unrecoverable(consecutiveFailures)
+			}
+			// TODO: add logger
+			fmt.Println("error happened", err)
 		}
 	}
 }
 
-func (r relayer) loopLogic(ctx context.Context) {
-	err := r.signMessagesForExecution(ctx, queueTypeNameMessageExecution, queueTypeNameValsetUpdate)
-	if err != nil {
-		panic(err)
+func (r *Relayer) oneLoopCall(ctx context.Context) error {
+	var g whoops.Group
+
+	g.Add(r.signMessagesForExecution(ctx, queueTypeNameMessageExecution, queueTypeNameValsetUpdate))
+	g.Add(r.queryConcencusReachedMessages(ctx))
+
+	if g.Err() {
+		return g
 	}
+
+	return nil
 }

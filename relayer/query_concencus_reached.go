@@ -3,6 +3,6 @@ package relayer
 import "context"
 
 // TODO
-func (r relayer) queryConcencusReachedMessages(ctx context.Context) {
-
+func (r *Relayer) queryConcencusReachedMessages(ctx context.Context) error {
+	return nil
 }

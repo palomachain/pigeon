@@ -31,3 +31,48 @@ message MessageToSign {
   uint64 id = 2;
   google.protobuf.Any msg = 3;
 }
+
+service QueryValset {
+	rpc ValidatorInfo(QueryValidatorInfoRequest) returns (QueryValidatorInfoResponse) {
+		option (google.api.http).get = "/volumefi/cronchain/valset/validator_info/{valAddr}";
+	}
+}
+
+
+message QueryValidatorInfoRequest {
+  string valAddr = 1;
+}
+
+message QueryValidatorInfoResponse {
+  Validator validator = 1;
+}
+
+message Validator {
+  bytes shareCount = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+
+  // TODO: make this ed25519 pub key instead of bytes
+  bytes pubKey = 2;
+
+  ValidatorState state = 3;
+
+  repeated ExternalChainInfo externalChainInfos = 4;
+
+  string address = 5;
+}
+
+
+message ExternalChainInfo {
+  uint64 ID = 1;
+  string chainID = 2;
+  string address = 3;
+}
+
+enum ValidatorState {
+  NONE = 0;
+  ACTIVE = 1;
+  JAILED = 2;
+}
+
