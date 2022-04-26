@@ -39,7 +39,7 @@ func (cc *LensClient) Init() error {
 	return nil
 }
 
-func NewChainClient(ccc *lens.ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*LensClient, error) {
+func NewChainClient(ccc *lens.ChainClientConfig, input io.Reader, output io.Writer, kro ...keyring.Option) (*LensClient, error) {
 	cc := LensClient{lens.ChainClient{
 		KeyringOptions: kro,
 		Config:         ccc,

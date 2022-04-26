@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 import (
 	"context"
@@ -81,6 +81,54 @@ type BroadcastMessageSignatureIn struct {
 // It build the message and sends it over.
 func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
 	return broadcastMessageSignatures(ctx, c.L, signatures...)
+}
+
+func (c Client) QueryValidatorInfo(ctx context.Context) (*cronchain.Validator, error) {
+	qc := cronchain.NewQueryValsetClient(&c.L.ChainClient)
+	valInfoRes, err := qc.ValidatorInfo(ctx, &cronchain.QueryValidatorInfoRequest{
+		ValAddr: c.L.Config.Key, // TODO: pass in key!!! this is name
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return valInfoRes.Validator, nil
+}
+
+func (c Client) RegisterValidator(ctx context.Context, pubKey, signedPubKey []byte) error {
+	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+
+	_, err := txsvc.RegisterConductor(ctx, &cronchain.MsgRegisterConductor{
+		PubKey:       pubKey,
+		SignedPubKey: signedPubKey,
+	})
+
+	return err
+
+}
+
+type ChainInfoIn struct {
+	ChainID    string
+	AccAddress string
+}
+
+func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInfoIn) error {
+	if len(chainInfos) == 0 {
+		return nil
+	}
+	txsvc := cronchain.NewValsetTxServiceClient(&c.L.ChainClient)
+
+	msg := &cronchain.MsgAddExternalChainInfoForValidator{}
+
+	for _, ci := range chainInfos {
+		msg.ChainInfos = append(msg.ChainInfos, &cronchain.MsgAddExternalChainInfoForValidator_ChainInfo{
+			ChainID: ci.ChainID,
+			Address: ci.AccAddress,
+		})
+	}
+
+	_, err := txsvc.AddExternalChainInfoForValidator(ctx, msg)
+	return err
 }
 
 type msgSender interface {
