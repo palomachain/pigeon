@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	errUnrecoverable = whoops.Errorf("unrecoverable error: %s")
+	errUnrecoverable = whoops.String("unrecoverable error")
 )
 
 func IsUnrecoverable(err error) bool {
@@ -15,5 +15,5 @@ func IsUnrecoverable(err error) bool {
 }
 
 func Unrecoverable(err error) error {
-	return whoops.Wrap(err, errUnrecoverable.Format(err.Error()))
+	return whoops.Wrap(err, errUnrecoverable)
 }
