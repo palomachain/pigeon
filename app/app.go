@@ -38,12 +38,14 @@ func Config() *config.Root {
 
 func PalomaClient() *paloma.Client {
 	if _palomaClient == nil {
+		lensClient := whoops.Must(chain.NewChainClient(
+			palomaLensClientConfig("", false),
+			os.Stdin,
+			os.Stdout,
+		))
 		_palomaClient = &paloma.Client{
-			L: whoops.Must(chain.NewChainClient(
-				palomaLensClientConfig("", false),
-				os.Stdin,
-				os.Stdout,
-			)),
+			L:          lensClient,
+			GRPCClient: lensClient,
 		}
 	}
 	return _palomaClient

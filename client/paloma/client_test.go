@@ -11,7 +11,10 @@ import (
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/volumefi/conductor/types/cronchain"
+	"github.com/volumefi/conductor/types/cronchain/mocks"
 	"github.com/volumefi/conductor/types/testdata"
 
 	"google.golang.org/grpc/test/bufconn"
@@ -35,24 +38,46 @@ var (
 	}
 )
 
-var _ cronchain.QueryServer = mockCronchainQueryServer{}
-
-type queuedMsgsFnc func(context.Context, *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error)
-
-type mockCronchainQueryServer struct {
-	queuedMsgs queuedMsgsFnc
-}
-
-func (m mockCronchainQueryServer) QueuedMessagesForSigning(ctx context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
-	return m.queuedMsgs(ctx, msg)
-}
-
-func dialer(t *testing.T, msgsrv mockCronchainQueryServer) func(context.Context, string) (net.Conn, error) {
+func queryServerDailer(t *testing.T, msgsrv *mocks.QueryServer) func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)
 
 	server := grpc.NewServer()
 
 	cronchain.RegisterQueryServer(server, msgsrv)
+
+	go func() {
+		err := server.Serve(listener)
+		assert.NoError(t, err)
+	}()
+
+	return func(context.Context, string) (net.Conn, error) {
+		return listener.Dial()
+	}
+}
+
+func valsetTxServerDailer(t *testing.T, msgsrv *mocks.ValsetTxServiceServer) func(context.Context, string) (net.Conn, error) {
+	listener := bufconn.Listen(1024 * 1024)
+
+	server := grpc.NewServer()
+
+	cronchain.RegisterValsetTxServiceServer(server, msgsrv)
+
+	go func() {
+		err := server.Serve(listener)
+		assert.NoError(t, err)
+	}()
+
+	return func(context.Context, string) (net.Conn, error) {
+		return listener.Dial()
+	}
+}
+
+func valsetQueryServerDailer(t *testing.T, msgsrv *mocks.QueryValsetServer) func(context.Context, string) (net.Conn, error) {
+	listener := bufconn.Listen(1024 * 1024)
+
+	server := grpc.NewServer()
+
+	cronchain.RegisterQueryValsetServer(server, msgsrv)
 
 	go func() {
 		err := server.Serve(listener)
@@ -84,10 +109,10 @@ func makeCodec() lens.Codec {
 func TestQueryingMessagesForSigning(t *testing.T) {
 	codec := makeCodec()
 	for _, tt := range []struct {
-		name          string
-		queuedMsgsFnc queuedMsgsFnc
-		expRes        []QueuedMessage[*testdata.SimpleMessage]
-		expErr        error
+		name   string
+		mcksrv func(*testing.T) *mocks.QueryServer
+		expRes []QueuedMessage[*testdata.SimpleMessage]
+		expErr error
 
 		// used only for testing the GRPC responses because GRPC is doing a
 		// string concatenation on errors, thus we can't do proper error
@@ -96,33 +121,47 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	}{
 		{
 			name: "called with correct arguments",
-			queuedMsgsFnc: func(_ context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
-				assert.Equal(t, "validator", msg.ValAddress)
-				assert.Equal(t, "queueName", msg.QueueTypeName)
-				return &cronchain.QueryQueuedMessagesForSigningResponse{}, nil
+			mcksrv: func(t *testing.T) *mocks.QueryServer {
+				srv := mocks.NewQueryServer(t)
+				srv.On("QueuedMessagesForSigning", mock.Anything, &cronchain.QueryQueuedMessagesForSigningRequest{
+					ValAddress:    "validator",
+					QueueTypeName: "queueName",
+				}).Return(
+					&cronchain.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*cronchain.MessageToSign{},
+					},
+					nil,
+				).Once()
+				return srv
 			},
 		},
 		{
 			name: "messages are happily returned",
-			queuedMsgsFnc: func(_ context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
+			mcksrv: func(t *testing.T) *mocks.QueryServer {
 				msgany1, err := codectypes.NewAnyWithValue(simpleMessageTestData1)
 				assert.NoError(t, err)
 				msgany2, err := codectypes.NewAnyWithValue(simpleMessageTestData2)
 				assert.NoError(t, err)
-				return &cronchain.QueryQueuedMessagesForSigningResponse{
-					MessageToSign: []*cronchain.MessageToSign{
-						{
-							Nonce: []byte("nonce-123"),
-							Id:    456,
-							Msg:   msgany1,
-						},
-						{
-							Nonce: []byte("nonce-321"),
-							Id:    654,
-							Msg:   msgany2,
+
+				srv := mocks.NewQueryServer(t)
+				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
+					&cronchain.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*cronchain.MessageToSign{
+							{
+								Nonce: []byte("nonce-123"),
+								Id:    456,
+								Msg:   msgany1,
+							},
+							{
+								Nonce: []byte("nonce-321"),
+								Id:    654,
+								Msg:   msgany2,
+							},
 						},
 					},
-				}, nil
+					nil,
+				).Once()
+				return srv
 			},
 			expRes: []QueuedMessage[*testdata.SimpleMessage]{
 				{
@@ -139,46 +178,63 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 		},
 		{
 			name: "unpacking messages returns an error",
-			queuedMsgsFnc: func(_ context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
+			mcksrv: func(t *testing.T) *mocks.QueryServer {
 				erroneousMsg := &codectypes.Any{
 					TypeUrl: "/wrong",
 					Value:   []byte(`whoops`),
 				}
-				return &cronchain.QueryQueuedMessagesForSigningResponse{
-					MessageToSign: []*cronchain.MessageToSign{
-						{
-							Nonce: []byte("nonce-123"),
-							Id:    456,
-							Msg:   erroneousMsg,
+
+				srv := mocks.NewQueryServer(t)
+				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
+					&cronchain.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*cronchain.MessageToSign{
+							{
+								Nonce: []byte("nonce-123"),
+								Id:    456,
+								Msg:   erroneousMsg,
+							},
 						},
 					},
-				}, nil
+					nil,
+				).Once()
+				return srv
 			},
 			expErr: ErrUnableToUnpackAny,
 		},
 		{
 			name: "client returns an error",
-			queuedMsgsFnc: func(_ context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
-				return nil, errTestErr
+			mcksrv: func(t *testing.T) *mocks.QueryServer {
+				srv := mocks.NewQueryServer(t)
+				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
+					nil,
+					errTestErr,
+				).Once()
+				return srv
 			},
 			expectsAnyError: true,
 		},
 		{
 			name: "incorrect type used for the unpacked message",
-			queuedMsgsFnc: func(_ context.Context, msg *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
+			mcksrv: func(t *testing.T) *mocks.QueryServer {
 				msgany, err := codectypes.NewAnyWithValue(&testdata.SimpleMessage2{
 					Field: "random value",
 				})
 				assert.NoError(t, err)
-				return &cronchain.QueryQueuedMessagesForSigningResponse{
-					MessageToSign: []*cronchain.MessageToSign{
-						{
-							Nonce: []byte("nonce-123"),
-							Id:    456,
-							Msg:   msgany,
+
+				srv := mocks.NewQueryServer(t)
+				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
+					&cronchain.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*cronchain.MessageToSign{
+							{
+								Nonce: []byte("nonce-123"),
+								Id:    456,
+								Msg:   msgany,
+							},
 						},
 					},
-				}, nil
+					nil,
+				).Once()
+				return srv
 			},
 			expErr: ErrIncorrectTypeSavedInMessage,
 		},
@@ -186,9 +242,8 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// setting everything up
 			ctx := context.Background()
-			mocksrv := mockCronchainQueryServer{}
-			mocksrv.queuedMsgs = tt.queuedMsgsFnc
-			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(dialer(t, mocksrv)))
+			mocksrv := tt.mcksrv(t)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(queryServerDailer(t, mocksrv)))
 			assert.NoError(t, err)
 
 			// setup complete
@@ -206,6 +261,186 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 				assert.ErrorIs(t, err, tt.expErr)
 			}
 			assert.Equal(t, tt.expRes, msgs)
+		})
+	}
+}
+
+func TestRegisterValidator(t *testing.T) {
+	pk := []byte{1, 2, 3}
+	sig := []byte{4, 5, 6}
+	fakeErr := errors.New("something")
+	for _, tt := range []struct {
+		name   string
+		mcksrv func(*testing.T) *mocks.ValsetTxServiceServer
+		expRes []QueuedMessage[*testdata.SimpleMessage]
+
+		expectsAnyError bool
+	}{
+		{
+			name: "happy path",
+			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
+				srv := mocks.NewValsetTxServiceServer(t)
+				srv.On("RegisterConductor", mock.Anything, &cronchain.MsgRegisterConductor{
+					PubKey:       pk,
+					SignedPubKey: sig,
+				}).Return(nil, nil).Once()
+				return srv
+			},
+		},
+		{
+			name: "grpc returns error",
+			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
+				srv := mocks.NewValsetTxServiceServer(t)
+				srv.On("RegisterConductor", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+				return srv
+			},
+			expectsAnyError: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// setting everything up
+			ctx := context.Background()
+			mocksrv := tt.mcksrv(t)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetTxServerDailer(t, mocksrv)))
+			assert.NoError(t, err)
+
+			client := Client{
+				GRPCClient: conn,
+			}
+			err = client.RegisterValidator(ctx, pk, sig)
+
+			if tt.expectsAnyError {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestQueryValidatorInfo(t *testing.T) {
+	fakeErr := errors.New("something")
+	fakeVal := &cronchain.Validator{
+		Address: "hello",
+	}
+	for _, tt := range []struct {
+		name   string
+		mcksrv func(*testing.T) *mocks.QueryValsetServer
+		expRes []QueuedMessage[*testdata.SimpleMessage]
+
+		expectedValidator *cronchain.Validator
+		expectsAnyError   bool
+	}{
+		{
+			name: "happy path",
+			mcksrv: func(t *testing.T) *mocks.QueryValsetServer {
+				srv := mocks.NewQueryValsetServer(t)
+				srv.On("ValidatorInfo", mock.Anything, mock.Anything).Return(&cronchain.QueryValidatorInfoResponse{
+					Validator: fakeVal,
+				}, nil).Once()
+				return srv
+			},
+			expectedValidator: fakeVal,
+		},
+		{
+			name: "grpc returns error",
+			mcksrv: func(t *testing.T) *mocks.QueryValsetServer {
+				srv := mocks.NewQueryValsetServer(t)
+				srv.On("ValidatorInfo", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+				return srv
+			},
+			expectsAnyError: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// setting everything up
+			ctx := context.Background()
+			mocksrv := tt.mcksrv(t)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetQueryServerDailer(t, mocksrv)))
+			assert.NoError(t, err)
+
+			client := Client{
+				GRPCClient: conn,
+			}
+			valInfo, err := client.QueryValidatorInfo(ctx)
+
+			require.Equal(t, tt.expectedValidator, valInfo)
+
+			if tt.expectsAnyError {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestAddingExternalChainInfo(t *testing.T) {
+	fakeErr := errors.New("something")
+	for _, tt := range []struct {
+		name      string
+		chainInfo []ChainInfoIn
+		mcksrv    func(*testing.T) *mocks.ValsetTxServiceServer
+		expRes    []QueuedMessage[*testdata.SimpleMessage]
+
+		expectsAnyError bool
+	}{
+		{
+			name:      "without chain infos provided does nothing",
+			chainInfo: []ChainInfoIn{},
+			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
+				srv := mocks.NewValsetTxServiceServer(t)
+				t.Cleanup(func() {
+					srv.AssertNotCalled(t, "AddExternalChainInfoForValidator", mock.Anything, mock.Anything)
+				})
+				return srv
+			},
+		},
+		{
+			name: "happy path",
+			chainInfo: []ChainInfoIn{
+				{ChainID: "chain1", AccAddress: "addr1"},
+				{ChainID: "chain2", AccAddress: "addr2"},
+			},
+			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
+				srv := mocks.NewValsetTxServiceServer(t)
+				srv.On("AddExternalChainInfoForValidator", mock.Anything, &cronchain.MsgAddExternalChainInfoForValidator{
+					ChainInfos: []*cronchain.MsgAddExternalChainInfoForValidator_ChainInfo{
+						{ChainID: "chain1", Address: "addr1"},
+						{ChainID: "chain2", Address: "addr2"},
+					},
+				}).Return(nil, nil).Once()
+				return srv
+			},
+		},
+		{
+			name: "grpc returns error",
+			chainInfo: []ChainInfoIn{
+				{ChainID: "chain1", AccAddress: "addr1"},
+				{ChainID: "chain2", AccAddress: "addr2"},
+			},
+			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
+				srv := mocks.NewValsetTxServiceServer(t)
+				srv.On("AddExternalChainInfoForValidator", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+				return srv
+			},
+			expectsAnyError: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// setting everything up
+			ctx := context.Background()
+			mocksrv := tt.mcksrv(t)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetTxServerDailer(t, mocksrv)))
+			assert.NoError(t, err)
+
+			client := Client{
+				GRPCClient: conn,
+			}
+			err = client.AddExternalChainInfo(
+				ctx,
+				tt.chainInfo...,
+			)
+
+			if tt.expectsAnyError {
+				assert.Error(t, err)
+			}
 		})
 	}
 }
