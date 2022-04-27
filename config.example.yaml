@@ -1,0 +1,16 @@
+paloma:
+  chain-id: conductor
+  call-timeout: 20s
+  key-home: ~/.conductor
+  keyring-env-name: PALOMA_KEYRING_DETAILS
+  validator-account-name: validator
+  base-rpc-url: http://localhost:26657
+  gas-adjustment: 1.1
+  gas-prices: 0.01uatom
+
+terra:
+  keyring-env-name: TERRA_KEYRING_DETAILS
+  acc-addresses:
+    - acc1
+    - acc2
+    - acc3

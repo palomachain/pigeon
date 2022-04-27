@@ -29,15 +29,19 @@ func (r *Relayer) Start(ctx context.Context) error {
 			err := r.oneLoopCall(ctx)
 			if err == nil {
 				// resetting the failures
-				consecutiveFailures = whoops.Group{}
+				if len(consecutiveFailures) > 0 {
+					consecutiveFailures = whoops.Group{}
+				}
 				continue
 			}
 
 			if errors.IsUnrecoverable(err) {
+				// there is no way that we can recover from this
 				return err
 			}
 
 			consecutiveFailures.Add(err)
+
 			if len(consecutiveFailures) >= defaultErrorCountToExit {
 				return errors.Unrecoverable(consecutiveFailures)
 			}

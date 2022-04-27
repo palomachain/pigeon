@@ -11,7 +11,6 @@ var (
 	startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "starts the sparrow server",
-		// TODO: add config stuff
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("*chirp chirp*")
 			return app.Relayer().Start(cmd.Context())
