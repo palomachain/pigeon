@@ -12,7 +12,8 @@ var (
 
 var (
 	rootCmd = &cobra.Command{
-		Use: "sparrow",
+		Use:          "sparrow",
+		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			app.SetConfigPath(flagConfigPath)
 		},

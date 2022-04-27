@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -96,7 +95,6 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 }
 
 func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainClientConfig {
-	fmt.Println(palomaConfig)
 	return &lens.ChainClientConfig{
 		ChainID:        defaultValue(palomaConfig.ChainID, "conductor"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
