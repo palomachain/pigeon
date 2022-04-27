@@ -19,6 +19,8 @@ const (
 	defaultLoopTimeout = 10 * time.Second
 )
 
+// Start starts the relayer. It's responsible for handling the communication
+// with Paloma and other chains.
 func (r *Relayer) Start(ctx context.Context) error {
 	consecutiveFailures := whoops.Group{}
 	for {

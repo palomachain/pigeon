@@ -1,5 +1,5 @@
 syntax = "proto3";
-package volumefi.cronchain.concensus;
+package volumefi.cronchain.consensus;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
@@ -12,9 +12,8 @@ option go_package = "github.com/volumefi/conductor/types/cronchain";
 service Query {
   // Queries a list of QueuedMessagesForSigning items.
 	rpc QueuedMessagesForSigning(QueryQueuedMessagesForSigningRequest) returns (QueryQueuedMessagesForSigningResponse) {
-		option (google.api.http).get = "/volumefi/cronchain/concensus/queued_messages_for_signing";
+		option (google.api.http).get = "/volumefi/cronchain/consensus/queued_messages_for_signing";
 	}
-
 }
 
 message QueryQueuedMessagesForSigningRequest {
@@ -33,9 +32,9 @@ message MessageToSign {
 }
 
 service QueryValset {
-	rpc ValidatorInfo(QueryValidatorInfoRequest) returns (QueryValidatorInfoResponse) {
-		option (google.api.http).get = "/volumefi/cronchain/valset/validator_info/{valAddr}";
-	}
+    rpc ValidatorInfo(QueryValidatorInfoRequest) returns (QueryValidatorInfoResponse) {
+        option (google.api.http).get = "/volumefi/cronchain/valset/validator_info/{valAddr}";
+    }
 }
 
 
@@ -75,4 +74,3 @@ enum ValidatorState {
   ACTIVE = 1;
   JAILED = 2;
 }
-
