@@ -2,4 +2,4 @@
 
 ## ISSUES
 
-Please use https://github.com/VolumeFi/cronchain/issues to submit issues!
+Please use https://github.com/palomachain/paloma/issues to submit issues and add sparrow label!
