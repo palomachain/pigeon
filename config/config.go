@@ -3,7 +3,6 @@ package config
 import (
 	"io"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -14,14 +13,15 @@ const (
 )
 
 type ChainClientConfig struct {
-	ChainID          string        `yaml:"chain-id"`
-	BaseRPCURL       string        `yaml:"base-rpc-url"`
-	KeyringDetails   keyringEnvKey `yaml:"keyring-env-name"`
-	KeyHomeDirectory string        `yaml:"key-home"`
-	CallTimeout      string        `yaml:"call-timeout"`
-	GasAdjustment    float64       `yaml:"gas-adjustment"`
-	AccountPrefix    string        `yaml:"account-prefix"`
-	GasPrices        string        `yaml:"gas-prices"`
+	ChainID            string  `yaml:"chain-id"`
+	BaseRPCURL         string  `yaml:"base-rpc-url"`
+	KeyringPassEnvName string  `yaml:"keyring-pass-env-name"`
+	KeyringType        string  `yaml:"keyring-type"`
+	KeyHomeDirectory   string  `yaml:"key-home"`
+	CallTimeout        string  `yaml:"call-timeout"`
+	GasAdjustment      float64 `yaml:"gas-adjustment"`
+	AccountPrefix      string  `yaml:"account-prefix"`
+	GasPrices          string  `yaml:"gas-prices"`
 }
 
 type Root struct {
@@ -43,43 +43,9 @@ type Terra struct {
 	Accounts       []string `yaml:"acc-addresses"`
 }
 
-type keyringEnvKey string
-
-type keyringDetails struct {
-	typ  string
-	pass string
-}
-
-func parseKeyringEnvValue(value string) (keyringDetails, error) {
-	var zero keyringDetails
-	values := strings.SplitN(value, ";", 2)
-
-	if len(values) != 2 {
-		return zero, ErrUnableToParseKeyringDetails
-	}
-
-	return keyringDetails{
-		typ:  values[0],
-		pass: values[1],
-	}, nil
-}
-
-func (k keyringEnvKey) Type() string {
-	envVal := os.Getenv(string(k))
-	details, err := parseKeyringEnvValue(envVal)
-	if err != nil {
-		panic(err)
-	}
-	return details.typ
-}
-
-func (k keyringEnvKey) Password() string {
-	envVal := os.Getenv(string(k))
-	details, err := parseKeyringEnvValue(envVal)
-	if err != nil {
-		panic(err)
-	}
-	return details.pass
+func KeyringPassword(envKey string) string {
+	envVal := os.Getenv(envKey)
+	return envVal
 }
 
 func FromReader(r io.Reader) (Root, error) {

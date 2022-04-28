@@ -4,7 +4,8 @@ paloma:
   chain-id: conductor
   call-timeout: 20s
   key-home: ~/.conductor
-  keyring-env-name: PALOMA_KEYRING_DETAILS
+  keyring-pass-env-name: PALOMA_KEYRING_PASS
+  keyring-type: file
   validator-account-name: validator
   base-rpc-url: http://localhost:26657
   gas-adjustment: 1.1

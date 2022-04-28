@@ -4,12 +4,12 @@ import (
 	"os"
 	"strings"
 
-	lens "github.com/strangelove-ventures/lens/client"
-	"github.com/vizualni/whoops"
 	chain "github.com/palomachain/sparrow/client"
 	"github.com/palomachain/sparrow/client/paloma"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/relayer"
+	lens "github.com/strangelove-ventures/lens/client"
+	"github.com/vizualni/whoops"
 )
 
 var (
@@ -66,11 +66,10 @@ func PalomaClient() *paloma.Client {
 		palomaConfig := Config().Paloma
 
 		lensConfig := palomaLensClientConfig(palomaConfig.ChainClientConfig)
-		lensConfig.KeyringBackend = palomaConfig.KeyringDetails.Type()
 
 		// HACK: \n is added at the end of a password because github.com/cosmos/cosmos-sdk@v0.45.1/client/input/input.go at line 93 would return an EOF error which then would fail
 		// Should be fixed with https://github.com/cosmos/cosmos-sdk/pull/11796
-		passInput := strings.NewReader(palomaConfig.KeyringDetails.Password() + "\n")
+		passInput := strings.NewReader(config.KeyringPassword(palomaConfig.KeyringPassEnvName) + "\n")
 
 		lensClient := whoops.Must(chain.NewChainClient(
 			lensConfig,
@@ -99,7 +98,7 @@ func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainCl
 		ChainID:        defaultValue(palomaConfig.ChainID, "conductor"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),
-		KeyringBackend: defaultValue(palomaConfig.KeyringDetails.Type(), "os"),
+		KeyringBackend: defaultValue(palomaConfig.KeyringType, "os"),
 		GasAdjustment:  defaultValue(palomaConfig.GasAdjustment, 1.2),
 		GasPrices:      defaultValue(palomaConfig.GasPrices, "0.01uatom"),
 		KeyDirectory:   palomaConfig.KeyHomeDirectory,
