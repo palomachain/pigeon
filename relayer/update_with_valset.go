@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/vizualni/whoops"
-	"github.com/volumefi/conductor/client/paloma"
-	"github.com/volumefi/conductor/errors"
+	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/errors"
 )
 
 func (r *Relayer) updateValidatorInfo(ctx context.Context) error {

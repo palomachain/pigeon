@@ -8,11 +8,11 @@ package conductor
 // 	"github.com/gogo/protobuf/proto"
 // 	"github.com/strangelove-ventures/lens/byop"
 // 	lens "github.com/strangelove-ventures/lens/client"
-// 	"github.com/volumefi/conductor/client/cronchain"
-// 	cronchaintypes "github.com/volumefi/conductor/types/cronchain"
-// 	terratypes "github.com/volumefi/conductor/types/terra"
+// 	"github.com/palomachain/sparrow/client/cronchain"
+// 	cronchaintypes "github.com/palomachain/sparrow/types/cronchain"
+// 	terratypes "github.com/palomachain/sparrow/types/terra"
 
-// 	chain "github.com/volumefi/conductor/client"
+// 	chain "github.com/palomachain/sparrow/client"
 // )
 
 // func Start() {

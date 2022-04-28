@@ -3,8 +3,8 @@ package relayer
 import (
 	"context"
 
-	"github.com/volumefi/conductor/client/paloma"
-	cronchaintypes "github.com/volumefi/conductor/types/cronchain"
+	"github.com/palomachain/sparrow/client/paloma"
+	cronchaintypes "github.com/palomachain/sparrow/types/cronchain"
 	"github.com/volumefi/utils/signing"
 )
 

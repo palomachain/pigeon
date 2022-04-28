@@ -6,10 +6,10 @@ import (
 
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/vizualni/whoops"
-	chain "github.com/volumefi/conductor/client"
-	"github.com/volumefi/conductor/client/paloma"
-	"github.com/volumefi/conductor/config"
-	"github.com/volumefi/conductor/relayer"
+	chain "github.com/palomachain/sparrow/client"
+	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/config"
+	"github.com/palomachain/sparrow/relayer"
 )
 
 var (

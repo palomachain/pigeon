@@ -1,4 +1,4 @@
-module github.com/volumefi/conductor
+module github.com/palomachain/sparrow
 
 go 1.18
 
