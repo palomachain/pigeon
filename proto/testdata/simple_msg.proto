@@ -1,7 +1,7 @@
 syntax = "proto3";
 package runner;
 
-option go_package = "github.com/volumefi/conductor/types/testdata";
+option go_package = "types/testdata";
 
 message SimpleMessage {
   string sender = 1;

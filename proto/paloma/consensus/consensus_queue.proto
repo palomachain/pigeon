@@ -1,0 +1,19 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+
+package volumefi.paloma.consensus;
+
+option go_package = "github.com/palomachain/paloma/x/consensus/types";
+
+// message for storing the queued signed message in the internal queue
+message QueuedSignedMessage {
+  uint64 id = 1;
+  google.protobuf.Any msg = 2;
+  repeated SignData signData = 3;
+}
+
+message SignData {
+  string valAddress = 1;
+  string pubKey = 2; 
+  bytes signature = 3;
+}

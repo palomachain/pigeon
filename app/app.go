@@ -101,7 +101,7 @@ func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainCl
 		KeyringBackend: defaultValue(palomaConfig.KeyringType, "os"),
 		GasAdjustment:  defaultValue(palomaConfig.GasAdjustment, 1.2),
 		GasPrices:      defaultValue(palomaConfig.GasPrices, "0.01uatom"),
-		KeyDirectory:   palomaConfig.KeyHomeDirectory,
+		KeyDirectory:   palomaConfig.KeyringDirectory.Path(),
 		Debug:          false,
 		Timeout:        defaultValue(palomaConfig.CallTimeout, "20s"),
 		OutputFormat:   "json",

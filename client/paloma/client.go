@@ -11,7 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	chain "github.com/palomachain/sparrow/client"
 	"github.com/palomachain/sparrow/config"
-	paloma "github.com/palomachain/sparrow/types/paloma"
+	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
+	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
 )
 
 type Client struct {
@@ -21,7 +22,7 @@ type Client struct {
 	GRPCClient grpc.ClientConn
 }
 
-type QueuedMessage[T paloma.Signable] struct {
+type QueuedMessage[T consensus.Signable] struct {
 	ID    uint64
 	Nonce []byte
 	Msg   T
@@ -29,7 +30,7 @@ type QueuedMessage[T paloma.Signable] struct {
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
-func QueryMessagesForSigning[T paloma.Signable](
+func QueryMessagesForSigning[T consensus.Signable](
 	ctx context.Context,
 	c Client,
 	valAddress string,
@@ -38,15 +39,15 @@ func QueryMessagesForSigning[T paloma.Signable](
 	return queryMessagesForSigning[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
 }
 
-func queryMessagesForSigning[T paloma.Signable](
+func queryMessagesForSigning[T consensus.Signable](
 	ctx context.Context,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 	valAddress string,
 	queueTypeName string,
 ) ([]QueuedMessage[T], error) {
-	qc := paloma.NewQueryClient(c)
-	msgs, err := qc.QueuedMessagesForSigning(ctx, &paloma.QueryQueuedMessagesForSigningRequest{
+	qc := consensus.NewQueryClient(c)
+	msgs, err := qc.QueuedMessagesForSigning(ctx, &consensus.QueryQueuedMessagesForSigningRequest{
 		ValAddress:    valAddress,
 		QueueTypeName: queueTypeName,
 	})
@@ -55,7 +56,7 @@ func queryMessagesForSigning[T paloma.Signable](
 	}
 	var res []QueuedMessage[T]
 	for _, msg := range msgs.GetMessageToSign() {
-		var m paloma.Signable
+		var m consensus.Signable
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &m)
 		if err != nil {
 			return nil, whoops.Wrap(err, ErrUnableToUnpackAny)
@@ -88,10 +89,10 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 }
 
 // QueryValidatorInfo returns info about the validator.
-func (c Client) QueryValidatorInfo(ctx context.Context) (*paloma.Validator, error) {
-	qc := paloma.NewQueryValsetClient(c.GRPCClient)
-	valInfoRes, err := qc.ValidatorInfo(ctx, &paloma.QueryValidatorInfoRequest{
-		ValAddr: "TODO CHANGE ME", // TODO: pass in key!!! this is name
+func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset.Validator, error) {
+	qc := valset.NewQueryClient(c.GRPCClient)
+	valInfoRes, err := qc.ValidatorInfo(ctx, &valset.QueryValidatorInfoRequest{
+		ValAddr: valAddr,
 	})
 	if err != nil {
 		return nil, err
@@ -103,9 +104,9 @@ func (c Client) QueryValidatorInfo(ctx context.Context) (*paloma.Validator, erro
 // RegisterValidator registers itself with the network and sends it's public key that they are using for
 // signing messages.
 func (c Client) RegisterValidator(ctx context.Context, pubKey, signedPubKey []byte) error {
-	txsvc := paloma.NewValsetTxServiceClient(c.GRPCClient)
+	txsvc := valset.NewMsgClient(c.GRPCClient)
 
-	_, err := txsvc.RegisterConductor(ctx, &paloma.MsgRegisterConductor{
+	_, err := txsvc.RegisterConductor(ctx, &valset.MsgRegisterConductor{
 		PubKey:       pubKey,
 		SignedPubKey: signedPubKey,
 	})
@@ -125,12 +126,12 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 	if len(chainInfos) == 0 {
 		return nil
 	}
-	txsvc := paloma.NewValsetTxServiceClient(c.GRPCClient)
+	txsvc := valset.NewMsgClient(c.GRPCClient)
 
-	msg := &paloma.MsgAddExternalChainInfoForValidator{}
+	msg := &valset.MsgAddExternalChainInfoForValidator{}
 
 	for _, ci := range chainInfos {
-		msg.ChainInfos = append(msg.ChainInfos, &paloma.MsgAddExternalChainInfoForValidator_ChainInfo{
+		msg.ChainInfos = append(msg.ChainInfos, &valset.MsgAddExternalChainInfoForValidator_ChainInfo{
 			ChainID: ci.ChainID,
 			Address: ci.AccAddress,
 		})
@@ -152,15 +153,15 @@ func broadcastMessageSignatures(
 	if len(signatures) == 0 {
 		return nil
 	}
-	var signedMessages []*paloma.MsgAddMessagesSignatures_MsgSignedMessage
+	var signedMessages []*consensus.MsgAddMessagesSignatures_MsgSignedMessage
 	for _, sig := range signatures {
-		signedMessages = append(signedMessages, &paloma.MsgAddMessagesSignatures_MsgSignedMessage{
+		signedMessages = append(signedMessages, &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
 			Id:            sig.ID,
 			QueueTypeName: sig.QueueTypeName,
 			Signature:     sig.Signature,
 		})
 	}
-	msg := &paloma.MsgAddMessagesSignatures{
+	msg := &consensus.MsgAddMessagesSignatures{
 		SignedMessages: signedMessages,
 	}
 	_, err := ms.SendMsg(ctx, msg)

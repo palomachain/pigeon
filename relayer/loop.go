@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vizualni/whoops"
 	"github.com/palomachain/sparrow/errors"
+	"github.com/vizualni/whoops"
 )
 
 const (
@@ -22,6 +22,15 @@ const (
 // Start starts the relayer. It's responsible for handling the communication
 // with Paloma and other chains.
 func (r *Relayer) Start(ctx context.Context) error {
+
+	if err := r.init(); err != nil {
+		return err
+	}
+
+	if err := r.updateValidatorInfo(ctx); err != nil {
+		return err
+	}
+
 	consecutiveFailures := whoops.Group{}
 	for {
 		select {

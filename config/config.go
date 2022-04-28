@@ -3,6 +3,11 @@ package config
 import (
 	"io"
 	"os"
+	"os/user"
+	"path"
+	"strings"
+
+	"github.com/vizualni/whoops"
 
 	"gopkg.in/yaml.v2"
 )
@@ -13,15 +18,24 @@ const (
 )
 
 type ChainClientConfig struct {
-	ChainID            string  `yaml:"chain-id"`
-	BaseRPCURL         string  `yaml:"base-rpc-url"`
-	KeyringPassEnvName string  `yaml:"keyring-pass-env-name"`
-	KeyringType        string  `yaml:"keyring-type"`
-	KeyHomeDirectory   string  `yaml:"key-home"`
-	CallTimeout        string  `yaml:"call-timeout"`
-	GasAdjustment      float64 `yaml:"gas-adjustment"`
-	AccountPrefix      string  `yaml:"account-prefix"`
-	GasPrices          string  `yaml:"gas-prices"`
+	ChainID            string   `yaml:"chain-id"`
+	BaseRPCURL         string   `yaml:"base-rpc-url"`
+	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
+	KeyringType        string   `yaml:"keyring-type"`
+	KeyringDirectory   filepath `yaml:"keyring-dir"`
+	CallTimeout        string   `yaml:"call-timeout"`
+	GasAdjustment      float64  `yaml:"gas-adjustment"`
+	AccountPrefix      string   `yaml:"account-prefix"`
+	GasPrices          string   `yaml:"gas-prices"`
+}
+
+type filepath string
+
+func (f filepath) Path() string {
+	p := string(f)
+	homeDir := whoops.Must(user.Current()).HomeDir
+	p = strings.ReplaceAll(p, "~", homeDir)
+	return path.Clean(p)
 }
 
 type Root struct {
@@ -44,7 +58,10 @@ type Terra struct {
 }
 
 func KeyringPassword(envKey string) string {
-	envVal := os.Getenv(envKey)
+	envVal, ok := os.LookupEnv(envKey)
+	if !ok {
+		panic(ErrUnableToLocateKeyringEnvironmentVar)
+	}
 	return envVal
 }
 
