@@ -6,14 +6,15 @@ require (
 	github.com/99designs/keyring v1.1.6
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/gogo/protobuf v1.3.3
+	github.com/palomachain/utils v0.1.2
 	github.com/spf13/cobra v1.4.0
 	github.com/strangelove-ventures/lens v0.3.1-0.20220329150126-16b15e90cf34
 	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/tendermint v0.34.15
 	github.com/vizualni/whoops v0.2.0
-	github.com/volumefi/utils v0.1.1
 	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e
 	google.golang.org/grpc v1.45.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -107,7 +108,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 

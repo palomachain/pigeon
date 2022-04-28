@@ -5,7 +5,7 @@ import (
 
 	"github.com/palomachain/sparrow/client/paloma"
 	cronchaintypes "github.com/palomachain/sparrow/types/cronchain"
-	"github.com/volumefi/utils/signing"
+	"github.com/palomachain/utils/signing"
 )
 
 // THIS IS WIP AND WILL CHANGE!
