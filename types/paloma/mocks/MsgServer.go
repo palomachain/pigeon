@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	cronchain "github.com/palomachain/sparrow/types/cronchain"
+	paloma "github.com/palomachain/sparrow/types/paloma"
 
 	testing "testing"
 )
@@ -17,20 +17,20 @@ type MsgServer struct {
 }
 
 // AddMessagesSignatures provides a mock function with given fields: _a0, _a1
-func (_m *MsgServer) AddMessagesSignatures(_a0 context.Context, _a1 *cronchain.MsgAddMessagesSignatures) (*cronchain.MsgAddMessagesSignaturesResponse, error) {
+func (_m *MsgServer) AddMessagesSignatures(_a0 context.Context, _a1 *paloma.MsgAddMessagesSignatures) (*paloma.MsgAddMessagesSignaturesResponse, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *cronchain.MsgAddMessagesSignaturesResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *cronchain.MsgAddMessagesSignatures) *cronchain.MsgAddMessagesSignaturesResponse); ok {
+	var r0 *paloma.MsgAddMessagesSignaturesResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *paloma.MsgAddMessagesSignatures) *paloma.MsgAddMessagesSignaturesResponse); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*cronchain.MsgAddMessagesSignaturesResponse)
+			r0 = ret.Get(0).(*paloma.MsgAddMessagesSignaturesResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *cronchain.MsgAddMessagesSignatures) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *paloma.MsgAddMessagesSignatures) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)

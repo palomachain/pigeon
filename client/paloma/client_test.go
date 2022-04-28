@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/palomachain/sparrow/types/cronchain"
-	"github.com/palomachain/sparrow/types/cronchain/mocks"
+	"github.com/palomachain/sparrow/types/paloma"
+	"github.com/palomachain/sparrow/types/paloma/mocks"
 	"github.com/palomachain/sparrow/types/testdata"
 
 	"google.golang.org/grpc/test/bufconn"
@@ -43,7 +43,7 @@ func queryServerDailer(t *testing.T, msgsrv *mocks.QueryServer) func(context.Con
 
 	server := grpc.NewServer()
 
-	cronchain.RegisterQueryServer(server, msgsrv)
+	paloma.RegisterQueryServer(server, msgsrv)
 
 	go func() {
 		err := server.Serve(listener)
@@ -60,7 +60,7 @@ func valsetTxServerDailer(t *testing.T, msgsrv *mocks.ValsetTxServiceServer) fun
 
 	server := grpc.NewServer()
 
-	cronchain.RegisterValsetTxServiceServer(server, msgsrv)
+	paloma.RegisterValsetTxServiceServer(server, msgsrv)
 
 	go func() {
 		err := server.Serve(listener)
@@ -77,7 +77,7 @@ func valsetQueryServerDailer(t *testing.T, msgsrv *mocks.QueryValsetServer) func
 
 	server := grpc.NewServer()
 
-	cronchain.RegisterQueryValsetServer(server, msgsrv)
+	paloma.RegisterQueryValsetServer(server, msgsrv)
 
 	go func() {
 		err := server.Serve(listener)
@@ -95,7 +95,7 @@ func makeCodec() lens.Codec {
 			ModuleName: "testing",
 			MsgsImplementations: []byop.RegisterImplementation{
 				{
-					Iface: (*cronchain.Signable)(nil),
+					Iface: (*paloma.Signable)(nil),
 					Msgs: []proto.Message{
 						&testdata.SimpleMessage{},
 						&testdata.SimpleMessage2{},
@@ -123,12 +123,12 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 			name: "called with correct arguments",
 			mcksrv: func(t *testing.T) *mocks.QueryServer {
 				srv := mocks.NewQueryServer(t)
-				srv.On("QueuedMessagesForSigning", mock.Anything, &cronchain.QueryQueuedMessagesForSigningRequest{
+				srv.On("QueuedMessagesForSigning", mock.Anything, &paloma.QueryQueuedMessagesForSigningRequest{
 					ValAddress:    "validator",
 					QueueTypeName: "queueName",
 				}).Return(
-					&cronchain.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*cronchain.MessageToSign{},
+					&paloma.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*paloma.MessageToSign{},
 					},
 					nil,
 				).Once()
@@ -145,8 +145,8 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 
 				srv := mocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
-					&cronchain.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*cronchain.MessageToSign{
+					&paloma.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*paloma.MessageToSign{
 							{
 								Nonce: []byte("nonce-123"),
 								Id:    456,
@@ -186,8 +186,8 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 
 				srv := mocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
-					&cronchain.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*cronchain.MessageToSign{
+					&paloma.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*paloma.MessageToSign{
 							{
 								Nonce: []byte("nonce-123"),
 								Id:    456,
@@ -223,8 +223,8 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 
 				srv := mocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
-					&cronchain.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*cronchain.MessageToSign{
+					&paloma.QueryQueuedMessagesForSigningResponse{
+						MessageToSign: []*paloma.MessageToSign{
 							{
 								Nonce: []byte("nonce-123"),
 								Id:    456,
@@ -280,7 +280,7 @@ func TestRegisterValidator(t *testing.T) {
 			name: "happy path",
 			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
 				srv := mocks.NewValsetTxServiceServer(t)
-				srv.On("RegisterConductor", mock.Anything, &cronchain.MsgRegisterConductor{
+				srv.On("RegisterConductor", mock.Anything, &paloma.MsgRegisterConductor{
 					PubKey:       pk,
 					SignedPubKey: sig,
 				}).Return(nil, nil).Once()
@@ -318,7 +318,7 @@ func TestRegisterValidator(t *testing.T) {
 
 func TestQueryValidatorInfo(t *testing.T) {
 	fakeErr := errors.New("something")
-	fakeVal := &cronchain.Validator{
+	fakeVal := &paloma.Validator{
 		Address: "hello",
 	}
 	for _, tt := range []struct {
@@ -326,14 +326,14 @@ func TestQueryValidatorInfo(t *testing.T) {
 		mcksrv func(*testing.T) *mocks.QueryValsetServer
 		expRes []QueuedMessage[*testdata.SimpleMessage]
 
-		expectedValidator *cronchain.Validator
+		expectedValidator *paloma.Validator
 		expectsAnyError   bool
 	}{
 		{
 			name: "happy path",
 			mcksrv: func(t *testing.T) *mocks.QueryValsetServer {
 				srv := mocks.NewQueryValsetServer(t)
-				srv.On("ValidatorInfo", mock.Anything, mock.Anything).Return(&cronchain.QueryValidatorInfoResponse{
+				srv.On("ValidatorInfo", mock.Anything, mock.Anything).Return(&paloma.QueryValidatorInfoResponse{
 					Validator: fakeVal,
 				}, nil).Once()
 				return srv
@@ -400,8 +400,8 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			},
 			mcksrv: func(t *testing.T) *mocks.ValsetTxServiceServer {
 				srv := mocks.NewValsetTxServiceServer(t)
-				srv.On("AddExternalChainInfoForValidator", mock.Anything, &cronchain.MsgAddExternalChainInfoForValidator{
-					ChainInfos: []*cronchain.MsgAddExternalChainInfoForValidator_ChainInfo{
+				srv.On("AddExternalChainInfoForValidator", mock.Anything, &paloma.MsgAddExternalChainInfoForValidator{
+					ChainInfos: []*paloma.MsgAddExternalChainInfoForValidator_ChainInfo{
 						{ChainID: "chain1", Address: "addr1"},
 						{ChainID: "chain2", Address: "addr2"},
 					},
@@ -477,15 +477,15 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 				},
 			},
 			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
-				addMsgSigs, ok := msg.(*cronchain.MsgAddMessagesSignatures)
+				addMsgSigs, ok := msg.(*paloma.MsgAddMessagesSignatures)
 				assert.True(t, ok, "incorrect msg type")
 				assert.Len(t, addMsgSigs.SignedMessages, 2)
-				assert.Equal(t, addMsgSigs.SignedMessages[0], &cronchain.MsgAddMessagesSignatures_MsgSignedMessage{
+				assert.Equal(t, addMsgSigs.SignedMessages[0], &paloma.MsgAddMessagesSignatures_MsgSignedMessage{
 					Id:            123,
 					QueueTypeName: "abc",
 					Signature:     []byte(`sig-123`),
 				})
-				assert.Equal(t, addMsgSigs.SignedMessages[1], &cronchain.MsgAddMessagesSignatures_MsgSignedMessage{
+				assert.Equal(t, addMsgSigs.SignedMessages[1], &paloma.MsgAddMessagesSignatures_MsgSignedMessage{
 					Id:            456,
 					QueueTypeName: "def",
 					Signature:     []byte(`sig-789`),

@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	cronchain "github.com/palomachain/sparrow/types/cronchain"
+	paloma "github.com/palomachain/sparrow/types/paloma"
 
 	testing "testing"
 )
@@ -17,20 +17,20 @@ type QueryServer struct {
 }
 
 // QueuedMessagesForSigning provides a mock function with given fields: _a0, _a1
-func (_m *QueryServer) QueuedMessagesForSigning(_a0 context.Context, _a1 *cronchain.QueryQueuedMessagesForSigningRequest) (*cronchain.QueryQueuedMessagesForSigningResponse, error) {
+func (_m *QueryServer) QueuedMessagesForSigning(_a0 context.Context, _a1 *paloma.QueryQueuedMessagesForSigningRequest) (*paloma.QueryQueuedMessagesForSigningResponse, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *cronchain.QueryQueuedMessagesForSigningResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *cronchain.QueryQueuedMessagesForSigningRequest) *cronchain.QueryQueuedMessagesForSigningResponse); ok {
+	var r0 *paloma.QueryQueuedMessagesForSigningResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *paloma.QueryQueuedMessagesForSigningRequest) *paloma.QueryQueuedMessagesForSigningResponse); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*cronchain.QueryQueuedMessagesForSigningResponse)
+			r0 = ret.Get(0).(*paloma.QueryQueuedMessagesForSigningResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *cronchain.QueryQueuedMessagesForSigningRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *paloma.QueryQueuedMessagesForSigningRequest) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
