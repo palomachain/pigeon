@@ -7,7 +7,7 @@ import (
 	"github.com/palomachain/sparrow/config"
 )
 
-type cronchainClienter interface {
+type palomaClienter interface {
 	KeyName() string
 	Keyring() keyring.Keyring
 }

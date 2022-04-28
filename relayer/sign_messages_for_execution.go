@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/palomachain/sparrow/client/paloma"
-	cronchaintypes "github.com/palomachain/sparrow/types/cronchain"
+	palomatypes "github.com/palomachain/sparrow/types/paloma"
 	"github.com/palomachain/utils/signing"
 )
 
 // THIS IS WIP AND WILL CHANGE!
 // signMessagesForExecution takes messages from a given list of queueTypeNames that require a signature.
 // It then signs each message and adds the signature into a list of signatures to be sent all at once
-// over to the cronchain.
+// over to the paloma.
 func (r *Relayer) signMessagesForExecution(ctx context.Context, queueTypeNames ...string) error {
 	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
 	for _, queueTypeName := range queueTypeNames {
@@ -19,7 +19,7 @@ func (r *Relayer) signMessagesForExecution(ctx context.Context, queueTypeNames .
 			return err
 		}
 		// fetch messages that need to be signed
-		msgs, err := paloma.QueryMessagesForSigning[*cronchaintypes.SignSmartContractExecute](
+		msgs, err := paloma.QueryMessagesForSigning[*palomatypes.SignSmartContractExecute](
 			ctx,
 			r.palomaClient,
 			// TODO: take the address from the keyring

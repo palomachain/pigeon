@@ -8,8 +8,8 @@ package conductor
 // 	"github.com/gogo/protobuf/proto"
 // 	"github.com/strangelove-ventures/lens/byop"
 // 	lens "github.com/strangelove-ventures/lens/client"
-// 	"github.com/palomachain/sparrow/client/cronchain"
-// 	cronchaintypes "github.com/palomachain/sparrow/types/cronchain"
+// 	"github.com/palomachain/sparrow/client/paloma"
+// 	palomatypes "github.com/palomachain/sparrow/types/paloma"
 // 	terratypes "github.com/palomachain/sparrow/types/terra"
 
 // 	chain "github.com/palomachain/sparrow/client"
@@ -53,7 +53,7 @@ package conductor
 
 // func Start2() {
 // 	// TODO: this is a temporary playing ground to test things in real life
-// 	var c cronchain.Client
+// 	var c paloma.Client
 // 	// registering types into the interface registry for codec
 // 	byopmodule := byop.Module{
 // 		ModuleName: "runner",
@@ -62,13 +62,13 @@ package conductor
 // 				Iface: (*sdk.Msg)(nil),
 // 				Msgs: []proto.Message{
 // 					(*terratypes.MsgExecuteContract)(nil),
-// 					(*cronchaintypes.MsgAddMessagesSignatures)(nil),
+// 					(*palomatypes.MsgAddMessagesSignatures)(nil),
 // 				},
 // 			},
 // 			{
-// 				Iface: (*cronchaintypes.Signable)(nil),
+// 				Iface: (*palomatypes.Signable)(nil),
 // 				Msgs: []proto.Message{
-// 					&cronchaintypes.SignSmartContractExecute{},
+// 					&palomatypes.SignSmartContractExecute{},
 // 				},
 // 			},
 // 		},
@@ -78,10 +78,10 @@ package conductor
 // 	lensc, err := chain.NewChainClient(
 // 		&lens.ChainClientConfig{
 // 			Key:            "matija",
-// 			ChainID:        "cronchain",
+// 			ChainID:        "paloma",
 // 			RPCAddr:        "http://127.0.0.1:26657",
 // 			KeyringBackend: "test",
-// 			KeyDirectory:   "/home/vizualni/.cronchain/",
+// 			KeyDirectory:   "/home/vizualni/.paloma/",
 // 			AccountPrefix:  "cosmos",
 // 			Modules:        modules,
 // 			Debug:          true,
@@ -97,7 +97,7 @@ package conductor
 // 	}
 // 	c.L = lensc
 // 	r := relayer{
-// 		cronchain: c,
+// 		paloma: c,
 // 	}
 
 // 	err = r.signMessagesForExecution(context.Background(), "a")

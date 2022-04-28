@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 type Signable interface {
 	Signable()

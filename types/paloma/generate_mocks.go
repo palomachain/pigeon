@@ -1,4 +1,4 @@
-package cronchain
+package paloma
 
 //go:generate mockery --name=MsgServer
 //go:generate mockery --name=QueryServer

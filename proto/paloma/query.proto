@@ -1,18 +1,18 @@
 syntax = "proto3";
-package volumefi.cronchain.consensus;
+package volumefi.paloma.consensus;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/protobuf/any.proto";
 
-option go_package = "github.com/volumefi/conductor/types/cronchain";
+option go_package = "github.com/volumefi/conductor/types/paloma";
 
 // Query defines the gRPC querier service.
 service Query {
   // Queries a list of QueuedMessagesForSigning items.
 	rpc QueuedMessagesForSigning(QueryQueuedMessagesForSigningRequest) returns (QueryQueuedMessagesForSigningResponse) {
-		option (google.api.http).get = "/volumefi/cronchain/consensus/queued_messages_for_signing";
+		option (google.api.http).get = "/volumefi/paloma/consensus/queued_messages_for_signing";
 	}
 }
 
@@ -33,7 +33,7 @@ message MessageToSign {
 
 service QueryValset {
     rpc ValidatorInfo(QueryValidatorInfoRequest) returns (QueryValidatorInfoResponse) {
-        option (google.api.http).get = "/volumefi/cronchain/valset/validator_info/{valAddr}";
+        option (google.api.http).get = "/volumefi/paloma/valset/validator_info/{valAddr}";
     }
 }
 

@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	cronchain "github.com/palomachain/sparrow/types/cronchain"
+	paloma "github.com/palomachain/sparrow/types/paloma"
 
 	testing "testing"
 )
@@ -17,20 +17,20 @@ type QueryValsetServer struct {
 }
 
 // ValidatorInfo provides a mock function with given fields: _a0, _a1
-func (_m *QueryValsetServer) ValidatorInfo(_a0 context.Context, _a1 *cronchain.QueryValidatorInfoRequest) (*cronchain.QueryValidatorInfoResponse, error) {
+func (_m *QueryValsetServer) ValidatorInfo(_a0 context.Context, _a1 *paloma.QueryValidatorInfoRequest) (*paloma.QueryValidatorInfoResponse, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *cronchain.QueryValidatorInfoResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *cronchain.QueryValidatorInfoRequest) *cronchain.QueryValidatorInfoResponse); ok {
+	var r0 *paloma.QueryValidatorInfoResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *paloma.QueryValidatorInfoRequest) *paloma.QueryValidatorInfoResponse); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*cronchain.QueryValidatorInfoResponse)
+			r0 = ret.Get(0).(*paloma.QueryValidatorInfoResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *cronchain.QueryValidatorInfoRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *paloma.QueryValidatorInfoRequest) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)

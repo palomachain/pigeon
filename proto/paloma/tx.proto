@@ -1,7 +1,7 @@
 syntax = "proto3";
-package volumefi.cronchain.concensus;
+package volumefi.paloma.concensus;
 
-option go_package = "github.com/volumefi/conductor/types/cronchain";
+option go_package = "github.com/volumefi/conductor/types/paloma";
 
 service Msg {
       rpc AddMessagesSignatures(MsgAddMessagesSignatures) returns (MsgAddMessagesSignaturesResponse);
