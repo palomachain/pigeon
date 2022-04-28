@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	chain "github.com/volumefi/conductor/client"
-	types "github.com/volumefi/conductor/types/terra"
+	chain "github.com/palomachain/sparrow/client"
+	types "github.com/palomachain/sparrow/types/terra"
 )
 
 type SmartContractExecution struct {

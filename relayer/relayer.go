@@ -2,9 +2,9 @@ package relayer
 
 import (
 	"github.com/99designs/keyring"
-	"github.com/volumefi/conductor/client/paloma"
-	"github.com/volumefi/conductor/client/terra"
-	"github.com/volumefi/conductor/config"
+	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/client/terra"
+	"github.com/palomachain/sparrow/config"
 )
 
 type cronchainClienter interface {

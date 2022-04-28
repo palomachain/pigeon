@@ -9,9 +9,9 @@ import (
 	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	chain "github.com/volumefi/conductor/client"
-	"github.com/volumefi/conductor/config"
-	cronchain "github.com/volumefi/conductor/types/cronchain"
+	chain "github.com/palomachain/sparrow/client"
+	"github.com/palomachain/sparrow/config"
+	cronchain "github.com/palomachain/sparrow/types/cronchain"
 )
 
 type Client struct {

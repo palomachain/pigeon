@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	cronchain "github.com/volumefi/conductor/types/cronchain"
+	cronchain "github.com/palomachain/sparrow/types/cronchain"
 
 	testing "testing"
 )

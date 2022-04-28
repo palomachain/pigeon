@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/volumefi/conductor/types/cronchain"
-	"github.com/volumefi/conductor/types/cronchain/mocks"
-	"github.com/volumefi/conductor/types/testdata"
+	"github.com/palomachain/sparrow/types/cronchain"
+	"github.com/palomachain/sparrow/types/cronchain/mocks"
+	"github.com/palomachain/sparrow/types/testdata"
 
 	"google.golang.org/grpc/test/bufconn"
 

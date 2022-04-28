@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/vizualni/whoops"
-	"github.com/volumefi/conductor/errors"
+	"github.com/palomachain/sparrow/errors"
 )
 
 const (
