@@ -76,5 +76,5 @@ func (r *Relayer) registerValidator(ctx context.Context) error {
 		return errors.Unrecoverable(err)
 	}
 
-	return r.palomaClient.RegisterValidator(ctx, r.validatorAddress, pkBytes, sig)
+	return r.palomaClient.RegisterValidator(ctx, r.signingKeyAddress, r.validatorAddress, pkBytes, sig)
 }

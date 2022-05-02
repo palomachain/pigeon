@@ -267,6 +267,7 @@ func TestRegisterValidator(t *testing.T) {
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)
 				srv.On("SendMsg", mock.Anything, &valset.MsgRegisterConductor{
+					Creator:      "signer1",
 					ValAddr:      "val1",
 					PubKey:       pk,
 					SignedPubKey: sig,
@@ -292,7 +293,7 @@ func TestRegisterValidator(t *testing.T) {
 			client := Client{
 				MessageSender: mocksrv,
 			}
-			err := client.RegisterValidator(ctx, "val1", pk, sig)
+			err := client.RegisterValidator(ctx, "signer1", "val1", pk, sig)
 
 			if tt.expectsAnyError {
 				assert.Error(t, err)

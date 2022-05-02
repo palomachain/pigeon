@@ -114,9 +114,9 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset
 
 // RegisterValidator registers itself with the network and sends it's public key that they are using for
 // signing messages.
-func (c Client) RegisterValidator(ctx context.Context, valAddr string, pubKey, signedPubKey []byte) error {
+func (c Client) RegisterValidator(ctx context.Context, signerAddr, valAddr string, pubKey, signedPubKey []byte) error {
 	_, err := c.MessageSender.SendMsg(ctx, &valset.MsgRegisterConductor{
-		Creator:      whoops.Must(c.L.GetKeyAddress()).String(),
+		Creator:      signerAddr,
 		ValAddr:      valAddr,
 		PubKey:       pubKey,
 		SignedPubKey: signedPubKey,
