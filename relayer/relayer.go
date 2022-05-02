@@ -20,7 +20,8 @@ type Relayer struct {
 	palomaClient paloma.Client
 	terraClients map[string]terra.Client
 
-	valKeyInfo keyring.Info
+	signingKeyAddress string
+	validatorAddress  string
 }
 
 func New(config config.Root, palomaClient paloma.Client) *Relayer {
@@ -32,14 +33,19 @@ func New(config config.Root, palomaClient paloma.Client) *Relayer {
 
 func (r *Relayer) init() error {
 
-	valInfo, err := r.palomaClient.Keyring().Key(
-		r.config.Paloma.ValidatorAccountName,
+	signingKeyInfo, err := r.palomaClient.Keyring().Key(
+		r.config.Paloma.SigningKeyName,
 	)
 	if err != nil {
 		return errors.Unrecoverable(err)
 	}
 
-	r.valKeyInfo = valInfo
+	r.signingKeyAddress, err = r.palomaClient.L.EncodeBech32AccAddr(signingKeyInfo.GetAddress())
+	r.validatorAddress = r.config.Paloma.ValidatorAddress
+
+	if err != nil {
+		return errors.Unrecoverable(err)
+	}
 
 	return nil
 }

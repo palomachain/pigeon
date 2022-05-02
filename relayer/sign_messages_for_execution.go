@@ -22,7 +22,7 @@ func (r *Relayer) signMessagesForExecution(ctx context.Context, queueTypeNames .
 		msgs, err := paloma.QueryMessagesForSigning[*palomatypes.SignSmartContractExecute](
 			ctx,
 			r.palomaClient,
-			string(r.valKeyInfo.GetAddress().Bytes()),
+			r.signingKeyAddress,
 			queueTypeName,
 		)
 		if err != nil {

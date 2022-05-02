@@ -78,8 +78,9 @@ func PalomaClient() *paloma.Client {
 		))
 
 		_palomaClient = &paloma.Client{
-			L:          lensClient,
-			GRPCClient: lensClient,
+			L:             lensClient,
+			GRPCClient:    lensClient,
+			MessageSender: lensClient,
 		}
 	}
 	return _palomaClient
@@ -95,7 +96,7 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 
 func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainClientConfig {
 	return &lens.ChainClientConfig{
-		ChainID:        defaultValue(palomaConfig.ChainID, "conductor"),
+		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),
 		KeyringBackend: defaultValue(palomaConfig.KeyringType, "os"),

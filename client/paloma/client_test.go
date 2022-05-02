@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
+	clientmocks "github.com/palomachain/sparrow/client/paloma/mocks"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	consensusmocks "github.com/palomachain/sparrow/types/paloma/x/consensus/types/mocks"
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
@@ -46,23 +47,6 @@ func queryServerDailer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(co
 	server := grpc.NewServer()
 
 	consensus.RegisterQueryServer(server, msgsrv)
-
-	go func() {
-		err := server.Serve(listener)
-		assert.NoError(t, err)
-	}()
-
-	return func(context.Context, string) (net.Conn, error) {
-		return listener.Dial()
-	}
-}
-
-func valsetTxServerDailer(t *testing.T, msgsrv *valsetmocks.MsgServer) func(context.Context, string) (net.Conn, error) {
-	listener := bufconn.Listen(1024 * 1024)
-
-	server := grpc.NewServer()
-
-	valset.RegisterMsgServer(server, msgsrv)
 
 	go func() {
 		err := server.Serve(listener)
@@ -273,16 +257,17 @@ func TestRegisterValidator(t *testing.T) {
 	fakeErr := errors.New("something")
 	for _, tt := range []struct {
 		name   string
-		mcksrv func(*testing.T) *valsetmocks.MsgServer
+		mcksrv func(*testing.T) *clientmocks.MessageSender
 		expRes []QueuedMessage[*testdata.SimpleMessage]
 
 		expectsAnyError bool
 	}{
 		{
 			name: "happy path",
-			mcksrv: func(t *testing.T) *valsetmocks.MsgServer {
-				srv := valsetmocks.NewMsgServer(t)
-				srv.On("RegisterConductor", mock.Anything, &valset.MsgRegisterConductor{
+			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
+				srv := clientmocks.NewMessageSender(t)
+				srv.On("SendMsg", mock.Anything, &valset.MsgRegisterConductor{
+					ValAddr:      "val1",
 					PubKey:       pk,
 					SignedPubKey: sig,
 				}).Return(nil, nil).Once()
@@ -291,9 +276,9 @@ func TestRegisterValidator(t *testing.T) {
 		},
 		{
 			name: "grpc returns error",
-			mcksrv: func(t *testing.T) *valsetmocks.MsgServer {
-				srv := valsetmocks.NewMsgServer(t)
-				srv.On("RegisterConductor", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
+				srv := clientmocks.NewMessageSender(t)
+				srv.On("SendMsg", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
 				return srv
 			},
 			expectsAnyError: true,
@@ -303,13 +288,11 @@ func TestRegisterValidator(t *testing.T) {
 			// setting everything up
 			ctx := context.Background()
 			mocksrv := tt.mcksrv(t)
-			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetTxServerDailer(t, mocksrv)))
-			assert.NoError(t, err)
 
 			client := Client{
-				GRPCClient: conn,
+				MessageSender: mocksrv,
 			}
-			err = client.RegisterValidator(ctx, pk, sig)
+			err := client.RegisterValidator(ctx, "val1", pk, sig)
 
 			if tt.expectsAnyError {
 				assert.Error(t, err)
@@ -378,7 +361,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
 		chainInfo []ChainInfoIn
-		mcksrv    func(*testing.T) *valsetmocks.MsgServer
+		mcksrv    func(*testing.T) *clientmocks.MessageSender
 		expRes    []QueuedMessage[*testdata.SimpleMessage]
 
 		expectsAnyError bool
@@ -386,10 +369,10 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		{
 			name:      "without chain infos provided does nothing",
 			chainInfo: []ChainInfoIn{},
-			mcksrv: func(t *testing.T) *valsetmocks.MsgServer {
-				srv := valsetmocks.NewMsgServer(t)
+			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
+				srv := clientmocks.NewMessageSender(t)
 				t.Cleanup(func() {
-					srv.AssertNotCalled(t, "AddExternalChainInfoForValidator", mock.Anything, mock.Anything)
+					srv.AssertNotCalled(t, "SendMsg", mock.Anything, mock.Anything)
 				})
 				return srv
 			},
@@ -400,9 +383,9 @@ func TestAddingExternalChainInfo(t *testing.T) {
 				{ChainID: "chain1", AccAddress: "addr1"},
 				{ChainID: "chain2", AccAddress: "addr2"},
 			},
-			mcksrv: func(t *testing.T) *valsetmocks.MsgServer {
-				srv := valsetmocks.NewMsgServer(t)
-				srv.On("AddExternalChainInfoForValidator", mock.Anything, &valset.MsgAddExternalChainInfoForValidator{
+			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
+				srv := clientmocks.NewMessageSender(t)
+				srv.On("SendMsg", mock.Anything, &valset.MsgAddExternalChainInfoForValidator{
 					ChainInfos: []*valset.MsgAddExternalChainInfoForValidator_ChainInfo{
 						{ChainID: "chain1", Address: "addr1"},
 						{ChainID: "chain2", Address: "addr2"},
@@ -412,14 +395,14 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "grpc returns error",
+			name: "with SendMsg returning errors",
 			chainInfo: []ChainInfoIn{
 				{ChainID: "chain1", AccAddress: "addr1"},
 				{ChainID: "chain2", AccAddress: "addr2"},
 			},
-			mcksrv: func(t *testing.T) *valsetmocks.MsgServer {
-				srv := valsetmocks.NewMsgServer(t)
-				srv.On("AddExternalChainInfoForValidator", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
+				srv := clientmocks.NewMessageSender(t)
+				srv.On("SendMsg", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
 				return srv
 			},
 			expectsAnyError: true,
@@ -429,13 +412,11 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			// setting everything up
 			ctx := context.Background()
 			mocksrv := tt.mcksrv(t)
-			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetTxServerDailer(t, mocksrv)))
-			assert.NoError(t, err)
 
 			client := Client{
-				GRPCClient: conn,
+				MessageSender: mocksrv,
 			}
-			err = client.AddExternalChainInfo(
+			err := client.AddExternalChainInfo(
 				ctx,
 				tt.chainInfo...,
 			)
@@ -456,7 +437,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range []struct {
 		name       string
-		msgSender  msgSender
+		msgSender  MessageSender
 		signatures []BroadcastMessageSignatureIn
 
 		expErr error
