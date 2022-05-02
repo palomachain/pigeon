@@ -1,4 +1,4 @@
-package paloma
+package types
 
 type Signable interface {
 	Signable()

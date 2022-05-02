@@ -3,9 +3,9 @@ package relayer
 import (
 	"context"
 
-	"github.com/vizualni/whoops"
 	"github.com/palomachain/sparrow/client/paloma"
 	"github.com/palomachain/sparrow/errors"
+	"github.com/vizualni/whoops"
 )
 
 func (r *Relayer) updateValidatorInfo(ctx context.Context) error {
@@ -20,7 +20,7 @@ func (r *Relayer) updateValidatorInfo(ctx context.Context) error {
 }
 
 func (r *Relayer) updateExternalChainInfos(ctx context.Context, chainID string, accAddresses []string) error {
-	val, err := r.palomaClient.QueryValidatorInfo(ctx)
+	val, err := r.palomaClient.QueryValidatorInfo(ctx, string(r.valKeyInfo.GetAddress()))
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context, chainID string, 
 }
 
 func (r *Relayer) registerValidator(ctx context.Context) error {
-	val, err := r.palomaClient.QueryValidatorInfo(ctx)
+	val, err := r.palomaClient.QueryValidatorInfo(ctx, string(r.valKeyInfo.GetAddress()))
 	if err != nil {
 		return nil
 	}

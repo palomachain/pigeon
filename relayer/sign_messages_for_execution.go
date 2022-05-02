@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/palomachain/sparrow/client/paloma"
-	palomatypes "github.com/palomachain/sparrow/types/paloma"
+	palomatypes "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	"github.com/palomachain/utils/signing"
 )
 
@@ -22,8 +22,7 @@ func (r *Relayer) signMessagesForExecution(ctx context.Context, queueTypeNames .
 		msgs, err := paloma.QueryMessagesForSigning[*palomatypes.SignSmartContractExecute](
 			ctx,
 			r.palomaClient,
-			// TODO: take the address from the keyring
-			"VALIDATOR ADDRESS",
+			string(r.valKeyInfo.GetAddress().Bytes()),
 			queueTypeName,
 		)
 		if err != nil {

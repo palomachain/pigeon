@@ -1,0 +1,44 @@
+syntax = "proto3";
+package volumefi.paloma.valset;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "valset/params.proto";
+import "valset/snapshot.proto";
+// this line is used by starport scaffolding # 1
+
+option go_package = "github.com/palomachain/paloma/x/valset/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/volumefi/paloma/valset/params";
+  }
+  // Queries a list of ValidatorInfo items.
+	rpc ValidatorInfo(QueryValidatorInfoRequest) returns (QueryValidatorInfoResponse) {
+		option (google.api.http).get = "/volumefi/paloma/valset/validator_info/{valAddr}";
+	}
+
+// this line is used by starport scaffolding # 2
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryValidatorInfoRequest {
+  string valAddr = 1;
+}
+
+message QueryValidatorInfoResponse {
+  Validator validator = 1;
+}
+
+// this line is used by starport scaffolding # 3

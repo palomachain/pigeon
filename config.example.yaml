@@ -1,12 +1,12 @@
 loop-timeout: 5s
 
 paloma:
-  chain-id: conductor
+  chain-id: paloma
   call-timeout: 20s
-  key-home: ~/.conductor
+  keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
   keyring-type: file
-  validator-account-name: validator
+  validator-account-name: my_validator
   base-rpc-url: http://localhost:26657
   gas-adjustment: 1.1
   gas-prices: 0.01uatom
