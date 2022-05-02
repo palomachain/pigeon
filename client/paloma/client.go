@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,11 +16,18 @@ import (
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
 )
 
+//go:generate mockery --name=MessageSender
+type MessageSender interface {
+	SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error)
+}
+
 type Client struct {
 	L            *chain.LensClient
 	palomaConfig config.Paloma
 
 	GRPCClient grpc.ClientConn
+
+	MessageSender MessageSender
 }
 
 type QueuedMessage[T consensus.Signable] struct {
@@ -85,7 +93,7 @@ type BroadcastMessageSignatureIn struct {
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
 // It build the message and sends it over.
 func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
-	return broadcastMessageSignatures(ctx, c.L, signatures...)
+	return broadcastMessageSignatures(ctx, c.MessageSender, signatures...)
 }
 
 // QueryValidatorInfo returns info about the validator.
@@ -95,6 +103,9 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset
 		ValAddr: valAddr,
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "item not found in store") {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -103,16 +114,15 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset
 
 // RegisterValidator registers itself with the network and sends it's public key that they are using for
 // signing messages.
-func (c Client) RegisterValidator(ctx context.Context, pubKey, signedPubKey []byte) error {
-	txsvc := valset.NewMsgClient(c.GRPCClient)
-
-	_, err := txsvc.RegisterConductor(ctx, &valset.MsgRegisterConductor{
+func (c Client) RegisterValidator(ctx context.Context, signerAddr, valAddr string, pubKey, signedPubKey []byte) error {
+	_, err := c.MessageSender.SendMsg(ctx, &valset.MsgRegisterConductor{
+		Creator:      signerAddr,
+		ValAddr:      valAddr,
 		PubKey:       pubKey,
 		SignedPubKey: signedPubKey,
 	})
 
 	return err
-
 }
 
 type ChainInfoIn struct {
@@ -126,7 +136,6 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 	if len(chainInfos) == 0 {
 		return nil
 	}
-	txsvc := valset.NewMsgClient(c.GRPCClient)
 
 	msg := &valset.MsgAddExternalChainInfoForValidator{}
 
@@ -137,17 +146,13 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 		})
 	}
 
-	_, err := txsvc.AddExternalChainInfoForValidator(ctx, msg)
+	_, err := c.MessageSender.SendMsg(ctx, msg)
 	return err
-}
-
-type msgSender interface {
-	SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error)
 }
 
 func broadcastMessageSignatures(
 	ctx context.Context,
-	ms msgSender,
+	ms MessageSender,
 	signatures ...BroadcastMessageSignatureIn,
 ) error {
 	if len(signatures) == 0 {

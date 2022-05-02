@@ -6,13 +6,15 @@ paloma:
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
   keyring-type: file
-  validator-account-name: my_validator
+  signing-key-name: my_validator
+  validator-address: palomavaloper107ur3w38qvjnx44a732ayphp0yfh4f0jmxsn0e
   base-rpc-url: http://localhost:26657
   gas-adjustment: 1.1
   gas-prices: 0.01uatom
+  account-prefix: paloma
 
 terra:
-  keyring-env-name: TERRA_KEYRING_DETAILS
+  keyring-pass-env-name: TERRA_KEYRING_PASS
   acc-addresses:
     - acc1
     - acc2

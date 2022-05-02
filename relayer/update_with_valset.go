@@ -20,7 +20,7 @@ func (r *Relayer) updateValidatorInfo(ctx context.Context) error {
 }
 
 func (r *Relayer) updateExternalChainInfos(ctx context.Context, chainID string, accAddresses []string) error {
-	val, err := r.palomaClient.QueryValidatorInfo(ctx, string(r.valKeyInfo.GetAddress()))
+	val, err := r.palomaClient.QueryValidatorInfo(ctx, r.validatorAddress)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context, chainID string, 
 }
 
 func (r *Relayer) registerValidator(ctx context.Context) error {
-	val, err := r.palomaClient.QueryValidatorInfo(ctx, string(r.valKeyInfo.GetAddress()))
+	val, err := r.palomaClient.QueryValidatorInfo(ctx, r.validatorAddress)
 	if err != nil {
 		return nil
 	}
@@ -76,5 +76,5 @@ func (r *Relayer) registerValidator(ctx context.Context) error {
 		return errors.Unrecoverable(err)
 	}
 
-	return r.palomaClient.RegisterValidator(ctx, pkBytes, sig)
+	return r.palomaClient.RegisterValidator(ctx, r.signingKeyAddress, r.validatorAddress, pkBytes, sig)
 }

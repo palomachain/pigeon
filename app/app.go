@@ -65,7 +65,7 @@ func PalomaClient() *paloma.Client {
 	if _palomaClient == nil {
 		palomaConfig := Config().Paloma
 
-		lensConfig := palomaLensClientConfig(palomaConfig.ChainClientConfig)
+		lensConfig := palomaLensClientConfig(palomaConfig)
 
 		// HACK: \n is added at the end of a password because github.com/cosmos/cosmos-sdk@v0.45.1/client/input/input.go at line 93 would return an EOF error which then would fail
 		// Should be fixed with https://github.com/cosmos/cosmos-sdk/pull/11796
@@ -78,8 +78,9 @@ func PalomaClient() *paloma.Client {
 		))
 
 		_palomaClient = &paloma.Client{
-			L:          lensClient,
-			GRPCClient: lensClient,
+			L:             lensClient,
+			GRPCClient:    lensClient,
+			MessageSender: lensClient,
 		}
 	}
 	return _palomaClient
@@ -93,9 +94,10 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 	return proposedVal
 }
 
-func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainClientConfig {
+func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig {
 	return &lens.ChainClientConfig{
-		ChainID:        defaultValue(palomaConfig.ChainID, "conductor"),
+		Key:            palomaConfig.SigningKeyName,
+		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),
 		KeyringBackend: defaultValue(palomaConfig.KeyringType, "os"),
@@ -106,5 +108,6 @@ func palomaLensClientConfig(palomaConfig config.ChainClientConfig) *lens.ChainCl
 		Timeout:        defaultValue(palomaConfig.CallTimeout, "20s"),
 		OutputFormat:   "json",
 		SignModeStr:    "direct",
+		Modules:        lens.ModuleBasics,
 	}
 }

@@ -46,8 +46,8 @@ type Root struct {
 type Paloma struct {
 	ChainClientConfig `yaml:",inline"`
 
-	ValidatorAccountName string `yaml:"validator-account-name"`
-	SigningKeyName       string `yaml:"signing-key-name"`
+	SigningKeyName   string `yaml:"signing-key-name"`
+	ValidatorAddress string `yaml:"validator-address"`
 }
 
 type Terra struct {
