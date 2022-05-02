@@ -116,13 +116,13 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset
 // signing messages.
 func (c Client) RegisterValidator(ctx context.Context, valAddr string, pubKey, signedPubKey []byte) error {
 	_, err := c.MessageSender.SendMsg(ctx, &valset.MsgRegisterConductor{
+		Creator:      whoops.Must(c.L.GetKeyAddress()).String(),
 		ValAddr:      valAddr,
 		PubKey:       pubKey,
 		SignedPubKey: signedPubKey,
 	})
 
 	return err
-
 }
 
 type ChainInfoIn struct {
