@@ -27,3 +27,4 @@ RUN \
 FROM ubuntu AS local-testnet
 ENTRYPOINT ["/sparrow"]
 COPY --from=builder /sparrow /sparrow
+COPY --from=builder /app/config.example.yaml /config.example.yaml
