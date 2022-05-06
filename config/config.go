@@ -67,7 +67,13 @@ func KeyringPassword(envKey string) string {
 
 func FromReader(r io.Reader) (Root, error) {
 	var cnf Root
-	err := yaml.NewDecoder(r).Decode(&cnf)
+	rawBody, err := io.ReadAll(r)
+	if err != nil {
+		return Root{}, err
+	}
+	str := string(rawBody)
+	str = os.ExpandEnv(str)
+	err = yaml.Unmarshal([]byte(str), &cnf)
 	if err != nil {
 		return Root{}, err
 	}
