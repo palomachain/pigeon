@@ -3,11 +3,11 @@ loop-timeout: 5s
 paloma:
   chain-id: paloma
   call-timeout: 20s
-  keyring-dir: ~/.sparrow/keyring
+  keyring-dir: ~/.sparrow
   keyring-pass-env-name: PALOMA_KEYRING_PASS
   keyring-type: file
-  signing-key-name: signing_key
-  validator-address: palomavaloper107ur3w38qvjnx44a732ayphp0yfh4f0jmxsn0e
+  signing-key-name: signing-key
+  validator-address: ${PALOMA_VALIDATOR_ADDRESS}
   base-rpc-url: http://palomachain:26657
   gas-adjustment: 1.1
   gas-prices: 0.01dove
