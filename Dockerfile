@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.3-labs
+
 ###########################
 ####     Base image    ####
 ###########################
@@ -9,11 +11,25 @@ WORKDIR /app
 #### Local development ####
 ###########################
 FROM base AS local-dev
-RUN cd /tmp && go install github.com/cosmtrek/air@latest
+RUN cd /tmp && go install github.com/cespare/reflex@latest
+
+COPY <<EOF /live-reload.sh
+#!/usr/bin/env bash
+exec reflex \\
+  -d none \\
+  -s \\
+  -g "\*.go" \\
+  -g "\*.proto" \\
+  -g "\*.yaml" \\
+  -- \\
+  \$@
+EOF
+
+RUN chmod +x /live-reload.sh
 
 # air is not set to entrypoint because I want to override that behaviour
 # when using docker-compose run.
-CMD ["air"]
+CMD ["/live-reload.sh", "go", "run", "./cmd/sparrow", "-c", "config.local-dev.yaml", "start"]
 
 ###########################
 ####     Builder       ####
