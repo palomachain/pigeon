@@ -4,10 +4,14 @@ import (
 	"os"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gogo/protobuf/proto"
 	chain "github.com/palomachain/sparrow/client"
 	"github.com/palomachain/sparrow/client/paloma"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/relayer"
+	valsettypes "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/vizualni/whoops"
 )
@@ -95,6 +99,22 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 }
 
 func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig {
+	modules := lens.ModuleBasics[:]
+
+	modules = append(modules, byop.Module{
+		ModuleName: "paloma",
+		MsgsInterfaces: []byop.RegisterInterface{
+			{
+				Name:  "paloma",
+				Iface: (*sdk.Msg)(nil),
+				Msgs: []proto.Message{
+					&valsettypes.MsgRegisterConductor{},
+					&valsettypes.MsgAddExternalChainInfoForValidator{},
+				},
+			},
+		},
+	})
+
 	return &lens.ChainClientConfig{
 		Key:            palomaConfig.SigningKeyName,
 		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
@@ -108,6 +128,6 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 		Timeout:        defaultValue(palomaConfig.CallTimeout, "20s"),
 		OutputFormat:   "json",
 		SignModeStr:    "direct",
-		Modules:        lens.ModuleBasics,
+		Modules:        modules,
 	}
 }
