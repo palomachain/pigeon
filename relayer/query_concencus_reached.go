@@ -1,6 +1,8 @@
 package relayer
 
-import "context"
+import (
+	"context"
+)
 
 // TODO
 func (r *Relayer) queryConcencusReachedMessages(ctx context.Context) error {

@@ -10,10 +10,6 @@ import (
 )
 
 const (
-	// TODO: FILL IN THE REAL QUEUE TYPE NAMES
-	queueTypeNameMessageExecution = "a"
-	queueTypeNameValsetUpdate     = "b"
-
 	defaultErrorCountToExit = 5
 
 	defaultLoopTimeout = 10 * time.Second
@@ -65,7 +61,10 @@ func (r *Relayer) Start(ctx context.Context) error {
 func (r *Relayer) oneLoopCall(ctx context.Context) error {
 	var g whoops.Group
 
-	g.Add(r.signMessagesForExecution(ctx, queueTypeNameMessageExecution, queueTypeNameValsetUpdate))
+	g.Add(r.signMessagesForExecution(ctx,
+		consensusExecuteSmartContract,
+		consensusUpdateValset,
+	))
 	g.Add(r.queryConcencusReachedMessages(ctx))
 
 	if g.Err() {

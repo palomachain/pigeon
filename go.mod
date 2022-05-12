@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/gogo/protobuf v1.3.3
-	github.com/palomachain/utils v0.1.2
+	github.com/palomachain/utils v0.2.0
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/spf13/cobra v1.4.0
 	github.com/strangelove-ventures/lens v0.3.1-0.20220329150126-16b15e90cf34
