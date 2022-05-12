@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -62,7 +63,7 @@ func queryMessagesForSigning[T consensus.Signable](
 	if err != nil {
 		return nil, err
 	}
-	var res []QueuedMessage[T]
+	res := []QueuedMessage[T]{}
 	for _, msg := range msgs.GetMessageToSign() {
 		var m consensus.Signable
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &m)
@@ -79,6 +80,70 @@ func queryMessagesForSigning[T consensus.Signable](
 			Nonce: msg.GetNonce(),
 			Msg:   msgT,
 		})
+	}
+
+	return res, nil
+}
+
+type ValidatorSignature struct {
+	ValAddress string
+	Signature  []byte
+}
+type ConsensusReachedMsg[T consensus.Signable] struct {
+	ID         string
+	Nonce      []byte
+	Signatures []ValidatorSignature
+	Msg        T
+}
+
+func QueryConsensusReachedMessages[T consensus.Signable](
+	ctx context.Context,
+	c Client,
+	queueTypeName string,
+) ([]ConsensusReachedMsg[T], error) {
+	return queryConsensusReachedMessages[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, queueTypeName)
+}
+
+func queryConsensusReachedMessages[T consensus.Signable](
+	ctx context.Context,
+	c grpc.ClientConn,
+	anyunpacker codectypes.AnyUnpacker,
+	queueTypeName string,
+) ([]ConsensusReachedMsg[T], error) {
+	qc := consensus.NewQueryClient(c)
+	consensusRes, err := qc.ConsensusReached(ctx, &consensus.QueryConsensusReachedRequest{
+		QueueTypeName: queueTypeName,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var res []ConsensusReachedMsg[T]
+	for _, rawMsg := range consensusRes.GetMessages() {
+		var signable consensus.Signable
+		err := anyunpacker.UnpackAny(rawMsg.GetMsg(), &signable)
+		if err != nil {
+			return nil, err
+		}
+		packedMsg, ok := signable.(T)
+		if !ok {
+			var expected T
+			return nil, ErrIncorrectTypeSavedInMessage.Format(expected, signable)
+		}
+
+		m := ConsensusReachedMsg[T]{
+			ID:    fmt.Sprintf("%d", rawMsg.GetId()),
+			Nonce: rawMsg.Nonce,
+			Msg:   packedMsg,
+		}
+		for _, signData := range rawMsg.GetSignData() {
+			m.Signatures = append(m.Signatures, ValidatorSignature{
+				ValAddress: signData.GetValAddress(),
+				Signature:  signData.GetSignature(),
+			})
+		}
+		res = append(res, m)
 	}
 
 	return res, nil

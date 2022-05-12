@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "consensus/params.proto";
+import "consensus/consensus_queue.proto";
 import "google/protobuf/any.proto";
 // this line is used by starport scaffolding # 1
 
@@ -19,6 +20,11 @@ service Query {
   // Queries a list of QueuedMessagesForSigning items.
 	rpc QueuedMessagesForSigning(QueryQueuedMessagesForSigningRequest) returns (QueryQueuedMessagesForSigningResponse) {
 		option (google.api.http).get = "/volumefi/paloma/consensus/queued_messages_for_signing";
+	}
+
+// Queries a list of ConsensusReached items.
+	rpc ConsensusReached(QueryConsensusReachedRequest) returns (QueryConsensusReachedResponse) {
+		option (google.api.http).get = "/palomachain/paloma/consensus/consensus_reached/{queueTypeName}";
 	}
 
 // this line is used by starport scaffolding # 2
@@ -46,6 +52,26 @@ message MessageToSign {
   bytes nonce = 1;
   uint64 id = 2;
   google.protobuf.Any msg = 3;
+}
+
+message MessageApprovedSignData {
+  string valAddress = 1;
+  bytes signature = 2;
+}
+
+message MessageApproved {
+  bytes nonce = 1;
+  uint64 id = 2;
+  google.protobuf.Any msg = 3;
+  repeated MessageApprovedSignData signData = 4;
+}
+
+message QueryConsensusReachedRequest {
+  string queueTypeName = 1;
+}
+
+message QueryConsensusReachedResponse {
+  repeated MessageApproved messages = 1;
 }
 
 // this line is used by starport scaffolding # 3

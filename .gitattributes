@@ -1,0 +1,2 @@
+**/*.pb.go linguist-generated=true
+**/mocks/*.go linguist-generated=true
