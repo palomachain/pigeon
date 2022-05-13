@@ -9,6 +9,12 @@ import (
 	types "github.com/palomachain/sparrow/types/terra"
 )
 
+type TurnstoneConsensusMessage struct {
+	MessageID string
+	Nonce     []byte
+	Payload   json.Marshaler
+}
+
 type SmartContractExecution struct {
 	Contract string
 	Sender   string
@@ -25,9 +31,11 @@ type Client struct {
 
 // TODO: this is currently oversimplified. Once we start using this for real we will adapt.
 // Maybe better thing would be to actually use the "Invoke" method along with the grpc client.
-func (c Client) ExecuteSmartContract(
+func (c Client) ExecuteTurnstoneConsensusMessage(
 	ctx context.Context,
-	msg SmartContractExecution,
+	messageId string,
+	nonce []byte,
+	payload []byte,
 ) (*sdk.TxResponse, error) {
 	// TODO: do validations
 	var msgExec types.MsgExecuteContract
