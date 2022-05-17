@@ -52,6 +52,7 @@ func (c consensusMessageQueueType[T]) queryMessagesForSigning(
 			r.palomaClient.Keyring(),
 			signingKeyAddress,
 		),
+		r.attestExecutor,
 		valAddress,
 		c.queue(),
 	)
@@ -61,6 +62,7 @@ func signMessagesForExecution[T consensus.Signable](
 	ctx context.Context,
 	client paloma.Client,
 	signer signing.Signer,
+	att attestExecutor,
 	valAddress sdk.ValAddress,
 	queueTypeName string,
 ) ([]paloma.BroadcastMessageSignatureIn, error) {
@@ -77,22 +79,40 @@ func signMessagesForExecution[T consensus.Signable](
 	}
 
 	for _, msg := range msgs {
+		var extraData []byte
+
+		// check if this is something that requires attestation
+		evidence, err := att.Execute(ctx, queueTypeName, msg.Msg)
+		if err != nil {
+			return nil, err
+		}
+
+		if evidence != nil {
+			extraData, err = evidence.Bytes()
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		// do the actual signing
 		signBytes, _, err := signing.SignBytes(
 			signer,
-			signing.SerializeFnc(signing.JsonDeterministicEncoding),
+			signing.JsonDeterministicEncoding(),
 			msg.Msg,
 			msg.Nonce,
+			extraData,
 		)
 		if err != nil {
 			return nil, err
 		}
+
 		broadcastMessageSignatures = append(
 			broadcastMessageSignatures,
 			paloma.BroadcastMessageSignatureIn{
 				ID:            msg.ID,
 				QueueTypeName: queueTypeName,
 				Signature:     signBytes,
+				ExtraData:     extraData,
 			},
 		)
 	}

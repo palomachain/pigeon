@@ -1,7 +1,10 @@
 package relayer
 
 import (
+	"context"
+
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/palomachain/sparrow/attest"
 	"github.com/palomachain/sparrow/client/paloma"
 	"github.com/palomachain/sparrow/client/terra"
 	"github.com/palomachain/sparrow/config"
@@ -13,6 +16,10 @@ type palomaClienter interface {
 	Keyring() keyring.Keyring
 }
 
+type attestExecutor interface {
+	Execute(context.Context, string, attest.Request) (attest.Evidence, error)
+}
+
 type Relayer struct {
 	config config.Root
 
@@ -20,14 +27,17 @@ type Relayer struct {
 	palomaClient paloma.Client
 	terraClients map[string]terra.Client
 
+	attestExecutor attestExecutor
+
 	signingKeyAddress string
 	validatorAddress  string
 }
 
-func New(config config.Root, palomaClient paloma.Client) *Relayer {
+func New(config config.Root, palomaClient paloma.Client, attestExecutor attestExecutor) *Relayer {
 	return &Relayer{
-		config:       config,
-		palomaClient: palomaClient,
+		config:         config,
+		palomaClient:   palomaClient,
+		attestExecutor: attestExecutor,
 	}
 }
 
