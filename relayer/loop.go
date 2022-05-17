@@ -65,7 +65,7 @@ func (r *Relayer) oneLoopCall(ctx context.Context) error {
 		consensusExecuteSmartContract,
 		consensusUpdateValset,
 	))
-	g.Add(r.queryConcencusReachedMessages(ctx))
+	// g.Add(r.queryConcencusReachedMessages(ctx))
 
 	if g.Err() {
 		return g

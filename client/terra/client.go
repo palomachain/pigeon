@@ -39,9 +39,6 @@ func (c Client) ExecuteTurnstoneConsensusMessage(
 ) (*sdk.TxResponse, error) {
 	// TODO: do validations
 	var msgExec types.MsgExecuteContract
-	msgExec.Contract = msg.Contract
-	msgExec.Sender = msg.Sender
-	msgExec.Coins = msg.Coins
-	msgExec.ExecuteMsg = msg.Payload
+
 	return c.LensClient.SendMsg(ctx, &msgExec)
 }
