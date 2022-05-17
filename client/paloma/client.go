@@ -153,6 +153,7 @@ type BroadcastMessageSignatureIn struct {
 	ID            uint64
 	QueueTypeName string
 	Signature     []byte
+	ExtraData     []byte
 }
 
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
@@ -229,6 +230,7 @@ func broadcastMessageSignatures(
 			Id:            sig.ID,
 			QueueTypeName: sig.QueueTypeName,
 			Signature:     sig.Signature,
+			ExtraData:     sig.ExtraData,
 		})
 	}
 	msg := &consensus.MsgAddMessagesSignatures{
