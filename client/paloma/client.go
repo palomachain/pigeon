@@ -42,7 +42,7 @@ type QueuedMessage[T consensus.Signable] struct {
 func QueryMessagesForSigning[T consensus.Signable](
 	ctx context.Context,
 	c Client,
-	valAddress string,
+	valAddress sdk.ValAddress,
 	queueTypeName string,
 ) ([]QueuedMessage[T], error) {
 	return queryMessagesForSigning[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
@@ -52,7 +52,7 @@ func queryMessagesForSigning[T consensus.Signable](
 	ctx context.Context,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
-	valAddress string,
+	valAddress sdk.ValAddress,
 	queueTypeName string,
 ) ([]QueuedMessage[T], error) {
 	qc := consensus.NewQueryClient(c)
@@ -86,7 +86,7 @@ func queryMessagesForSigning[T consensus.Signable](
 }
 
 type ValidatorSignature struct {
-	ValAddress string
+	ValAddress sdk.ValAddress
 	Signature  []byte
 }
 type ConsensusReachedMsg[T consensus.Signable] struct {
