@@ -12,6 +12,12 @@ type Registry struct {
 	r map[string]Attestor
 }
 
+func NewRegistry() *Registry {
+	return &Registry{
+		r: make(map[string]Attestor),
+	}
+}
+
 func (r *Registry) Register(queueTypeName string, att Attestor) {
 	r.r[queueTypeName] = att
 }

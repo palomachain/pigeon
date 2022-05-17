@@ -4,7 +4,6 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/palomachain/sparrow/attest"
 	"github.com/palomachain/sparrow/client/paloma"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	"github.com/palomachain/utils/signing"
@@ -53,13 +52,10 @@ func (c consensusMessageQueueType[T]) queryMessagesForSigning(
 			r.palomaClient.Keyring(),
 			signingKeyAddress,
 		),
+		r.attestExecutor,
 		valAddress,
 		c.queue(),
 	)
-}
-
-type attestExecutor interface {
-	Execute(context.Context, string, attest.Request) (attest.Evidence, error)
 }
 
 func signMessagesForExecution[T consensus.Signable](
