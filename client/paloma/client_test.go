@@ -113,7 +113,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
 				srv := consensusmocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, &consensus.QueryQueuedMessagesForSigningRequest{
-					ValAddress:    "validator",
+					ValAddress:    sdk.ValAddress("validator"),
 					QueueTypeName: "queueName",
 				}).Return(
 					&consensus.QueryQueuedMessagesForSigningResponse{
@@ -241,7 +241,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 				ctx,
 				conn,
 				codec.Marshaler,
-				"validator",
+				sdk.ValAddress("validator"),
 				"queueName",
 			)
 			if tt.expectsAnyError {
@@ -541,11 +541,11 @@ func TestQueryConsensusReached(t *testing.T) {
 							})),
 							SignData: []*consensus.MessageApprovedSignData{
 								{
-									ValAddress: "1",
+									ValAddress: sdk.ValAddress("1"),
 									Signature:  []byte("1"),
 								},
 								{
-									ValAddress: "2",
+									ValAddress: sdk.ValAddress("2"),
 									Signature:  []byte("2"),
 								},
 							},
@@ -558,11 +558,11 @@ func TestQueryConsensusReached(t *testing.T) {
 							})),
 							SignData: []*consensus.MessageApprovedSignData{
 								{
-									ValAddress: "1",
+									ValAddress: sdk.ValAddress("1"),
 									Signature:  []byte("11"),
 								},
 								{
-									ValAddress: "2",
+									ValAddress: sdk.ValAddress("2"),
 									Signature:  []byte("22"),
 								},
 							},
@@ -580,11 +580,11 @@ func TestQueryConsensusReached(t *testing.T) {
 					},
 					Signatures: []ValidatorSignature{
 						{
-							ValAddress: "1",
+							ValAddress: sdk.ValAddress("1"),
 							Signature:  []byte("1"),
 						},
 						{
-							ValAddress: "2",
+							ValAddress: sdk.ValAddress("2"),
 							Signature:  []byte("2"),
 						},
 					},
@@ -597,11 +597,11 @@ func TestQueryConsensusReached(t *testing.T) {
 					},
 					Signatures: []ValidatorSignature{
 						{
-							ValAddress: "1",
+							ValAddress: sdk.ValAddress("1"),
 							Signature:  []byte("11"),
 						},
 						{
-							ValAddress: "2",
+							ValAddress: sdk.ValAddress("2"),
 							Signature:  []byte("22"),
 						},
 					},

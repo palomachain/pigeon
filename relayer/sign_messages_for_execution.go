@@ -43,14 +43,16 @@ func (c consensusMessageQueueType[T]) queryMessagesForSigning(
 	ctx context.Context,
 	r *Relayer,
 ) ([]paloma.BroadcastMessageSignatureIn, error) {
+	signingKeyAddress := whoops.Must(sdk.AccAddressFromBech32(r.signingKeyAddress))
+	valAddress := whoops.Must(sdk.ValAddressFromBech32(r.validatorAddress))
 	return signMessagesForExecution[T](
 		ctx,
 		r.palomaClient,
 		signing.KeyringSignerByAddress(
 			r.palomaClient.Keyring(),
-			whoops.Must(sdk.AccAddressFromBech32(r.signingKeyAddress)),
+			signingKeyAddress,
 		),
-		r.signingKeyAddress,
+		valAddress,
 		c.queue(),
 	)
 }
@@ -59,7 +61,7 @@ func signMessagesForExecution[T consensus.Signable](
 	ctx context.Context,
 	client paloma.Client,
 	signer signing.Signer,
-	signingKeyAddress string,
+	valAddress sdk.ValAddress,
 	queueTypeName string,
 ) ([]paloma.BroadcastMessageSignatureIn, error) {
 	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
@@ -67,7 +69,7 @@ func signMessagesForExecution[T consensus.Signable](
 	msgs, err := paloma.QueryMessagesForSigning[T](
 		ctx,
 		client,
-		signingKeyAddress,
+		valAddress,
 		queueTypeName,
 	)
 	if err != nil {
