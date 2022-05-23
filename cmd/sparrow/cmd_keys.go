@@ -34,7 +34,4 @@ var (
 func init() {
 	rootCmd.AddCommand(keysCmd)
 	keysCmd.AddCommand(keysConvertCmd)
-
-	noConfigRequired(keysCmd)
-	noConfigRequired(keysConvertCmd)
 }

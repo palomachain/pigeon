@@ -7,8 +7,8 @@ import (
 
 // flags
 var (
-	flagConfigPath       string
-	noConfigRequiredCmds []*cobra.Command
+	flagConfigPath     string
+	configRequiredCmds []*cobra.Command
 )
 
 var (
@@ -16,23 +16,27 @@ var (
 		Use:          "sparrow",
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			for _, curr := range noConfigRequiredCmds {
+			found := false
+			for _, curr := range configRequiredCmds {
 				if curr == cmd {
-					return
+					found = true
+					break
 				}
 			}
-			app.SetConfigPath(flagConfigPath)
+			if found {
+				app.SetConfigPath(flagConfigPath)
+			}
 		},
 	}
 )
 
-func noConfigRequired(cmd *cobra.Command) {
-	for _, curr := range noConfigRequiredCmds {
+func configRequired(cmd *cobra.Command) {
+	for _, curr := range configRequiredCmds {
 		if curr == cmd {
 			return
 		}
 	}
-	noConfigRequiredCmds = append(noConfigRequiredCmds, cmd)
+	configRequiredCmds = append(configRequiredCmds, cmd)
 }
 
 func init() {
