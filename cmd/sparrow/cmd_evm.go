@@ -18,7 +18,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			contracts := evm.StoredContracts()
 			for name, contract := range contracts {
-				fmt.Println("%s: %#v", name, contract)
+				fmt.Printf("%s: %#v\n", name, contract)
 			}
 
 			return nil
@@ -28,11 +28,6 @@ var (
 		Use:   "debug-connect",
 		Short: "tries to connect to the evm network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			contracts := evm.StoredContracts()
-			for name, contract := range contracts {
-				fmt.Println("%s: %#v", name, contract)
-			}
-
 			return nil
 		},
 	}
