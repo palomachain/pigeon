@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/palomachain/sparrow/app"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -20,4 +20,6 @@ var (
 
 func init() {
 	rootCmd.AddCommand(startCmd)
+
+	configRequired(startCmd)
 }

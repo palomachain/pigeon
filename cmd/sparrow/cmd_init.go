@@ -47,6 +47,4 @@ var (
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	noConfigRequired(initCmd)
 }
