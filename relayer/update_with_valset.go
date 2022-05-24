@@ -13,9 +13,9 @@ func (r *Relayer) updateValidatorInfo(ctx context.Context) error {
 		whoops.Assert(
 			r.registerValidator(ctx),
 		)
-		whoops.Assert(
-			r.updateExternalChainInfos(ctx, "terra", r.config.Terra.Accounts),
-		)
+		// whoops.Assert(
+		// r.updateExternalChainInfos(ctx, "terra", r.config.Terra.Accounts),
+		// )
 	})
 }
 
@@ -63,7 +63,7 @@ func (r *Relayer) registerValidator(ctx context.Context) error {
 		return nil
 	}
 	kr := r.palomaClient.Keyring()
-	signingKeyName := r.config.Paloma.SigningKeyName
+	signingKeyName := r.config.Paloma.SigningKey
 	keyInfo, err := kr.Key(signingKeyName)
 	if err != nil {
 		return errors.Unrecoverable(err)

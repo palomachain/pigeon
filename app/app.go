@@ -127,7 +127,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 	})
 
 	return &lens.ChainClientConfig{
-		Key:            palomaConfig.SigningKeyName,
+		Key:            palomaConfig.SigningKey,
 		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),

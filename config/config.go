@@ -17,16 +17,24 @@ const (
 	Name      = "sparrow"
 )
 
+type CosmosSpecificClientConfig struct {
+	KeyringType   string `yaml:"keyring-type"`
+	AccountPrefix string `yaml:"account-prefix"`
+	GasPrices     string `yaml:"gas-prices"`
+}
+
+type EVMSpecificClientConfig struct {
+	SmartContractAddress string `yaml:"smart-contract-address"`
+}
+
 type ChainClientConfig struct {
 	ChainID            string   `yaml:"chain-id"`
 	BaseRPCURL         string   `yaml:"base-rpc-url"`
 	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
-	KeyringType        string   `yaml:"keyring-type"`
+	SigningKey         string   `yaml:"signing-key"`
 	KeyringDirectory   filepath `yaml:"keyring-dir"`
 	CallTimeout        string   `yaml:"call-timeout"`
 	GasAdjustment      float64  `yaml:"gas-adjustment"`
-	AccountPrefix      string   `yaml:"account-prefix"`
-	GasPrices          string   `yaml:"gas-prices"`
 }
 
 type filepath string
@@ -40,21 +48,20 @@ func (f filepath) Path() string {
 
 type Root struct {
 	Paloma Paloma `yaml:"paloma"`
-	Terra  Terra  `yaml:"terra"`
+
+	EVM []EVM `yaml:"evm"`
+}
+
+type EVM struct {
+	EVMSpecificClientConfig `yaml:",inline"`
+	ChainClientConfig       `yaml:",inline"`
 }
 
 type Paloma struct {
-	ChainClientConfig `yaml:",inline"`
+	CosmosSpecificClientConfig `yaml:",inline"`
+	ChainClientConfig          `yaml:",inline"`
 
-	SigningKeyName   string `yaml:"signing-key-name"`
 	ValidatorAddress string `yaml:"validator-address"`
-}
-
-type Terra struct {
-	ChainClientConfig `yaml:",inline"`
-
-	RewardsAccount string   `yaml:"rewards-account"` // TODO: rethink this
-	Accounts       []string `yaml:"acc-addresses"`
 }
 
 func KeyringPassword(envKey string) string {
