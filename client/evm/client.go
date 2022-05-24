@@ -3,7 +3,6 @@ package evm
 import (
 	"context"
 	"embed"
-	"fmt"
 	"math/big"
 	"path/filepath"
 	"strings"
@@ -109,6 +108,7 @@ func (c *Client) init() error {
 	})
 }
 
+//go:generate mockery --name=ethClienter --inpackage --testonly
 type ethClienter interface {
 	bind.ContractBackend
 }
@@ -142,7 +142,6 @@ func executeSmartContract(
 		nonce := whoops.Must(
 			args.ethClient.PendingNonceAt(ctx, args.signingAddr),
 		)
-		fmt.Println(nonce, args.signingAddr)
 
 		gasPrice := whoops.Must(
 			args.ethClient.SuggestGasPrice(ctx),
@@ -176,7 +175,6 @@ func executeSmartContract(
 		txOpts.From = args.signingAddr
 
 		tx := whoops.Must(boundContract.RawTransact(txOpts, packedBytes))
-		fmt.Println(tx.Hash())
 
 		_ = tx
 
@@ -188,7 +186,9 @@ func executeSmartContract(
 
 func (c Client) UpdateValset(ctx context.Context) {}
 
+// TODO: this is just a placeholder
 func (c Client) ExecuteArbitraryMessage(ctx context.Context) error {
+
 	chainID := &big.Int{}
 	chainID.SetString(c.config.ChainID, 10)
 
