@@ -3,7 +3,7 @@ package relayer
 import (
 	"context"
 
-	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/chain/paloma"
 	"github.com/palomachain/sparrow/errors"
 	"github.com/vizualni/whoops"
 )

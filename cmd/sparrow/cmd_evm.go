@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/palomachain/sparrow/client/evm"
+	"github.com/palomachain/sparrow/chain/evm"
 	"github.com/palomachain/sparrow/config"
 	"github.com/spf13/cobra"
 )

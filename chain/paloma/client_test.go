@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
-	clientmocks "github.com/palomachain/sparrow/client/paloma/mocks"
+	clientmocks "github.com/palomachain/sparrow/chain/paloma/mocks"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	consensusmocks "github.com/palomachain/sparrow/types/paloma/x/consensus/types/mocks"
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
