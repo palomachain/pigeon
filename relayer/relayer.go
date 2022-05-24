@@ -44,7 +44,7 @@ func New(config config.Root, palomaClient paloma.Client, attestExecutor attestEx
 func (r *Relayer) init() error {
 
 	signingKeyInfo, err := r.palomaClient.Keyring().Key(
-		r.config.Paloma.SigningKeyName,
+		r.config.Paloma.SigningKey,
 	)
 	if err != nil {
 		return errors.Unrecoverable(err)
