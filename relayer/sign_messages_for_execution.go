@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/chain/paloma"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	"github.com/palomachain/utils/signing"
 	"github.com/vizualni/whoops"

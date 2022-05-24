@@ -2,7 +2,7 @@ package relayer
 
 import (
 	"context"
-	"github.com/palomachain/sparrow/client/paloma"
+	"github.com/palomachain/sparrow/chain/paloma"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	palomatypes "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 )

@@ -11,7 +11,7 @@ import (
 	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	chain "github.com/palomachain/sparrow/client"
+	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/config"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"

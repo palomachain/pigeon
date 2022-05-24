@@ -5,8 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/sparrow/attest"
-	"github.com/palomachain/sparrow/client/paloma"
-	"github.com/palomachain/sparrow/client/terra"
+	"github.com/palomachain/sparrow/chain/paloma"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
 )
@@ -25,7 +24,6 @@ type Relayer struct {
 
 	// TODO: make an interface for paloma.Client and terra.Client
 	palomaClient paloma.Client
-	terraClients map[string]terra.Client
 
 	attestExecutor attestExecutor
 
