@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/config"
@@ -188,6 +189,12 @@ func executeSmartContract(
 }
 
 func (c Client) UpdateValset(ctx context.Context, vu chain.ValsetUpdate) (chain.ValsetUpdateResponse, error) {
+	return chain.ValsetUpdateResponse{}, nil
+}
+
+func (c Client) sign(ctx context.Context, msg []byte) (chain.ValsetUpdateResponse, error) {
+	// TODO
+	crypto.Keccak256(nil)
 	return chain.ValsetUpdateResponse{}, nil
 }
 

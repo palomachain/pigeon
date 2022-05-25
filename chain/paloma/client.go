@@ -30,20 +30,13 @@ type Client struct {
 	MessageSender MessageSender
 }
 
-type QueuedMessage struct {
-	ID          uint64
-	Nonce       []byte
-	BytesToSign []byte
-	Msg         any
-}
-
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
 func (c Client) QueryMessagesForSigning(
 	ctx context.Context,
 	valAddress sdk.ValAddress,
 	queueTypeName string,
-) ([]QueuedMessage, error) {
+) ([]chain.QueuedMessage, error) {
 	return queryMessagesForSigning(ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
 }
 
@@ -53,7 +46,7 @@ func queryMessagesForSigning(
 	anyunpacker codectypes.AnyUnpacker,
 	valAddress sdk.ValAddress,
 	queueTypeName string,
-) ([]QueuedMessage, error) {
+) ([]chain.QueuedMessage, error) {
 	qc := consensus.NewQueryClient(c)
 	msgs, err := qc.QueuedMessagesForSigning(ctx, &consensus.QueryQueuedMessagesForSigningRequest{
 		ValAddress:    valAddress,
@@ -62,14 +55,14 @@ func queryMessagesForSigning(
 	if err != nil {
 		return nil, err
 	}
-	res := []QueuedMessage{}
+	res := []chain.QueuedMessage{}
 	for _, msg := range msgs.GetMessageToSign() {
 		var ptr consensus.Signable
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, QueuedMessage{
+		res = append(res, chain.QueuedMessage{
 			ID:          msg.GetId(),
 			Nonce:       msg.GetNonce(),
 			BytesToSign: msg.GetBytesToSign(),
@@ -80,22 +73,11 @@ func queryMessagesForSigning(
 	return res, nil
 }
 
-type ValidatorSignature struct {
-	ValAddress sdk.ValAddress
-	Signature  []byte
-}
-type ConsensusReachedMsg struct {
-	ID         string
-	Nonce      []byte
-	Signatures []ValidatorSignature
-	Msg        consensus.Signable
-}
-
 func QueryConsensusReachedMessages(
 	ctx context.Context,
 	c Client,
 	queueTypeName string,
-) ([]ConsensusReachedMsg, error) {
+) ([]chain.ConsensusReachedMsg, error) {
 	return queryConsensusReachedMessages(ctx, c.GRPCClient, c.L.Codec.Marshaler, queueTypeName)
 }
 
@@ -104,7 +86,7 @@ func queryConsensusReachedMessages(
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 	queueTypeName string,
-) ([]ConsensusReachedMsg, error) {
+) ([]chain.ConsensusReachedMsg, error) {
 	qc := consensus.NewQueryClient(c)
 	consensusRes, err := qc.ConsensusReached(ctx, &consensus.QueryConsensusReachedRequest{
 		QueueTypeName: queueTypeName,
@@ -114,7 +96,7 @@ func queryConsensusReachedMessages(
 		return nil, err
 	}
 
-	var res []ConsensusReachedMsg
+	var res []chain.ConsensusReachedMsg
 	for _, rawMsg := range consensusRes.GetMessages() {
 		var signable consensus.Signable
 		err := anyunpacker.UnpackAny(rawMsg.GetMsg(), &signable)
@@ -122,13 +104,13 @@ func queryConsensusReachedMessages(
 			return nil, err
 		}
 
-		m := ConsensusReachedMsg{
+		m := chain.ConsensusReachedMsg{
 			ID:    fmt.Sprintf("%d", rawMsg.GetId()),
 			Nonce: rawMsg.Nonce,
 			Msg:   signable,
 		}
 		for _, signData := range rawMsg.GetSignData() {
-			m.Signatures = append(m.Signatures, ValidatorSignature{
+			m.Signatures = append(m.Signatures, chain.ValidatorSignature{
 				ValAddress: signData.GetValAddress(),
 				Signature:  signData.GetSignature(),
 			})
