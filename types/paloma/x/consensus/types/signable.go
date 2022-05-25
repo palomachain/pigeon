@@ -1,7 +1,3 @@
 package types
 
-type Signable interface {
-	Signable()
-}
-
-func (SignSmartContractExecute) Signable() {}
+type Signable interface{}

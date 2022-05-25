@@ -3,6 +3,7 @@ package paloma
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 
@@ -99,7 +100,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *consensusmocks.QueryServer
-		expRes []QueuedMessage[*testdata.SimpleMessage]
+		expRes []QueuedMessage
 		expErr error
 
 		// used only for testing the GRPC responses because GRPC is doing a
@@ -109,7 +110,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	}{
 		{
 			name:   "called with correct arguments",
-			expRes: []QueuedMessage[*testdata.SimpleMessage]{},
+			expRes: []QueuedMessage{},
 			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
 				srv := consensusmocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, &consensus.QueryQueuedMessagesForSigningRequest{
@@ -127,24 +128,19 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 		{
 			name: "messages are happily returned",
 			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				msgany1, err := codectypes.NewAnyWithValue(simpleMessageTestData1)
-				assert.NoError(t, err)
-				msgany2, err := codectypes.NewAnyWithValue(simpleMessageTestData2)
-				assert.NoError(t, err)
-
 				srv := consensusmocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
 					&consensus.QueryQueuedMessagesForSigningResponse{
 						MessageToSign: []*consensus.MessageToSign{
 							{
-								Nonce: []byte("nonce-123"),
-								Id:    456,
-								Msg:   msgany1,
+								Nonce:       []byte("nonce-123"),
+								Id:          456,
+								BytesToSign: []byte("bla"),
 							},
 							{
-								Nonce: []byte("nonce-321"),
-								Id:    654,
-								Msg:   msgany2,
+								Nonce:       []byte("nonce-321"),
+								Id:          654,
+								BytesToSign: []byte("bla2"),
 							},
 						},
 					},
@@ -152,43 +148,18 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 				).Once()
 				return srv
 			},
-			expRes: []QueuedMessage[*testdata.SimpleMessage]{
+			expRes: []QueuedMessage{
 				{
-					Nonce: []byte("nonce-123"),
-					ID:    456,
-					Msg:   simpleMessageTestData1,
+					Nonce:       []byte("nonce-123"),
+					ID:          456,
+					BytesToSign: []byte("bla"),
 				},
 				{
-					Nonce: []byte("nonce-321"),
-					ID:    654,
-					Msg:   simpleMessageTestData2,
+					Nonce:       []byte("nonce-321"),
+					ID:          654,
+					BytesToSign: []byte("bla2"),
 				},
 			},
-		},
-		{
-			name: "unpacking messages returns an error",
-			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				erroneousMsg := &codectypes.Any{
-					TypeUrl: "/wrong",
-					Value:   []byte(`whoops`),
-				}
-
-				srv := consensusmocks.NewQueryServer(t)
-				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
-					&consensus.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*consensus.MessageToSign{
-							{
-								Nonce: []byte("nonce-123"),
-								Id:    456,
-								Msg:   erroneousMsg,
-							},
-						},
-					},
-					nil,
-				).Once()
-				return srv
-			},
-			expErr: ErrUnableToUnpackAny,
 		},
 		{
 			name: "client returns an error",
@@ -202,31 +173,6 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 			},
 			expectsAnyError: true,
 		},
-		{
-			name: "incorrect type used for the unpacked message",
-			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				msgany, err := codectypes.NewAnyWithValue(&testdata.SimpleMessage2{
-					Field: "random value",
-				})
-				assert.NoError(t, err)
-
-				srv := consensusmocks.NewQueryServer(t)
-				srv.On("QueuedMessagesForSigning", mock.Anything, mock.Anything).Return(
-					&consensus.QueryQueuedMessagesForSigningResponse{
-						MessageToSign: []*consensus.MessageToSign{
-							{
-								Nonce: []byte("nonce-123"),
-								Id:    456,
-								Msg:   msgany,
-							},
-						},
-					},
-					nil,
-				).Once()
-				return srv
-			},
-			expErr: ErrIncorrectTypeSavedInMessage,
-		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			// setting everything up
@@ -237,13 +183,14 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 
 			// setup complete
 			// calling the function that we are testing
-			msgs, err := queryMessagesForSigning[*testdata.SimpleMessage](
+			msgs, err := queryMessagesForSigning(
 				ctx,
 				conn,
 				codec.Marshaler,
 				sdk.ValAddress("validator"),
 				"queueName",
 			)
+			fmt.Println(err)
 			if tt.expectsAnyError {
 				assert.Error(t, err)
 			} else {
@@ -261,7 +208,7 @@ func TestRegisterValidator(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *clientmocks.MessageSender
-		expRes []QueuedMessage[*testdata.SimpleMessage]
+		expRes []QueuedMessage
 
 		expectsAnyError bool
 	}{
@@ -313,7 +260,7 @@ func TestQueryValidatorInfo(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *valsetmocks.QueryServer
-		expRes []QueuedMessage[*testdata.SimpleMessage]
+		expRes []QueuedMessage
 
 		expectedValidator *valset.Validator
 		expectsAnyError   bool
@@ -366,7 +313,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		name      string
 		chainInfo []ChainInfoIn
 		mcksrv    func(*testing.T) *clientmocks.MessageSender
-		expRes    []QueuedMessage[*testdata.SimpleMessage]
+		expRes    []QueuedMessage
 
 		expectsAnyError bool
 	}{
@@ -512,7 +459,7 @@ func TestQueryConsensusReached(t *testing.T) {
 		name        string
 		mcksrv      func(t *testing.T) *consensusmocks.QueryServer
 		expectedErr error
-		expectedRes []ConsensusReachedMsg[*testdata.SimpleMessage]
+		expectedRes []ConsensusReachedMsg
 		anyUnpacker codectypes.AnyUnpacker
 	}{
 		{
@@ -571,7 +518,7 @@ func TestQueryConsensusReached(t *testing.T) {
 				}, nil)
 				return srv
 			},
-			expectedRes: []ConsensusReachedMsg[*testdata.SimpleMessage]{
+			expectedRes: []ConsensusReachedMsg{
 				{
 					ID:    "123",
 					Nonce: []byte("abc"),
@@ -629,7 +576,7 @@ func TestQueryConsensusReached(t *testing.T) {
 				tt.anyUnpacker = codec.Marshaler
 			}
 
-			msgs, err := queryConsensusReachedMessages[*testdata.SimpleMessage](ctx, conn, tt.anyUnpacker, "queue-name")
+			msgs, err := queryConsensusReachedMessages(ctx, conn, tt.anyUnpacker, "queue-name")
 			if serr := status.Convert(err); serr != nil {
 				if tt.expectedErr != nil {
 					require.Equal(t, serr.Message(), tt.expectedErr.Error())

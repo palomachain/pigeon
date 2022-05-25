@@ -8,7 +8,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
-	"github.com/vizualni/whoops"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/sparrow/chain"
@@ -31,30 +31,30 @@ type Client struct {
 	MessageSender MessageSender
 }
 
-type QueuedMessage[T consensus.Signable] struct {
-	ID    uint64
-	Nonce []byte
-	Msg   T
+type QueuedMessage struct {
+	ID          uint64
+	Nonce       []byte
+	BytesToSign []byte
+	Msg         any
 }
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
-func QueryMessagesForSigning[T consensus.Signable](
+func (c Client) QueryMessagesForSigning(
 	ctx context.Context,
-	c Client,
 	valAddress sdk.ValAddress,
 	queueTypeName string,
-) ([]QueuedMessage[T], error) {
-	return queryMessagesForSigning[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
+) ([]QueuedMessage, error) {
+	return queryMessagesForSigning(ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
 }
 
-func queryMessagesForSigning[T consensus.Signable](
+func queryMessagesForSigning(
 	ctx context.Context,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 	valAddress sdk.ValAddress,
 	queueTypeName string,
-) ([]QueuedMessage[T], error) {
+) ([]QueuedMessage, error) {
 	qc := consensus.NewQueryClient(c)
 	msgs, err := qc.QueuedMessagesForSigning(ctx, &consensus.QueryQueuedMessagesForSigningRequest{
 		ValAddress:    valAddress,
@@ -63,22 +63,18 @@ func queryMessagesForSigning[T consensus.Signable](
 	if err != nil {
 		return nil, err
 	}
-	res := []QueuedMessage[T]{}
+	res := []QueuedMessage{}
 	for _, msg := range msgs.GetMessageToSign() {
-		var m consensus.Signable
-		err := anyunpacker.UnpackAny(msg.GetMsg(), &m)
+		var ptr proto.Message
+		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
-			return nil, whoops.Wrap(err, ErrUnableToUnpackAny)
+			return nil, err
 		}
-		msgT, ok := m.(T)
-		if !ok {
-			var expectedType T
-			return nil, ErrIncorrectTypeSavedInMessage.Format(expectedType, m)
-		}
-		res = append(res, QueuedMessage[T]{
-			ID:    msg.GetId(),
-			Nonce: msg.GetNonce(),
-			Msg:   msgT,
+		res = append(res, QueuedMessage{
+			ID:          msg.GetId(),
+			Nonce:       msg.GetNonce(),
+			BytesToSign: msg.GetBytesToSign(),
+			Msg:         ptr,
 		})
 	}
 
@@ -89,27 +85,27 @@ type ValidatorSignature struct {
 	ValAddress sdk.ValAddress
 	Signature  []byte
 }
-type ConsensusReachedMsg[T consensus.Signable] struct {
+type ConsensusReachedMsg struct {
 	ID         string
 	Nonce      []byte
 	Signatures []ValidatorSignature
-	Msg        T
+	Msg        consensus.Signable
 }
 
-func QueryConsensusReachedMessages[T consensus.Signable](
+func QueryConsensusReachedMessages(
 	ctx context.Context,
 	c Client,
 	queueTypeName string,
-) ([]ConsensusReachedMsg[T], error) {
-	return queryConsensusReachedMessages[T](ctx, c.GRPCClient, c.L.Codec.Marshaler, queueTypeName)
+) ([]ConsensusReachedMsg, error) {
+	return queryConsensusReachedMessages(ctx, c.GRPCClient, c.L.Codec.Marshaler, queueTypeName)
 }
 
-func queryConsensusReachedMessages[T consensus.Signable](
+func queryConsensusReachedMessages(
 	ctx context.Context,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 	queueTypeName string,
-) ([]ConsensusReachedMsg[T], error) {
+) ([]ConsensusReachedMsg, error) {
 	qc := consensus.NewQueryClient(c)
 	consensusRes, err := qc.ConsensusReached(ctx, &consensus.QueryConsensusReachedRequest{
 		QueueTypeName: queueTypeName,
@@ -119,23 +115,18 @@ func queryConsensusReachedMessages[T consensus.Signable](
 		return nil, err
 	}
 
-	var res []ConsensusReachedMsg[T]
+	var res []ConsensusReachedMsg
 	for _, rawMsg := range consensusRes.GetMessages() {
 		var signable consensus.Signable
 		err := anyunpacker.UnpackAny(rawMsg.GetMsg(), &signable)
 		if err != nil {
 			return nil, err
 		}
-		packedMsg, ok := signable.(T)
-		if !ok {
-			var expected T
-			return nil, ErrIncorrectTypeSavedInMessage.Format(expected, signable)
-		}
 
-		m := ConsensusReachedMsg[T]{
+		m := ConsensusReachedMsg{
 			ID:    fmt.Sprintf("%d", rawMsg.GetId()),
 			Nonce: rawMsg.Nonce,
-			Msg:   packedMsg,
+			Msg:   signable,
 		}
 		for _, signData := range rawMsg.GetSignData() {
 			m.Signatures = append(m.Signatures, ValidatorSignature{
