@@ -8,7 +8,6 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/sparrow/chain"
@@ -65,7 +64,7 @@ func queryMessagesForSigning(
 	}
 	res := []QueuedMessage{}
 	for _, msg := range msgs.GetMessageToSign() {
-		var ptr proto.Message
+		var ptr consensus.Signable
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
