@@ -61,10 +61,12 @@ func (r *Relayer) Start(ctx context.Context) error {
 func (r *Relayer) oneLoopCall(ctx context.Context) error {
 	var g whoops.Group
 
-	g.Add(r.signMessagesForExecution(ctx,
-		consensusExecuteSmartContract,
-		consensusUpdateValset,
-	))
+	g.Add(
+		r.signMessagesForExecution(
+			ctx,
+			"execute-smart-contract",
+			"update-valset",
+		))
 	// g.Add(r.queryConcencusReachedMessages(ctx))
 
 	if g.Err() {

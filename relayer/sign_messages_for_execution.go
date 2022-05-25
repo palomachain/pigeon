@@ -5,28 +5,36 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/palomachain/sparrow/chain/paloma"
-	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	"github.com/palomachain/utils/signing"
 	"github.com/vizualni/whoops"
 )
 
-type queueTypeSignerer interface {
-	queryMessagesForSigning(ctx context.Context, r *Relayer) ([]paloma.BroadcastMessageSignatureIn, error)
-}
-
 // signMessagesForExecution takes messages from a given list of queue types and fetches and signes messages for every queue type provided.
 // It is all aggregated and sent over in a single TX back to Paloma.
-func (r *Relayer) signMessagesForExecution(ctx context.Context, qtss ...queueTypeSignerer) error {
+func (r *Relayer) signMessagesForExecution(ctx context.Context, queueNames ...string) error {
 	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
 
 	err := whoops.Try(func() {
-		for _, qts := range qtss {
+		for _, queueName := range queueNames {
 			whoops.Assert(ctx.Err())
+
+			signingKeyAddress := whoops.Must(sdk.AccAddressFromBech32(r.signingKeyAddress))
+			valAddress := whoops.Must(sdk.ValAddressFromBech32(r.validatorAddress))
 
 			broadcastMessageSignatures = append(
 				broadcastMessageSignatures,
 				whoops.Must(
-					qts.queryMessagesForSigning(ctx, r),
+					signMessagesForExecution(
+						ctx,
+						r.palomaClient,
+						signing.KeyringSignerByAddress(
+							r.palomaClient.Keyring(),
+							signingKeyAddress,
+						),
+						r.attestExecutor,
+						valAddress,
+						queueName,
+					),
 				)...,
 			)
 		}
@@ -39,26 +47,7 @@ func (r *Relayer) signMessagesForExecution(ctx context.Context, qtss ...queueTyp
 	return r.palomaClient.BroadcastMessageSignatures(ctx, broadcastMessageSignatures...)
 }
 
-func (c consensusMessageQueueType[T]) queryMessagesForSigning(
-	ctx context.Context,
-	r *Relayer,
-) ([]paloma.BroadcastMessageSignatureIn, error) {
-	signingKeyAddress := whoops.Must(sdk.AccAddressFromBech32(r.signingKeyAddress))
-	valAddress := whoops.Must(sdk.ValAddressFromBech32(r.validatorAddress))
-	return signMessagesForExecution[T](
-		ctx,
-		r.palomaClient,
-		signing.KeyringSignerByAddress(
-			r.palomaClient.Keyring(),
-			signingKeyAddress,
-		),
-		r.attestExecutor,
-		valAddress,
-		c.queue(),
-	)
-}
-
-func signMessagesForExecution[T consensus.Signable](
+func signMessagesForExecution(
 	ctx context.Context,
 	client paloma.Client,
 	signer signing.Signer,
@@ -68,9 +57,8 @@ func signMessagesForExecution[T consensus.Signable](
 ) ([]paloma.BroadcastMessageSignatureIn, error) {
 	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
 	// fetch messages that need to be signed
-	msgs, err := paloma.QueryMessagesForSigning[T](
+	msgs, err := client.QueryMessagesForSigning(
 		ctx,
-		client,
 		valAddress,
 		queueTypeName,
 	)
