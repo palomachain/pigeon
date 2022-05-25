@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
 	"github.com/vizualni/whoops"
@@ -60,6 +61,8 @@ func StoredContracts() map[string]abi.ABI {
 	})
 	return _contracts
 }
+
+var _ chain.Relayer = Client{}
 
 type Client struct {
 	config config.EVM
@@ -184,10 +187,14 @@ func executeSmartContract(
 	})
 }
 
-func (c Client) UpdateValset(ctx context.Context) {}
+func (c Client) UpdateValset(ctx context.Context, vu chain.ValsetUpdate) (chain.ValsetUpdateResponse, error) {
+	return chain.ValsetUpdateResponse{}, nil
+}
 
 // TODO: this is just a placeholder
-func (c Client) ExecuteArbitraryMessage(ctx context.Context) error {
+func (c Client) ExecuteArbitraryMessage(ctx context.Context, am chain.ArbitraryMessage) (chain.ArbitraryMessageResponse, error) {
+
+	return chain.ArbitraryMessageResponse{}, nil
 
 	chainID := &big.Int{}
 	chainID.SetString(c.config.ChainID, 10)
