@@ -7,16 +7,6 @@ Please use https://github.com/palomachain/paloma/issues to submit issues and add
 
 # Instructions to test sending messages to EVM
 
-## Steps
-
-
-- install and run latest paloma version
-  - follow instructions from https://github.com/palomachain/paloma
-- install latest Sparrow
-  - fsdfs
-  - 
-
-
 ## Install
 
 ```shell
@@ -136,10 +126,8 @@ YOUR_ENV_VARIABLE_WITH_EVM_ROPSTEN_PASS=efgh
 sparrow start
 ```
 
-### Open sparrow window and look at the logs to get the TX HASH which you can look on the explorer.
-
-
-## Feel free to add more jobs to the queue while Sparrows are running
+- Open sparrow window and look at the logs to get the TX HASH which you can look on the explorer.
+- Feel free to add more jobs to the queue while Sparrows are running
 
 ## Can you run this on the mainnet?
 
