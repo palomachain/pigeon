@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/palomachain/sparrow/attest"
+	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/chain/paloma"
 	"github.com/palomachain/sparrow/config"
-	"github.com/palomachain/sparrow/errors"
 )
 
 type palomaClienter interface {
@@ -27,33 +28,23 @@ type Relayer struct {
 
 	attestExecutor attestExecutor
 
-	signingKeyAddress string
-	validatorAddress  string
+	validatorAddress sdk.ValAddress
+
+	processors map[string]chain.Processor
 }
 
-func New(config config.Root, palomaClient paloma.Client, attestExecutor attestExecutor) *Relayer {
+func New(config config.Root, palomaClient paloma.Client, attestExecutor attestExecutor, processors map[string]chain.Processor) *Relayer {
 	return &Relayer{
 		config:         config,
 		palomaClient:   palomaClient,
 		attestExecutor: attestExecutor,
+		processors:     processors,
 	}
 }
 
 func (r *Relayer) init() error {
 
-	signingKeyInfo, err := r.palomaClient.Keyring().Key(
-		r.config.Paloma.SigningKey,
-	)
-	if err != nil {
-		return errors.Unrecoverable(err)
-	}
-
-	r.signingKeyAddress, err = r.palomaClient.L.EncodeBech32AccAddr(signingKeyInfo.GetAddress())
 	r.validatorAddress = r.config.Paloma.ValidatorAddress
-
-	if err != nil {
-		return errors.Unrecoverable(err)
-	}
 
 	return nil
 }

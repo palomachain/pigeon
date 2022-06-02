@@ -23,9 +23,9 @@ func (r *Relayer) Start(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.updateValidatorInfo(ctx); err != nil {
-		return err
-	}
+	// if err := r.updateValidatorInfo(ctx); err != nil {
+	// 	return err
+	// }
 
 	consecutiveFailures := whoops.Group{}
 	for {
@@ -33,7 +33,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(defaultLoopTimeout):
-			err := r.oneLoopCall(ctx)
+			err := r.Process(ctx)
 			if err == nil {
 				// resetting the failures
 				if len(consecutiveFailures) > 0 {
@@ -56,22 +56,4 @@ func (r *Relayer) Start(ctx context.Context) error {
 			fmt.Println("error happened", err)
 		}
 	}
-}
-
-func (r *Relayer) oneLoopCall(ctx context.Context) error {
-	var g whoops.Group
-
-	g.Add(
-		r.signMessagesForExecution(
-			ctx,
-			"execute-smart-contract",
-			"update-valset",
-		))
-	// g.Add(r.queryConcencusReachedMessages(ctx))
-
-	if g.Err() {
-		return g
-	}
-
-	return nil
 }

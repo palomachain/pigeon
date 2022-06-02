@@ -16,21 +16,44 @@ type QueryServer struct {
 	mock.Mock
 }
 
-// ConsensusReached provides a mock function with given fields: _a0, _a1
-func (_m *QueryServer) ConsensusReached(_a0 context.Context, _a1 *types.QueryConsensusReachedRequest) (*types.QueryConsensusReachedResponse, error) {
+// GetAllQueueNames provides a mock function with given fields: _a0, _a1
+func (_m *QueryServer) GetAllQueueNames(_a0 context.Context, _a1 *types.QueryGetAllQueueNamesRequest) (*types.QueryGetAllQueueNamesResponse, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *types.QueryConsensusReachedResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *types.QueryConsensusReachedRequest) *types.QueryConsensusReachedResponse); ok {
+	var r0 *types.QueryGetAllQueueNamesResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.QueryGetAllQueueNamesRequest) *types.QueryGetAllQueueNamesResponse); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.QueryConsensusReachedResponse)
+			r0 = ret.Get(0).(*types.QueryGetAllQueueNamesResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *types.QueryConsensusReachedRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *types.QueryGetAllQueueNamesRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MessagesInQueue provides a mock function with given fields: _a0, _a1
+func (_m *QueryServer) MessagesInQueue(_a0 context.Context, _a1 *types.QueryMessagesInQueueRequest) (*types.QueryMessagesInQueueResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.QueryMessagesInQueueResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.QueryMessagesInQueueRequest) *types.QueryMessagesInQueueResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.QueryMessagesInQueueResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.QueryMessagesInQueueRequest) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)

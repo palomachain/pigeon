@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/vizualni/whoops"
 
 	"gopkg.in/yaml.v2"
@@ -49,7 +50,11 @@ func (f filepath) Path() string {
 type Root struct {
 	Paloma Paloma `yaml:"paloma"`
 
-	EVM []EVM `yaml:"evm"`
+	EVM map[string]EVM `yaml:"evm"`
+}
+
+func (r *Root) init() {
+	(&r.Paloma).init()
 }
 
 type EVM struct {
@@ -61,7 +66,21 @@ type Paloma struct {
 	CosmosSpecificClientConfig `yaml:",inline"`
 	ChainClientConfig          `yaml:",inline"`
 
-	ValidatorAddress string `yaml:"validator-address"`
+	ValidatorAddressString string         `yaml:"validator-address"`
+	ValidatorAddress       sdk.ValAddress `yaml:"-"`
+}
+
+func (p *Paloma) init() {
+	bz, err := sdk.GetFromBech32(p.ValidatorAddressString, p.AccountPrefix+"valoper")
+	if err != nil {
+		panic(err)
+	}
+
+	err = sdk.VerifyAddressFormat(bz)
+	if err != nil {
+		panic(err)
+	}
+	p.ValidatorAddress = sdk.ValAddress(bz)
 }
 
 func KeyringPassword(envKey string) string {
@@ -84,6 +103,8 @@ func FromReader(r io.Reader) (Root, error) {
 	if err != nil {
 		return Root{}, err
 	}
+
+	(&cnf).init()
 
 	return cnf, nil
 }

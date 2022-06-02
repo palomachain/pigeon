@@ -1,14 +1,17 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 	"embed"
+	"fmt"
 	"math/big"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"io/fs"
+	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -19,12 +22,18 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
+	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/vizualni/whoops"
 )
 
 const (
 	smartContractFilename = "simple"
 )
+
+type StoredContract struct {
+	ABI    abi.ABI
+	Source []byte
+}
 
 /*
 Do not delete hello.json contract. It's used for tests!
@@ -34,10 +43,10 @@ var (
 	contractsFS embed.FS
 
 	readOnce   sync.Once
-	_contracts = make(map[string]abi.ABI)
+	_contracts = make(map[string]StoredContract)
 )
 
-func StoredContracts() map[string]abi.ABI {
+func StoredContracts() map[string]StoredContract {
 	readOnce.Do(func() {
 		fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
 			if d.IsDir() {
@@ -49,16 +58,28 @@ func StoredContracts() map[string]abi.ABI {
 			if err != nil {
 				panic(err)
 			}
-			evmabi, err := abi.JSON(file)
+
+			// we need to store body locally, so reading it here first and
+			// using bytes.NewBuffer few lines down.
+			body := whoops.Must(ioutil.ReadAll(file))
+
+			evmabi, err := abi.JSON(bytes.NewBuffer(body))
 			if err != nil {
 				panic(err)
 			}
 
-			_contracts[contractName] = evmabi
+			_contracts[contractName] = StoredContract{
+				ABI:    evmabi,
+				Source: body,
+			}
 			return nil
 		})
 	})
 	return _contracts
+}
+
+type PalomaClienter interface {
+	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
 }
 
 type Client struct {
@@ -70,11 +91,14 @@ type Client struct {
 	keystore *keystore.KeyStore
 
 	conn *ethclient.Client
+
+	paloma PalomaClienter
 }
 
-func NewClient(cfg config.EVM) Client {
+func NewClient(cfg config.EVM, palomaClient PalomaClienter) Client {
 	client := &Client{
 		config: cfg,
+		paloma: palomaClient,
 	}
 
 	whoops.Assert(client.init())
@@ -89,7 +113,7 @@ func (c *Client) init() error {
 		if !ok {
 			whoops.Assert(errors.Unrecoverable(ErrSmartContractNotFound.Format(smartContractFilename)))
 		}
-		c.smartContractAbi = scabi
+		c.smartContractAbi = scabi.ABI
 
 		if !ethcommon.IsHexAddress(c.config.SigningKey) {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))
@@ -132,12 +156,15 @@ type executeSmartContractIn struct {
 func executeSmartContract(
 	ctx context.Context,
 	args executeSmartContractIn,
+	abiBytes []byte,
+	packedBytes []byte,
 ) error {
 	return whoops.Try(func() {
-		packedBytes := whoops.Must(args.abi.Pack(
-			args.method,
-			args.arguments...,
-		))
+		// TODO
+		// packedBytes := whoops.Must(args.abi.Pack(
+		// 	args.method,
+		// 	args.arguments...,
+		// ))
 
 		nonce := whoops.Must(
 			args.ethClient.PendingNonceAt(ctx, args.signingAddr),
@@ -154,9 +181,13 @@ func executeSmartContract(
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
 		}
 
+		aabi := whoops.Must(abi.JSON(bytes.NewBuffer(abiBytes)))
+
 		boundContract := bind.NewBoundContract(
 			args.contract,
-			args.abi,
+			// TODO:
+			// args.abi,
+			aabi,
 			args.ethClient,
 			args.ethClient,
 			args.ethClient,
@@ -175,6 +206,7 @@ func executeSmartContract(
 		txOpts.From = args.signingAddr
 
 		tx := whoops.Must(boundContract.RawTransact(txOpts, packedBytes))
+		fmt.Println("EXECUTED TXN", tx.Hash())
 
 		_ = tx
 
@@ -184,11 +216,16 @@ func executeSmartContract(
 	})
 }
 
-func (c Client) UpdateValset(ctx context.Context) {}
+func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
+	return c.keystore.SignHash(accounts.Account{Address: c.addr}, bytes)
+}
 
 // TODO: this is just a placeholder
-func (c Client) ExecuteArbitraryMessage(ctx context.Context) error {
-
+func (c Client) executeArbitraryMessage(
+	ctx context.Context,
+	// TODO
+	msg *types.ArbitrarySmartContractCall,
+) error {
 	chainID := &big.Int{}
 	chainID.SetString(c.config.ChainID, 10)
 
@@ -199,13 +236,16 @@ func (c Client) ExecuteArbitraryMessage(ctx context.Context) error {
 			chainID:       chainID,
 			gasAdjustment: c.config.GasAdjustment,
 			abi:           c.smartContractAbi,
-			contract:      ethcommon.HexToAddress(c.config.EVMSpecificClientConfig.SmartContractAddress),
-			signingAddr:   c.addr,
-			keystore:      c.keystore,
-			method:        "store",
+			// contract:      ethcommon.HexToAddress(c.config.EVMSpecificClientConfig.SmartContractAddress),
+			contract:    ethcommon.HexToAddress(msg.GetHexAddress()),
+			signingAddr: c.addr,
+			keystore:    c.keystore,
+			method:      "store",
 			arguments: []any{
 				big.NewInt(111),
 			},
 		},
+		msg.GetAbi(),
+		msg.GetPayload(),
 	)
 }

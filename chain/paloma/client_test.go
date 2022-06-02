@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
+	"github.com/palomachain/sparrow/chain"
 	clientmocks "github.com/palomachain/sparrow/chain/paloma/mocks"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	consensusmocks "github.com/palomachain/sparrow/types/paloma/x/consensus/types/mocks"
@@ -21,12 +22,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/vizualni/whoops"
 	"google.golang.org/grpc"
 )
 
@@ -84,7 +82,7 @@ func makeCodec() lens.Codec {
 			ModuleName: "testing",
 			MsgsImplementations: []byop.RegisterImplementation{
 				{
-					Iface: (*consensus.Signable)(nil),
+					Iface: (*consensus.Message)(nil),
 					Msgs: []proto.Message{
 						&testdata.SimpleMessage{},
 						&testdata.SimpleMessage2{},
@@ -100,7 +98,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *consensusmocks.QueryServer
-		expRes []QueuedMessage
+		expRes []chain.QueuedMessage
 		expErr error
 
 		// used only for testing the GRPC responses because GRPC is doing a
@@ -110,7 +108,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	}{
 		{
 			name:   "called with correct arguments",
-			expRes: []QueuedMessage{},
+			expRes: []chain.QueuedMessage{},
 			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
 				srv := consensusmocks.NewQueryServer(t)
 				srv.On("QueuedMessagesForSigning", mock.Anything, &consensus.QueryQueuedMessagesForSigningRequest{
@@ -148,7 +146,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 				).Once()
 				return srv
 			},
-			expRes: []QueuedMessage{
+			expRes: []chain.QueuedMessage{
 				{
 					Nonce:       []byte("nonce-123"),
 					ID:          456,
@@ -208,7 +206,7 @@ func TestRegisterValidator(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *clientmocks.MessageSender
-		expRes []QueuedMessage
+		expRes []chain.QueuedMessage
 
 		expectsAnyError bool
 	}{
@@ -260,7 +258,7 @@ func TestQueryValidatorInfo(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *valsetmocks.QueryServer
-		expRes []QueuedMessage
+		expRes []chain.QueuedMessage
 
 		expectedValidator *valset.Validator
 		expectsAnyError   bool
@@ -296,7 +294,7 @@ func TestQueryValidatorInfo(t *testing.T) {
 			client := Client{
 				GRPCClient: conn,
 			}
-			valInfo, err := client.QueryValidatorInfo(ctx, "something")
+			valInfo, err := client.QueryValidatorInfo(ctx, sdk.ValAddress("something"))
 
 			require.Equal(t, tt.expectedValidator, valInfo)
 
@@ -313,7 +311,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		name      string
 		chainInfo []ChainInfoIn
 		mcksrv    func(*testing.T) *clientmocks.MessageSender
-		expRes    []QueuedMessage
+		expRes    []chain.QueuedMessage
 
 		expectsAnyError bool
 	}{
@@ -445,148 +443,6 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 				tt.signatures...,
 			)
 			assert.ErrorIs(t, tt.expErr, err)
-		})
-	}
-}
-
-func TestQueryConsensusReached(t *testing.T) {
-	codec := makeCodec()
-	ctx := context.Background()
-
-	fakeErr := whoops.String("oh no")
-
-	for _, tt := range []struct {
-		name        string
-		mcksrv      func(t *testing.T) *consensusmocks.QueryServer
-		expectedErr error
-		expectedRes []ConsensusReachedMsg
-		anyUnpacker codectypes.AnyUnpacker
-	}{
-		{
-			name: "when there are no messages it returns empty slice",
-			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				srv := consensusmocks.NewQueryServer(t)
-				srv.On("ConsensusReached", mock.Anything, &consensus.QueryConsensusReachedRequest{
-					QueueTypeName: "queue-name",
-				}).Once().Return(&consensus.QueryConsensusReachedResponse{}, nil)
-				return srv
-			},
-		},
-		{
-			name: "when there are messages it returns them",
-			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				srv := consensusmocks.NewQueryServer(t)
-				srv.On("ConsensusReached", mock.Anything, &consensus.QueryConsensusReachedRequest{
-					QueueTypeName: "queue-name",
-				}).Once().Return(&consensus.QueryConsensusReachedResponse{
-					Messages: []*consensus.MessageApproved{
-						{
-							Nonce: []byte("abc"),
-							Id:    123,
-							Msg: whoops.Must(codectypes.NewAnyWithValue(&testdata.SimpleMessage{
-								Sender: "bob",
-							})),
-							SignData: []*consensus.MessageApprovedSignData{
-								{
-									ValAddress: sdk.ValAddress("1"),
-									Signature:  []byte("1"),
-								},
-								{
-									ValAddress: sdk.ValAddress("2"),
-									Signature:  []byte("2"),
-								},
-							},
-						},
-						{
-							Nonce: []byte("def"),
-							Id:    456,
-							Msg: whoops.Must(codectypes.NewAnyWithValue(&testdata.SimpleMessage{
-								Sender: "alice",
-							})),
-							SignData: []*consensus.MessageApprovedSignData{
-								{
-									ValAddress: sdk.ValAddress("1"),
-									Signature:  []byte("11"),
-								},
-								{
-									ValAddress: sdk.ValAddress("2"),
-									Signature:  []byte("22"),
-								},
-							},
-						},
-					},
-				}, nil)
-				return srv
-			},
-			expectedRes: []ConsensusReachedMsg{
-				{
-					ID:    "123",
-					Nonce: []byte("abc"),
-					Msg: &testdata.SimpleMessage{
-						Sender: "bob",
-					},
-					Signatures: []ValidatorSignature{
-						{
-							ValAddress: sdk.ValAddress("1"),
-							Signature:  []byte("1"),
-						},
-						{
-							ValAddress: sdk.ValAddress("2"),
-							Signature:  []byte("2"),
-						},
-					},
-				},
-				{
-					ID:    "456",
-					Nonce: []byte("def"),
-					Msg: &testdata.SimpleMessage{
-						Sender: "alice",
-					},
-					Signatures: []ValidatorSignature{
-						{
-							ValAddress: sdk.ValAddress("1"),
-							Signature:  []byte("11"),
-						},
-						{
-							ValAddress: sdk.ValAddress("2"),
-							Signature:  []byte("22"),
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "if there is an error it returns it",
-			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
-				srv := consensusmocks.NewQueryServer(t)
-				srv.On("ConsensusReached", mock.Anything, &consensus.QueryConsensusReachedRequest{
-					QueueTypeName: "queue-name",
-				}).Once().Return(nil, fakeErr)
-				return srv
-			},
-			expectedErr: fakeErr,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			srv := tt.mcksrv(t)
-			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(queryServerDailer(t, srv)))
-			require.NoError(t, err)
-
-			if tt.anyUnpacker == nil {
-				tt.anyUnpacker = codec.Marshaler
-			}
-
-			msgs, err := queryConsensusReachedMessages(ctx, conn, tt.anyUnpacker, "queue-name")
-			if serr := status.Convert(err); serr != nil {
-				if tt.expectedErr != nil {
-					require.Equal(t, serr.Message(), tt.expectedErr.Error())
-				} else {
-					require.NoError(t, err, "expected err %s, got err %s", tt.expectedErr, err)
-				}
-			} else {
-				require.ErrorIs(t, err, tt.expectedErr)
-			}
-			require.Equal(t, tt.expectedRes, msgs)
 		})
 	}
 }

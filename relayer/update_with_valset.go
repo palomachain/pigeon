@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/palomachain/sparrow/chain/paloma"
-	"github.com/palomachain/sparrow/errors"
 	"github.com/vizualni/whoops"
 )
 
@@ -53,28 +52,30 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context, chainID string, 
 }
 
 func (r *Relayer) registerValidator(ctx context.Context) error {
-	val, err := r.palomaClient.QueryValidatorInfo(ctx, r.validatorAddress)
-	if err != nil {
-		return nil
-	}
+	return nil
+	// val, err := r.palomaClient.QueryValidatorInfo(ctx, r.validatorAddress)
+	// if err != nil {
+	// 	return nil
+	// }
 
-	if val != nil {
-		// already registered
-		return nil
-	}
-	kr := r.palomaClient.Keyring()
-	signingKeyName := r.config.Paloma.SigningKey
-	keyInfo, err := kr.Key(signingKeyName)
-	if err != nil {
-		return errors.Unrecoverable(err)
-	}
+	// if val != nil {
+	// 	// already registered
+	// 	return nil
+	// }
 
-	pkBytes := keyInfo.GetPubKey().Bytes()
+	// kr := r.palomaClient.Keyring()
+	// signingKeyName := r.config.Paloma.SigningKey
+	// keyInfo, err := kr.Key(signingKeyName)
+	// if err != nil {
+	// 	return errors.Unrecoverable(err)
+	// }
 
-	sig, _, err := kr.Sign(signingKeyName, pkBytes)
-	if err != nil {
-		return errors.Unrecoverable(err)
-	}
+	// pkBytes := keyInfo.GetPubKey().Bytes()
 
-	return r.palomaClient.RegisterValidator(ctx, r.signingKeyAddress, r.validatorAddress, pkBytes, sig)
+	// sig, _, err := kr.Sign(signingKeyName, pkBytes)
+	// if err != nil {
+	// 	return errors.Unrecoverable(err)
+	// }
+
+	// return r.palomaClient.RegisterValidator(ctx, r., r.validatorAddress, pkBytes, sig)
 }
