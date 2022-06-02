@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  buildx:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Fetch all tags
+        run: git fetch --force --tags
+
+      - name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v2
+
+      -
+        name: Use Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Build image for release
+        run: |
+          docker buildx build \
+            --load \
+            -t sparrow-release \
+            --target release \
+            . 
+      -
+        name: Release
+        run: |
+          docker run \
+            -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            sparrow-release
