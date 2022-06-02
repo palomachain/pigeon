@@ -19,7 +19,6 @@ func (cc *LensClient) Init() error {
 	if err != nil {
 		return err
 	}
-	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
 
 	timeout, _ := time.ParseDuration(cc.Config.Timeout)
 	rpcClient, err := lens.NewRPCClient(cc.Config.RPCAddr, timeout)

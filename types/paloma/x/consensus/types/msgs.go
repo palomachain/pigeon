@@ -23,3 +23,15 @@ func (msg *MsgAddMessagesSignatures) GetSigners() []sdk.AccAddress {
 func (msg *MsgAddMessagesSignatures) ValidateBasic() error {
 	return nil
 }
+
+func (msg *MsgDeleteJob) GetSigners() []sdk.AccAddress {
+	creator, err := sdk.AccAddressFromBech32(msg.Creator)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{creator}
+}
+
+func (msg *MsgDeleteJob) ValidateBasic() error {
+	return nil
+}

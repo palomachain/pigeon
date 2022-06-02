@@ -6,30 +6,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type ValsetUpdate struct{}
-
-type ValsetUpdateResponse struct{}
-
-type ArbitraryMessage struct {
-	QueueName string
-}
-
-type ArbitraryMessageResponse struct{}
-
-// TODO: thing such as registering itself with the paloma
-type PalomaCompatibler interface{}
-
-type CustomSigner interface {
-	// Sign signs a message in a way that can be understood by the target
-	// chain.
-	Sign(ctx context.Context, msg []byte) (sig []byte, err error)
-}
-
 type QueuedMessage struct {
 	ID          uint64
 	Nonce       []byte
 	BytesToSign []byte
 	Msg         any
+}
+
+type SignedQueuedMessage struct {
+	QueuedMessage
+	Signature []byte
 }
 
 type MessageToProcess struct {
@@ -41,20 +27,20 @@ type ValidatorSignature struct {
 	ValAddress sdk.ValAddress
 	Signature  []byte
 }
-type ConsensusReachedMsg struct {
-	ID         string
-	Nonce      []byte
+
+type MessageWithSignatures struct {
+	QueuedMessage
 	Signatures []ValidatorSignature
-	Msg        any
 }
 
 type Processor interface {
+	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
 	SupportedQueues() []string
-	SignMessages(ctx context.Context, queueTypeName string, messages ...QueuedMessage)
-	RelayMessages(ctx context.Context, queueTypeName string, messages ...ConsensusReachedMsg)
-}
 
-type Relayer interface {
-	UpdateValset(context.Context, ValsetUpdate) (ValsetUpdateResponse, error)
-	ExecuteArbitraryMessage(context.Context, ArbitraryMessage) (ArbitraryMessageResponse, error)
+	// SignMessages takes a list of messages and signs them via their key.
+	SignMessages(ctx context.Context, queueTypeName string, messages ...QueuedMessage) ([]SignedQueuedMessage, error)
+
+	// ProcessMessages will receive messages from the current queues and it's on the implementation
+	// to ensure that there are enough signatures for consensus.
+	ProcessMessages(context.Context, string, []MessageWithSignatures) error
 }

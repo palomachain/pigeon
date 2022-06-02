@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain/evm"
-	"github.com/palomachain/sparrow/config"
 	"github.com/spf13/cobra"
 )
 
@@ -24,45 +22,9 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			contracts := evm.StoredContracts()
 			for name, contract := range contracts {
-				fmt.Printf("%s: %#v\n", name, contract)
+				fmt.Printf("%s: %#v\n", name, contract.ABI)
 			}
 
-			return nil
-		},
-	}
-
-	debugEvmConnectToNetworkCmd = &cobra.Command{
-		Use:   "connect",
-		Short: "tries to connect to the evm network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// addr := accounts.("0x621307FceE20F70Dd856F4EFF91bB1E21154105E")
-			// ks := evm.OpenKeystore("/tmp")
-
-			c := evm.NewClient(config.EVM{
-				EVMSpecificClientConfig: config.EVMSpecificClientConfig{
-					SmartContractAddress: "0x5A3E98aA540B2C3545311Fc33d445A7F62EB16Bf",
-				},
-				ChainClientConfig: config.ChainClientConfig{
-					ChainID:            "3",
-					BaseRPCURL:         "https://ropsten.infura.io/v3/d697ced03e7c49209a1fe2a1c8858821",
-					KeyringPassEnvName: "blaa",
-					SigningKey:         "0x621307FceE20F70Dd856F4EFF91bB1E21154105E",
-					KeyringDirectory:   "/tmp",
-					GasAdjustment:      1.1,
-				},
-			})
-
-			return c.ExecuteArbitraryMessage(context.Background())
-		},
-	}
-	debugEvmDeploySmartContractCmd = &cobra.Command{
-		Use:   "deploy",
-		Short: "tries to connect to the evm network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// addr := "0x621307FceE20F70Dd856F4EFF91bB1E21154105E"
-			// ks := evm.OpenKeystore("/tmp")
-
-			// ks.Find()
 			return nil
 		},
 	}
@@ -82,11 +44,13 @@ var (
 			return nil
 		},
 	}
+	// TODO: add import
 	evmKeysGenerateCmd = &cobra.Command{
-		Use:   "generate-new",
+		Use:   "generate-new [directory]",
 		Short: "generates a new account and adds it to keystore",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ks := evm.OpenKeystore("/tmp")
+			ks := evm.OpenKeystore(args[0])
 			ecdsaPK, err := crypto.GenerateKey()
 			if err != nil {
 				return err
@@ -97,6 +61,8 @@ var (
 				return err
 			}
 			fmt.Println()
+			fmt.Println("Key created in", args[0], "directory")
+			fmt.Println("Don't lose your password! Otherwise you'd lose access to your key!")
 			fmt.Println(acc)
 			return nil
 		},
@@ -108,7 +74,6 @@ func init() {
 
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
-		debugEvmConnectToNetworkCmd,
 	)
 
 	evmCmd.AddCommand(

@@ -2,7 +2,6 @@ package paloma
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -57,7 +56,7 @@ func queryMessagesForSigning(
 	}
 	res := []chain.QueuedMessage{}
 	for _, msg := range msgs.GetMessageToSign() {
-		var ptr consensus.Signable
+		var ptr consensus.Message
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
@@ -73,52 +72,39 @@ func queryMessagesForSigning(
 	return res, nil
 }
 
-func QueryConsensusReachedMessages(
-	ctx context.Context,
-	c Client,
-	queueTypeName string,
-) ([]chain.ConsensusReachedMsg, error) {
-	return queryConsensusReachedMessages(ctx, c.GRPCClient, c.L.Codec.Marshaler, queueTypeName)
-}
-
-func queryConsensusReachedMessages(
-	ctx context.Context,
-	c grpc.ClientConn,
-	anyunpacker codectypes.AnyUnpacker,
-	queueTypeName string,
-) ([]chain.ConsensusReachedMsg, error) {
-	qc := consensus.NewQueryClient(c)
-	consensusRes, err := qc.ConsensusReached(ctx, &consensus.QueryConsensusReachedRequest{
+func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	qc := consensus.NewQueryClient(c.GRPCClient)
+	msgs, err := qc.MessagesInQueue(ctx, &consensus.QueryMessagesInQueueRequest{
 		QueueTypeName: queueTypeName,
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
-	var res []chain.ConsensusReachedMsg
-	for _, rawMsg := range consensusRes.GetMessages() {
-		var signable consensus.Signable
-		err := anyunpacker.UnpackAny(rawMsg.GetMsg(), &signable)
+	msgsWithSig := []chain.MessageWithSignatures{}
+	for _, msg := range msgs.Messages {
+		valSigs := []chain.ValidatorSignature{}
+		for _, vs := range msg.SignData {
+			valSigs = append(valSigs, chain.ValidatorSignature{
+				ValAddress: vs.ValAddress,
+				Signature:  vs.Signature,
+			})
+		}
+		var ptr consensus.Message
+		err := c.L.Codec.Marshaler.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-
-		m := chain.ConsensusReachedMsg{
-			ID:    fmt.Sprintf("%d", rawMsg.GetId()),
-			Nonce: rawMsg.Nonce,
-			Msg:   signable,
-		}
-		for _, signData := range rawMsg.GetSignData() {
-			m.Signatures = append(m.Signatures, chain.ValidatorSignature{
-				ValAddress: signData.GetValAddress(),
-				Signature:  signData.GetSignature(),
-			})
-		}
-		res = append(res, m)
+		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
+			QueuedMessage: chain.QueuedMessage{
+				ID:    msg.Id,
+				Nonce: msg.Nonce,
+				Msg:   ptr,
+			},
+			Signatures: valSigs,
+		})
 	}
-
-	return res, nil
+	return msgsWithSig, err
 }
 
 type BroadcastMessageSignatureIn struct {
@@ -135,10 +121,10 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 }
 
 // QueryValidatorInfo returns info about the validator.
-func (c Client) QueryValidatorInfo(ctx context.Context, valAddr string) (*valset.Validator, error) {
+func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) (*valset.Validator, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	valInfoRes, err := qc.ValidatorInfo(ctx, &valset.QueryValidatorInfoRequest{
-		ValAddr: valAddr,
+		ValAddr: valAddr.String(),
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
@@ -160,6 +146,22 @@ func (c Client) RegisterValidator(ctx context.Context, signerAddr, valAddr strin
 		SignedPubKey: signedPubKey,
 	})
 
+	return err
+}
+
+func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) error {
+	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
+	if err != nil {
+		return err
+	}
+	unlock := c.L.SetSDKContext()
+	addr := key.GetAddress().String()
+	unlock()
+	_, err = c.MessageSender.SendMsg(ctx, &consensus.MsgDeleteJob{
+		Creator:       addr,
+		QueueTypeName: queueTypeName,
+		MessageID:     id,
+	})
 	return err
 }
 

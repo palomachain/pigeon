@@ -1,3 +1,3 @@
 package types
 
-type Signable interface{}
+type Message interface{}

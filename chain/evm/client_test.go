@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -19,7 +18,6 @@ func TestReadingStoredContracts(t *testing.T) {
 		c := StoredContracts()
 		require.GreaterOrEqual(t, len(c), 1)
 		require.Contains(t, c, "hello")
-		fmt.Println(c["hello"])
 	})
 }
 
@@ -101,12 +99,13 @@ func TestExecutingSmartContract(t *testing.T) {
 			require.NoError(t, err)
 			acc, err := ks.ImportECDSA(cryptokey, "bla")
 			ks.Unlock(acc, "bla")
+			contract := StoredContracts()["simple"]
 			args := executeSmartContractIn{
 				chainID:       big.NewInt(1337),
 				gasAdjustment: 1.0,
 				contract:      common.HexToAddress("0xBABA"),
 				signingAddr:   acc.Address,
-				abi:           StoredContracts()["simple"],
+				abi:           contract.ABI,
 				method:        "store",
 				arguments:     []any{big.NewInt(123)},
 				keystore:      ks,
@@ -117,6 +116,8 @@ func TestExecutingSmartContract(t *testing.T) {
 			err = executeSmartContract(
 				ctx,
 				args,
+				contract.Source,
+				nil,
 			)
 			require.ErrorIs(t, err, tt.expectedErr)
 		})

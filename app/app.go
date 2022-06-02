@@ -4,13 +4,17 @@ import (
 	"os"
 	"strings"
 
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/sparrow/attest"
 	"github.com/palomachain/sparrow/chain"
+	"github.com/palomachain/sparrow/chain/evm"
 	"github.com/palomachain/sparrow/chain/paloma"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/relayer"
+	consensustypes "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
+	evmtypes "github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	valsettypes "github.com/palomachain/sparrow/types/paloma/x/valset/types"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
@@ -18,10 +22,14 @@ import (
 )
 
 var (
-	_relayer      *relayer.Relayer
-	_config       *config.Root
-	_configPath   string
+	_relayer    *relayer.Relayer
+	_config     *config.Root
+	_configPath string
+
 	_palomaClient *paloma.Client
+
+	_evmClients    map[string]evm.Client
+	_evmProcessors map[string]chain.Processor
 
 	_attestRegistry *attest.Registry
 )
@@ -33,6 +41,7 @@ func Relayer() *relayer.Relayer {
 			*Config(),
 			*PalomaClient(),
 			AttestRegistry(),
+			GetEvmProcessors(),
 		)
 	}
 	return _relayer
@@ -47,6 +56,35 @@ func SetConfigPath(path string) {
 		panic("config must point to a file, not to a directory")
 	}
 	_configPath = path
+}
+
+func GetEvmProcessors() map[string]chain.Processor {
+	if _evmProcessors == nil {
+		_evmProcessors = make(map[string]chain.Processor)
+	}
+
+	for chainName, client := range GetEvmClients() {
+		_evmProcessors[chainName] = evm.NewProcessor(client)
+	}
+
+	return _evmProcessors
+}
+
+func GetEvmClients() map[string]evm.Client {
+	if _evmClients == nil {
+		_evmClients = make(map[string]evm.Client)
+	}
+
+	config := Config()
+	for chainName, evmConfig := range config.EVM {
+		if _, ok := _evmClients[chainName]; ok {
+			panic(fmt.Sprintf("evm chain with chain-id %s already registered", chainName))
+		}
+
+		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient())
+	}
+
+	return _evmClients
 }
 
 func Config() *config.Root {
@@ -121,6 +159,15 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Msgs: []proto.Message{
 					&valsettypes.MsgRegisterConductor{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
+					&consensustypes.MsgDeleteJob{},
+				},
+			},
+		},
+		MsgsImplementations: []byop.RegisterImplementation{
+			{
+				Iface: (*consensustypes.Message)(nil),
+				Msgs: []proto.Message{
+					&evmtypes.ArbitrarySmartContractCall{},
 				},
 			},
 		},
