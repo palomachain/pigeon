@@ -138,6 +138,9 @@ sparrow start
 
 ### Open sparrow window and look at the logs to get the TX HASH which you can look on the explorer.
 
+
+## Feel free to add more jobs to the queue while Sparrows are running
+
 ## Can you run this on the mainnet?
 
 Yes! Generate yourself a new key (or use the one that you've generated for testing this on ropsten) and send some tokens to your newly created address. Change the rpc-url to point to the mainnet.
@@ -145,6 +148,7 @@ Find a smart contract from the mainnet and its address to submit a job.
 
 Right now we can't import existing keys, so you need to use generated ones.
 
-### Note!
+# Notes!
 
-Right now there is no routing of jobs based on which network they are supposed to belong to. It simply sends it to whatever is the first chain defined in the config file under the evm key.
+- Right now there is no routing of jobs based on which network they are supposed to belong to. It simply sends it to whatever is the first chain defined in the config file under the evm key.
+- Sparrows are not signing anything now. All sparrows are going to try their best to get the available messages that are in the queue and they will not sign those messages. They are simply going to take them and send them away.
