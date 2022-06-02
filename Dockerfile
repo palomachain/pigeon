@@ -37,3 +37,13 @@ RUN \
 FROM ubuntu AS local-testnet
 ENTRYPOINT ["/sparrow"]
 COPY --from=builder /sparrow /sparrow
+
+
+###########################
+####     Release       ####
+###########################
+FROM base AS release
+RUN go install github.com/goreleaser/goreleaser@latest
+COPY . /app
+
+CMD ["goreleaser", "release", "--rm-dist"]
