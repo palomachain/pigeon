@@ -33,6 +33,7 @@ type MessageWithSignatures struct {
 	Signatures []ValidatorSignature
 }
 
+//go:generate mockery --name=Processor
 type Processor interface {
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
 	SupportedQueues() []string
