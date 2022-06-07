@@ -8,10 +8,8 @@ import (
 	"github.com/palomachain/sparrow/chain/paloma"
 )
 
-func (r Relayer) Process(ctx context.Context) error {
-	processors := r.processors
-
-	for _, p := range processors {
+func (r *Relayer) Process(ctx context.Context) error {
+	for _, p := range r.processors {
 		for _, queueName := range p.SupportedQueues() {
 			// TODO: remove comments once signing is done on the paloma side.
 			// queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, r.validatorAddress, queueName)
@@ -30,6 +28,9 @@ func (r Relayer) Process(ctx context.Context) error {
 			// }
 
 			relayCandidateMsgs, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+			if err != nil {
+				return err
+			}
 			if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
 				fmt.Println("error processing a message", err)
 				return err
@@ -40,7 +41,7 @@ func (r Relayer) Process(ctx context.Context) error {
 	return nil
 }
 
-func (r Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, queueTypeName string, sigs []chain.SignedQueuedMessage) error {
+func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, queueTypeName string, sigs []chain.SignedQueuedMessage) error {
 	var broadcastMessageSignatures []paloma.BroadcastMessageSignatureIn
 	for _, sig := range sigs {
 		var extraData []byte
@@ -66,5 +67,5 @@ func (r Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, q
 		})
 	}
 
-	return r.palomaClient.BroadcastMessageSignatures(ctx)
+	return r.palomaClient.BroadcastMessageSignatures(ctx, broadcastMessageSignatures...)
 }

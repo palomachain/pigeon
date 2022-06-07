@@ -3,10 +3,10 @@ package paloma
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"testing"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/sparrow/chain"
@@ -18,13 +18,13 @@ import (
 	"github.com/palomachain/sparrow/types/testdata"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/vizualni/whoops"
 	"google.golang.org/grpc"
 )
 
@@ -42,7 +42,7 @@ var (
 	}
 )
 
-func queryServerDailer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(context.Context, string) (net.Conn, error) {
+func consensusQueryServerDialer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)
 
 	server := grpc.NewServer()
@@ -51,7 +51,7 @@ func queryServerDailer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(co
 
 	go func() {
 		err := server.Serve(listener)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	return func(context.Context, string) (net.Conn, error) {
@@ -68,7 +68,7 @@ func valsetQueryServerDailer(t *testing.T, msgsrv *valsetmocks.QueryServer) func
 
 	go func() {
 		err := server.Serve(listener)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	return func(context.Context, string) (net.Conn, error) {
@@ -176,8 +176,8 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 			// setting everything up
 			ctx := context.Background()
 			mocksrv := tt.mcksrv(t)
-			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(queryServerDailer(t, mocksrv)))
-			assert.NoError(t, err)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(consensusQueryServerDialer(t, mocksrv)))
+			require.NoError(t, err)
 
 			// setup complete
 			// calling the function that we are testing
@@ -188,13 +188,12 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 				sdk.ValAddress("validator"),
 				"queueName",
 			)
-			fmt.Println(err)
 			if tt.expectsAnyError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.ErrorIs(t, err, tt.expErr)
+				require.ErrorIs(t, err, tt.expErr)
 			}
-			assert.Equal(t, tt.expRes, msgs)
+			require.Equal(t, tt.expRes, msgs)
 		})
 	}
 }
@@ -244,12 +243,119 @@ func TestRegisterValidator(t *testing.T) {
 			err := client.RegisterValidator(ctx, "signer1", "val1", pk, sig)
 
 			if tt.expectsAnyError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
 }
 
+func TestGetMessagesInQueue(t *testing.T) {
+	codec := makeCodec()
+	for _, tt := range []struct {
+		name   string
+		mcksrv func(*testing.T) *consensusmocks.QueryServer
+		expRes []chain.QueuedMessage
+
+		expMsgs         []chain.MessageWithSignatures
+		expectsAnyError bool
+	}{
+		{
+			name: "happy path",
+			mcksrv: func(t *testing.T) *consensusmocks.QueryServer {
+				srv := consensusmocks.NewQueryServer(t)
+				srv.On("MessagesInQueue", mock.Anything, mock.Anything).Return(&consensus.QueryMessagesInQueueResponse{
+					Messages: []*consensus.MessageWithSignatures{
+						{
+							Nonce: []byte("hello"),
+							Id:    123,
+							Msg: whoops.Must(codectypes.NewAnyWithValue(&testdata.SimpleMessage{
+								Hello: "bob",
+							})),
+							SignData: []*consensus.ValidatorSignature{
+								{
+									ValAddress: sdk.ValAddress("abc"),
+									Signature:  []byte("sig-123"),
+								},
+								{
+									ValAddress: sdk.ValAddress("def"),
+									Signature:  []byte("sig-456"),
+								},
+							},
+						},
+						{
+							Nonce: []byte("hello2"),
+							Id:    456,
+							Msg: whoops.Must(codectypes.NewAnyWithValue(&testdata.SimpleMessage{
+								Hello: "alice",
+							})),
+							SignData: []*consensus.ValidatorSignature{
+								{
+									ValAddress: sdk.ValAddress("abc"),
+									Signature:  []byte("sig-123"),
+								},
+							},
+						},
+					},
+				}, nil).Once()
+				return srv
+			},
+			expMsgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						Nonce: []byte("hello"),
+						ID:    123,
+						Msg: &testdata.SimpleMessage{
+							Hello: "bob",
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						{
+							ValAddress: sdk.ValAddress("abc"),
+							Signature:  []byte("sig-123"),
+						},
+						{
+							ValAddress: sdk.ValAddress("def"),
+							Signature:  []byte("sig-456"),
+						},
+					},
+				},
+				{
+					QueuedMessage: chain.QueuedMessage{
+						Nonce: []byte("hello2"),
+						ID:    456,
+						Msg: &testdata.SimpleMessage{
+							Hello: "alice",
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						{
+							ValAddress: sdk.ValAddress("abc"),
+							Signature:  []byte("sig-123"),
+						},
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// setting everything up
+			ctx := context.Background()
+			mocksrv := tt.mcksrv(t)
+			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(consensusQueryServerDialer(t, mocksrv)))
+			require.NoError(t, err)
+
+			msgs, err := queryMessagesInQueue(ctx, "bob", conn, codec.Marshaler)
+
+			require.Equal(t, tt.expMsgs, msgs)
+
+			if tt.expectsAnyError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
 func TestQueryValidatorInfo(t *testing.T) {
 	fakeErr := errors.New("something")
 	fakeVal := &valset.Validator{
@@ -289,7 +395,7 @@ func TestQueryValidatorInfo(t *testing.T) {
 			ctx := context.Background()
 			mocksrv := tt.mcksrv(t)
 			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(valsetQueryServerDailer(t, mocksrv)))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			client := Client{
 				GRPCClient: conn,
@@ -299,7 +405,7 @@ func TestQueryValidatorInfo(t *testing.T) {
 			require.Equal(t, tt.expectedValidator, valInfo)
 
 			if tt.expectsAnyError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
@@ -371,7 +477,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			)
 
 			if tt.expectsAnyError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
@@ -410,14 +516,14 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 			},
 			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
 				addMsgSigs, ok := msg.(*consensus.MsgAddMessagesSignatures)
-				assert.True(t, ok, "incorrect msg type")
-				assert.Len(t, addMsgSigs.SignedMessages, 2)
-				assert.Equal(t, addMsgSigs.SignedMessages[0], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
+				require.True(t, ok, "incorrect msg type")
+				require.Len(t, addMsgSigs.SignedMessages, 2)
+				require.Equal(t, addMsgSigs.SignedMessages[0], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
 					Id:            123,
 					QueueTypeName: "abc",
 					Signature:     []byte(`sig-123`),
 				})
-				assert.Equal(t, addMsgSigs.SignedMessages[1], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
+				require.Equal(t, addMsgSigs.SignedMessages[1], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
 					Id:            456,
 					QueueTypeName: "def",
 					Signature:     []byte(`sig-789`),
@@ -442,7 +548,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 				tt.msgSender,
 				tt.signatures...,
 			)
-			assert.ErrorIs(t, tt.expErr, err)
+			require.ErrorIs(t, tt.expErr, err)
 		})
 	}
 }

@@ -62,7 +62,6 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 				},
 			),
 		)
-		return nil
 	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}

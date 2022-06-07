@@ -72,8 +72,23 @@ func queryMessagesForSigning(
 	return res, nil
 }
 
+// QueryMessagesInQueue returns all messages that are currently in the queue.
 func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	qc := consensus.NewQueryClient(c.GRPCClient)
+	return queryMessagesInQueue(
+		ctx,
+		queueTypeName,
+		c.GRPCClient,
+		c.L.Codec.Marshaler,
+	)
+}
+
+func queryMessagesInQueue(
+	ctx context.Context,
+	queueTypeName string,
+	c grpc.ClientConn,
+	anyunpacker codectypes.AnyUnpacker,
+) ([]chain.MessageWithSignatures, error) {
+	qc := consensus.NewQueryClient(c)
 	msgs, err := qc.MessagesInQueue(ctx, &consensus.QueryMessagesInQueueRequest{
 		QueueTypeName: queueTypeName,
 	})
@@ -91,7 +106,7 @@ func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) 
 			})
 		}
 		var ptr consensus.Message
-		err := c.L.Codec.Marshaler.UnpackAny(msg.GetMsg(), &ptr)
+		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
@@ -149,6 +164,7 @@ func (c Client) RegisterValidator(ctx context.Context, signerAddr, valAddr strin
 	return err
 }
 
+// TODO: this is only temporary for easier testing
 func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) error {
 	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
 	if err != nil {
