@@ -19,7 +19,7 @@ func TestEvmtSigning(t *testing.T) {
 	c.keystore.Unlock(acc, "abcd")
 	c.addr = acc.Address
 
-	p := NewProcessor(c)
+	p := NewProcessor(c, "test")
 
 	msgsToSign := []chain.QueuedMessage{
 		{

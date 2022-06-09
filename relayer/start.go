@@ -23,11 +23,12 @@ func (r *Relayer) Start(ctx context.Context) error {
 		return err
 	}
 
-	// if err := r.updateValidatorInfo(ctx); err != nil {
-	// 	return err
-	// }
+	if err := r.updateExternalChainInfos(ctx); err != nil {
+		return err
+	}
 
 	consecutiveFailures := whoops.Group{}
+
 	for {
 		select {
 		case <-ctx.Done():

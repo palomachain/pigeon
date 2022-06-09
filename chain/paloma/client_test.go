@@ -198,57 +198,6 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 	}
 }
 
-func TestRegisterValidator(t *testing.T) {
-	pk := []byte{1, 2, 3}
-	sig := []byte{4, 5, 6}
-	fakeErr := errors.New("something")
-	for _, tt := range []struct {
-		name   string
-		mcksrv func(*testing.T) *clientmocks.MessageSender
-		expRes []chain.QueuedMessage
-
-		expectsAnyError bool
-	}{
-		{
-			name: "happy path",
-			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
-				srv := clientmocks.NewMessageSender(t)
-				srv.On("SendMsg", mock.Anything, &valset.MsgRegisterConductor{
-					Creator:      "signer1",
-					ValAddr:      "val1",
-					PubKey:       pk,
-					SignedPubKey: sig,
-				}).Return(nil, nil).Once()
-				return srv
-			},
-		},
-		{
-			name: "grpc returns error",
-			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
-				srv := clientmocks.NewMessageSender(t)
-				srv.On("SendMsg", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
-				return srv
-			},
-			expectsAnyError: true,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			// setting everything up
-			ctx := context.Background()
-			mocksrv := tt.mcksrv(t)
-
-			client := Client{
-				MessageSender: mocksrv,
-			}
-			err := client.RegisterValidator(ctx, "signer1", "val1", pk, sig)
-
-			if tt.expectsAnyError {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
 func TestGetMessagesInQueue(t *testing.T) {
 	codec := makeCodec()
 	for _, tt := range []struct {
@@ -358,15 +307,20 @@ func TestGetMessagesInQueue(t *testing.T) {
 }
 func TestQueryValidatorInfo(t *testing.T) {
 	fakeErr := errors.New("something")
-	fakeVal := &valset.Validator{
-		Address: "hello",
+	fakeExternalInfo := []*valset.ExternalChainInfo{
+		{
+			ChainType: "abc",
+			ChainID:   "123",
+			Address:   "123",
+			Pubkey:    []byte("abc"),
+		},
 	}
 	for _, tt := range []struct {
 		name   string
 		mcksrv func(*testing.T) *valsetmocks.QueryServer
 		expRes []chain.QueuedMessage
 
-		expectedValidator *valset.Validator
+		expectedChainInfo []*valset.ExternalChainInfo
 		expectsAnyError   bool
 	}{
 		{
@@ -374,11 +328,11 @@ func TestQueryValidatorInfo(t *testing.T) {
 			mcksrv: func(t *testing.T) *valsetmocks.QueryServer {
 				srv := valsetmocks.NewQueryServer(t)
 				srv.On("ValidatorInfo", mock.Anything, mock.Anything).Return(&valset.QueryValidatorInfoResponse{
-					Validator: fakeVal,
+					ChainInfos: fakeExternalInfo,
 				}, nil).Once()
 				return srv
 			},
-			expectedValidator: fakeVal,
+			expectedChainInfo: fakeExternalInfo,
 		},
 		{
 			name: "grpc returns error",
@@ -400,9 +354,9 @@ func TestQueryValidatorInfo(t *testing.T) {
 			client := Client{
 				GRPCClient: conn,
 			}
-			valInfo, err := client.QueryValidatorInfo(ctx, sdk.ValAddress("something"))
+			externalChainInfos, err := client.QueryValidatorInfo(ctx, sdk.ValAddress("something"))
 
-			require.Equal(t, tt.expectedValidator, valInfo)
+			require.Equal(t, tt.expectedChainInfo, externalChainInfos)
 
 			if tt.expectsAnyError {
 				require.Error(t, err)
@@ -435,15 +389,15 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		{
 			name: "happy path",
 			chainInfo: []ChainInfoIn{
-				{ChainID: "chain1", AccAddress: "addr1"},
-				{ChainID: "chain2", AccAddress: "addr2"},
+				{ChainID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
+				{ChainID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)
 				srv.On("SendMsg", mock.Anything, &valset.MsgAddExternalChainInfoForValidator{
-					ChainInfos: []*valset.MsgAddExternalChainInfoForValidator_ChainInfo{
-						{ChainID: "chain1", Address: "addr1"},
-						{ChainID: "chain2", Address: "addr2"},
+					ChainInfos: []*valset.ExternalChainInfo{
+						{ChainID: "chain1", Address: "addr1", ChainType: "chain-type-1", Pubkey: []byte("pk1")},
+						{ChainID: "chain2", Address: "addr2", ChainType: "chain-type-2", Pubkey: []byte("pk2")},
 					},
 				}).Return(nil, nil).Once()
 				return srv
@@ -452,8 +406,8 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		{
 			name: "with SendMsg returning errors",
 			chainInfo: []ChainInfoIn{
-				{ChainID: "chain1", AccAddress: "addr1"},
-				{ChainID: "chain2", AccAddress: "addr2"},
+				{ChainID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
+				{ChainID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)

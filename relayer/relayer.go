@@ -18,7 +18,7 @@ type AttestExecutor interface {
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
 	AddExternalChainInfo(ctx context.Context, chainInfos ...paloma.ChainInfoIn) error
-	QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) (*valset.Validator, error)
+	QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 }

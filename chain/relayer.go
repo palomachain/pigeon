@@ -33,10 +33,20 @@ type MessageWithSignatures struct {
 	Signatures []ValidatorSignature
 }
 
+type ExternalAccount struct {
+	ChainType string
+	ChainID   string
+
+	Address string
+	PubKey  []byte
+}
+
 //go:generate mockery --name=Processor
 type Processor interface {
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
 	SupportedQueues() []string
+
+	ExternalAccount() ExternalAccount
 
 	// SignMessages takes a list of messages and signs them via their key.
 	SignMessages(ctx context.Context, queueTypeName string, messages ...QueuedMessage) ([]SignedQueuedMessage, error)
