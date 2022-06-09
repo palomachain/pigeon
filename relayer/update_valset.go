@@ -12,7 +12,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 	// this returns info about the current validator's keys.
 	// if this sparrow is trying to register with a key that the other validator
 	// has registered, then it's going to fail as well!
-	existingAccInfo, err := r.palomaClient.QueryValidatorInfo(ctx, r.validatorAddress)
+	existingAccInfo, err := r.palomaClient.QueryValidatorInfo(ctx)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
@@ -58,8 +59,8 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	// TODO: check for signatures
-	switch queueTypeName {
-	case queueArbitraryLogic:
+	switch {
+	case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
 		return p.processArbitraryLogic(
 			ctx,
 			queueTypeName,

@@ -127,6 +127,7 @@ func PalomaClient() *paloma.Client {
 			L:             lensClient,
 			GRPCClient:    lensClient,
 			MessageSender: lensClient,
+			PalomaConfig:  palomaConfig,
 		}
 	}
 	return _palomaClient

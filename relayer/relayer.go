@@ -3,7 +3,6 @@ package relayer
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/palomachain/sparrow/attest"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/chain/paloma"
@@ -18,7 +17,7 @@ type AttestExecutor interface {
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
 	AddExternalChainInfo(ctx context.Context, chainInfos ...paloma.ChainInfoIn) error
-	QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) ([]*valset.ExternalChainInfo, error)
+	QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 }
@@ -29,8 +28,6 @@ type Relayer struct {
 	palomaClient PalomaClienter
 
 	attestExecutor AttestExecutor
-
-	validatorAddress sdk.ValAddress
 
 	processors map[string]chain.Processor
 }
@@ -45,8 +42,6 @@ func New(config config.Root, palomaClient PalomaClienter, attestExecutor AttestE
 }
 
 func (r *Relayer) init() error {
-
-	r.validatorAddress = r.config.Paloma.ValidatorAddress
 
 	return nil
 }

@@ -7,7 +7,6 @@ paloma:
   keyring-pass-env-name: PALOMA_KEYRING_PASS
   keyring-type: test
   signing-key: my_validator
-  validator-address: palomavaloper107ur3w38qvjnx44a732ayphp0yfh4f0jmxsn0e
   base-rpc-url: http://localhost:26657
   gas-adjustment: 2.0
   gas-prices: 0.01dove
@@ -19,5 +18,5 @@ evm:
     chain-id: 3
     base-rpc-url: https://ropsten.infura.io/v3/d697ced03e7c49209a1fe2a1c8858821
     keyring-pass-env-name: ROPSTEN_PASS
-    signing-key: 0x378d6991F6b5207d7cC2b5270AD2Afb3Dd328E82
+    signing-key: 0x2f6F5d01f2c4276a759D42e7D9fD01df8D265d5E
     keyring-dir: ~/.sparrow/keys/evm/ropsten

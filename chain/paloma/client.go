@@ -23,7 +23,7 @@ type MessageSender interface {
 
 type Client struct {
 	L            *chain.LensClient
-	palomaConfig config.Paloma
+	PalomaConfig config.Paloma
 
 	GRPCClient grpc.ClientConn
 
@@ -137,10 +137,10 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 }
 
 // QueryValidatorInfo returns info about the validator.
-func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) ([]*valset.ExternalChainInfo, error) {
+func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	valInfoRes, err := qc.ValidatorInfo(ctx, &valset.QueryValidatorInfoRequest{
-		ValAddr: valAddr.String(),
+		ValAddr: c.getCreatorAsValoper(),
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
@@ -154,15 +154,8 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) 
 
 // TODO: this is only temporary for easier testing
 func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) error {
-	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
-	if err != nil {
-		return err
-	}
-	unlock := c.L.SetSDKContext()
-	addr := key.GetAddress().String()
-	unlock()
-	_, err = c.MessageSender.SendMsg(ctx, &consensus.MsgDeleteJob{
-		Creator:       addr,
+	_, err := c.MessageSender.SendMsg(ctx, &consensus.MsgDeleteJob{
+		Creator:       c.getCreator(),
 		QueueTypeName: queueTypeName,
 		MessageID:     id,
 	})
@@ -183,7 +176,9 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 		return nil
 	}
 
-	msg := &valset.MsgAddExternalChainInfoForValidator{}
+	msg := &valset.MsgAddExternalChainInfoForValidator{
+		Creator: c.getCreator(),
+	}
 
 	msg.ChainInfos = slice.Map(
 		chainInfos,
@@ -227,4 +222,25 @@ func broadcastMessageSignatures(
 
 func (c Client) Keyring() keyring.Keyring {
 	return c.L.Keybase
+}
+
+func (c Client) getCreator() string {
+	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
+	if err != nil {
+		panic(err)
+	}
+	return c.addressString(key.GetAddress())
+}
+
+func (c Client) getCreatorAsValoper() string {
+	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
+	if err != nil {
+		panic(err)
+	}
+	return c.addressString(sdk.ValAddress(key.GetAddress()))
+}
+
+func (c Client) addressString(val sdk.Address) string {
+	defer c.L.SetSDKContext()()
+	return val.String()
 }
