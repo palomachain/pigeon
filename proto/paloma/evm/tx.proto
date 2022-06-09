@@ -17,6 +17,10 @@ message MsgSubmitNewJob {
   string hexPayload = 3;
 
   string abi = 4;
+  string method = 5;
+
+  string chainType = 6;
+  string chainID = 7;
 }
 
 message MsgSubmitNewJobResponse {

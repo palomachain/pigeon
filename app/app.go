@@ -63,8 +63,8 @@ func GetEvmProcessors() map[string]chain.Processor {
 		_evmProcessors = make(map[string]chain.Processor)
 	}
 
-	for chainName, client := range GetEvmClients() {
-		_evmProcessors[chainName] = evm.NewProcessor(client)
+	for chainID, client := range GetEvmClients() {
+		_evmProcessors[chainID] = evm.NewProcessor(client, chainID)
 	}
 
 	return _evmProcessors
@@ -157,7 +157,6 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Name:  "paloma",
 				Iface: (*sdk.Msg)(nil),
 				Msgs: []proto.Message{
-					&valsettypes.MsgRegisterConductor{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
 					&consensustypes.MsgDeleteJob{},
 				},

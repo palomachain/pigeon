@@ -13,6 +13,7 @@ import (
 	"github.com/palomachain/sparrow/config"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	"github.com/palomachain/sparrow/util/slice"
 )
 
 //go:generate mockery --name=MessageSender
@@ -136,7 +137,7 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 }
 
 // QueryValidatorInfo returns info about the validator.
-func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) (*valset.Validator, error) {
+func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) ([]*valset.ExternalChainInfo, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	valInfoRes, err := qc.ValidatorInfo(ctx, &valset.QueryValidatorInfoRequest{
 		ValAddr: valAddr.String(),
@@ -148,20 +149,7 @@ func (c Client) QueryValidatorInfo(ctx context.Context, valAddr sdk.ValAddress) 
 		return nil, err
 	}
 
-	return valInfoRes.Validator, nil
-}
-
-// RegisterValidator registers itself with the network and sends it's public key that they are using for
-// signing messages.
-func (c Client) RegisterValidator(ctx context.Context, signerAddr, valAddr string, pubKey, signedPubKey []byte) error {
-	_, err := c.MessageSender.SendMsg(ctx, &valset.MsgRegisterConductor{
-		Creator:      signerAddr,
-		ValAddr:      valAddr,
-		PubKey:       pubKey,
-		SignedPubKey: signedPubKey,
-	})
-
-	return err
+	return valInfoRes.ChainInfos, nil
 }
 
 // TODO: this is only temporary for easier testing
@@ -182,12 +170,14 @@ func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) 
 }
 
 type ChainInfoIn struct {
+	ChainType  string
 	ChainID    string
 	AccAddress string
+	PubKey     []byte
 }
 
 // AddExternalChainInfo adds info about the external chain. It adds the chain's
-// account addresses that the runner owns.
+// account addresses that the sparrow knows about.
 func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInfoIn) error {
 	if len(chainInfos) == 0 {
 		return nil
@@ -195,12 +185,17 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 
 	msg := &valset.MsgAddExternalChainInfoForValidator{}
 
-	for _, ci := range chainInfos {
-		msg.ChainInfos = append(msg.ChainInfos, &valset.MsgAddExternalChainInfoForValidator_ChainInfo{
-			ChainID: ci.ChainID,
-			Address: ci.AccAddress,
-		})
-	}
+	msg.ChainInfos = slice.Map(
+		chainInfos,
+		func(in ChainInfoIn) *valset.ExternalChainInfo {
+			return &valset.ExternalChainInfo{
+				ChainType: in.ChainType,
+				ChainID:   in.ChainID,
+				Address:   in.AccAddress,
+				Pubkey:    in.PubKey,
+			}
+		},
+	)
 
 	_, err := c.MessageSender.SendMsg(ctx, msg)
 	return err

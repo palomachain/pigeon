@@ -17,6 +17,20 @@ type Processor struct {
 	mock.Mock
 }
 
+// ExternalAccount provides a mock function with given fields:
+func (_m *Processor) ExternalAccount() chain.ExternalAccount {
+	ret := _m.Called()
+
+	var r0 chain.ExternalAccount
+	if rf, ok := ret.Get(0).(func() chain.ExternalAccount); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(chain.ExternalAccount)
+	}
+
+	return r0
+}
+
 // ProcessMessages provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Processor) ProcessMessages(_a0 context.Context, _a1 string, _a2 []chain.MessageWithSignatures) error {
 	ret := _m.Called(_a0, _a1, _a2)

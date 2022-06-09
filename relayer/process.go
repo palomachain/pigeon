@@ -53,6 +53,7 @@ func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, 
 		}
 
 		if evidence != nil {
+			// TODO: include evidence.Bytes() into the signature
 			extraData, err = evidence.Bytes()
 			if err != nil {
 				return err

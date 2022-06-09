@@ -6,6 +6,7 @@ import (
 
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	"github.com/palomachain/sparrow/util/slice"
 )
 
 const (
@@ -13,17 +14,30 @@ const (
 )
 
 type Processor struct {
-	c Client
+	c         Client
+	chainType string
+	chainID   string
 }
 
-func NewProcessor(c Client) Processor {
-	return Processor{c}
+func NewProcessor(c Client, chainID string) Processor {
+	return Processor{
+		c:         c,
+		chainType: "EVM",
+		chainID:   chainID,
+	}
 }
 
 var _ chain.Processor = Processor{}
 
 func (p Processor) SupportedQueues() []string {
-	return []string{queueArbitraryLogic}
+	return slice.Map(
+		[]string{
+			queueArbitraryLogic,
+		},
+		func(q string) string {
+			return fmt.Sprintf("%s:%s:%s", p.chainType, p.chainID, q)
+		},
+	)
 }
 
 func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
@@ -64,6 +78,15 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 		)
 	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
+	}
+}
+
+func (p Processor) ExternalAccount() chain.ExternalAccount {
+	return chain.ExternalAccount{
+		ChainType: p.chainType,
+		ChainID:   p.chainID,
+		Address:   p.c.addr.Hex(),
+		PubKey:    p.c.addr.Bytes(),
 	}
 }
 

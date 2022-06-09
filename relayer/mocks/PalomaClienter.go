@@ -89,15 +89,15 @@ func (_m *PalomaClienter) QueryMessagesInQueue(ctx context.Context, queueTypeNam
 }
 
 // QueryValidatorInfo provides a mock function with given fields: ctx, valAddr
-func (_m *PalomaClienter) QueryValidatorInfo(ctx context.Context, valAddr types.ValAddress) (*valsettypes.Validator, error) {
+func (_m *PalomaClienter) QueryValidatorInfo(ctx context.Context, valAddr types.ValAddress) ([]*valsettypes.ExternalChainInfo, error) {
 	ret := _m.Called(ctx, valAddr)
 
-	var r0 *valsettypes.Validator
-	if rf, ok := ret.Get(0).(func(context.Context, types.ValAddress) *valsettypes.Validator); ok {
+	var r0 []*valsettypes.ExternalChainInfo
+	if rf, ok := ret.Get(0).(func(context.Context, types.ValAddress) []*valsettypes.ExternalChainInfo); ok {
 		r0 = rf(ctx, valAddr)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*valsettypes.Validator)
+			r0 = ret.Get(0).([]*valsettypes.ExternalChainInfo)
 		}
 	}
 
