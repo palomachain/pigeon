@@ -28,6 +28,14 @@ type Client struct {
 	GRPCClient grpc.ClientConn
 
 	MessageSender MessageSender
+
+	creator        string
+	creatorValoper string
+}
+
+func (c *Client) Init() {
+	c.creator = getCreator(*c)
+	c.creatorValoper = getCreatorAsValoper(*c)
 }
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
@@ -140,7 +148,7 @@ func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...Br
 func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	valInfoRes, err := qc.ValidatorInfo(ctx, &valset.QueryValidatorInfoRequest{
-		ValAddr: c.getCreatorAsValoper(),
+		ValAddr: c.creatorValoper,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
@@ -155,7 +163,7 @@ func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChain
 // TODO: this is only temporary for easier testing
 func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) error {
 	_, err := c.MessageSender.SendMsg(ctx, &consensus.MsgDeleteJob{
-		Creator:       c.getCreator(),
+		Creator:       c.creator,
 		QueueTypeName: queueTypeName,
 		MessageID:     id,
 	})
@@ -177,7 +185,7 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 	}
 
 	msg := &valset.MsgAddExternalChainInfoForValidator{
-		Creator: c.getCreator(),
+		Creator: c.creator,
 	}
 
 	msg.ChainInfos = slice.Map(
@@ -224,7 +232,7 @@ func (c Client) Keyring() keyring.Keyring {
 	return c.L.Keybase
 }
 
-func (c Client) getCreator() string {
+func getCreator(c Client) string {
 	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
 	if err != nil {
 		panic(err)
@@ -232,7 +240,7 @@ func (c Client) getCreator() string {
 	return c.addressString(key.GetAddress())
 }
 
-func (c Client) getCreatorAsValoper() string {
+func getCreatorAsValoper(c Client) string {
 	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
 	if err != nil {
 		panic(err)

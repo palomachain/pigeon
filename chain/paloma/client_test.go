@@ -352,9 +352,10 @@ func TestQueryValidatorInfo(t *testing.T) {
 			require.NoError(t, err)
 
 			client := Client{
-				GRPCClient: conn,
+				GRPCClient:     conn,
+				creatorValoper: "bla",
 			}
-			externalChainInfos, err := client.QueryValidatorInfo(ctx, sdk.ValAddress("something"))
+			externalChainInfos, err := client.QueryValidatorInfo(ctx)
 
 			require.Equal(t, tt.expectedChainInfo, externalChainInfos)
 
