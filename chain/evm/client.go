@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"fmt"
 	"math/big"
 	"path/filepath"
 	"strings"
@@ -23,6 +22,7 @@ import (
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
 
@@ -49,15 +49,20 @@ var (
 func StoredContracts() map[string]StoredContract {
 	readOnce.Do(func() {
 		fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
+			logger := log.WithFields(log.Fields{
+				"path": path,
+			})
 			if d.IsDir() {
 				return nil
 			}
 			file, err := contractsFS.Open(path)
+			if err != nil {
+				logger.WithFields(log.Fields{
+					"err": err,
+				}).Fatal("couldn't open contract file")
+			}
 
 			contractName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-			if err != nil {
-				panic(err)
-			}
 
 			// we need to store body locally, so reading it here first and
 			// using bytes.NewBuffer few lines down.
@@ -65,7 +70,9 @@ func StoredContracts() map[string]StoredContract {
 
 			evmabi, err := abi.JSON(bytes.NewBuffer(body))
 			if err != nil {
-				panic(err)
+				logger.WithFields(log.Fields{
+					"err": err,
+				}).Fatal("couldn't read contract file")
 			}
 
 			_contracts[contractName] = StoredContract{
@@ -159,6 +166,14 @@ func executeSmartContract(
 	abiBytes []byte,
 	packedBytes []byte,
 ) error {
+	logger := log.WithFields(log.Fields{
+		"chain-id":        args.chainID,
+		"arguments":       args.arguments,
+		"contract-addr":   args.contract,
+		"gas-adjustments": args.gasAdjustment,
+		"method":          args.method,
+		"signing-addr":    args.signingAddr,
+	})
 	return whoops.Try(func() {
 		// TODO
 		// packedBytes := whoops.Must(args.abi.Pack(
@@ -179,6 +194,9 @@ func executeSmartContract(
 			gasAdj := big.NewFloat(args.gasAdjustment)
 			gasAdj = gasAdj.Mul(gasAdj, new(big.Float).SetInt(gasPrice))
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
+			logger.WithFields(log.Fields{
+				"gas-price": gasPrice,
+			}).Info("adusted gas price")
 		}
 
 		aabi := whoops.Must(abi.JSON(bytes.NewBuffer(abiBytes)))
@@ -205,8 +223,18 @@ func executeSmartContract(
 		txOpts.GasPrice = gasPrice
 		txOpts.From = args.signingAddr
 
+		logger = logger.WithFields(log.Fields{
+			"tx-opts": txOpts,
+		})
+		logger.Info("executing tx")
+
 		tx := whoops.Must(boundContract.RawTransact(txOpts, packedBytes))
-		fmt.Println("EXECUTED TXN", tx.Hash())
+		logger.WithFields(log.Fields{
+			"tx-hash":      tx.Hash(),
+			"tx-gas-limit": tx.Gas(),
+			"tx-gas-price": tx.GasPrice(),
+			"tx-cost":      tx.Cost(),
+		}).Info("tx executed")
 
 		_ = tx
 

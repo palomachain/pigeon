@@ -4,7 +4,6 @@ import (
 	"os"
 	"strings"
 
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/sparrow/attest"
@@ -16,6 +15,7 @@ import (
 	consensustypes "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	valsettypes "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/vizualni/whoops"
@@ -50,10 +50,14 @@ func Relayer() *relayer.Relayer {
 func SetConfigPath(path string) {
 	fi, err := os.Stat(path)
 	if err != nil {
-		panic(err)
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("couldn't stat config file")
 	}
 	if fi.IsDir() {
-		panic("config must point to a file, not to a directory")
+		log.WithFields(log.Fields{
+			"path": path,
+		}).Fatal("path must be a file, not a directory")
 	}
 	_configPath = path
 }
@@ -78,7 +82,9 @@ func GetEvmClients() map[string]evm.Client {
 	config := Config()
 	for chainName, evmConfig := range config.EVM {
 		if _, ok := _evmClients[chainName]; ok {
-			panic(fmt.Sprintf("evm chain with chain-id %s already registered", chainName))
+			log.WithFields(log.Fields{
+				"chainName": chainName,
+			}).Fatal("chain with chainName already registered")
 		}
 
 		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient())
@@ -89,17 +95,21 @@ func GetEvmClients() map[string]evm.Client {
 
 func Config() *config.Root {
 	if len(_configPath) == 0 {
-		panic("config file path is not set")
+		log.Fatal("config file path is not set")
 	}
 	if _config == nil {
 		file, err := os.Open(_configPath)
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("couldn't open config file")
 		}
 		defer file.Close()
 		cnf, err := config.FromReader(file)
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("couldn't read config file")
 		}
 		_config = &cnf
 	}
