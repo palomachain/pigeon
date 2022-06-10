@@ -2,10 +2,10 @@ package relayer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/palomachain/sparrow/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
 
@@ -18,12 +18,19 @@ const (
 // Start starts the relayer. It's responsible for handling the communication
 // with Paloma and other chains.
 func (r *Relayer) Start(ctx context.Context) error {
+	log.Info("starting relayer")
 
 	if err := r.init(); err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("couldn't initialize relayer")
 		return err
 	}
 
 	if err := r.updateExternalChainInfos(ctx); err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("couldn't update external chain info")
 		return err
 	}
 
@@ -32,8 +39,10 @@ func (r *Relayer) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
+			log.Warn("exiting due to context being done")
 			return ctx.Err()
 		case <-time.After(defaultLoopTimeout):
+			log.Info("relayer loop")
 			err := r.Process(ctx)
 			if err == nil {
 				// resetting the failures
@@ -45,16 +54,27 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 			if errors.IsUnrecoverable(err) {
 				// there is no way that we can recover from this
+				log.WithFields(log.Fields{
+					"err": err,
+				}).Error("unrecoverable error returned")
 				return err
 			}
 
 			consecutiveFailures.Add(err)
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Warn("adding error to consecutive failures")
 
 			if len(consecutiveFailures) >= defaultErrorCountToExit {
+				log.WithFields(log.Fields{
+					"err": consecutiveFailures,
+				}).Error("too many consecutive failures")
 				return errors.Unrecoverable(consecutiveFailures)
 			}
-			// TODO: add logger
-			fmt.Println("error happened", err)
+
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("error while trying to relay messages")
 		}
 	}
 }

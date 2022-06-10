@@ -8,6 +8,7 @@ import (
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -42,20 +43,26 @@ func (p Processor) SupportedQueues() []string {
 }
 
 func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
-	signed := []chain.SignedQueuedMessage{}
-	for _, msg := range messages {
-		sig, err := p.c.sign(ctx, msg.BytesToSign)
-		if err != nil {
-			return nil, err
-		}
-		signed = append(signed, chain.SignedQueuedMessage{
-			QueuedMessage:   msg,
-			Signature:       sig,
-			SignedByAddress: p.c.addr.Hex(),
-		})
-	}
+	return slice.MapErr(
+		messages,
+		func(msg chain.QueuedMessage) (chain.SignedQueuedMessage, error) {
+			sig, err := p.c.sign(ctx, msg.BytesToSign)
+			log.WithFields(log.Fields{
+				"msg": msg,
+				"sig": sig,
+				"err": err,
+			}).Info("signing a message")
+			if err != nil {
+				return chain.SignedQueuedMessage{}, err
+			}
+			return chain.SignedQueuedMessage{
+				QueuedMessage:   msg,
+				Signature:       sig,
+				SignedByAddress: p.c.addr.Hex(),
+			}, nil
+		},
+	)
 
-	return signed, nil
 }
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
@@ -65,13 +72,13 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 		return p.processArbitraryLogic(
 			ctx,
 			queueTypeName,
-			typeMapSlice(
+			slice.Map(
 				msgs,
 				func(msg chain.MessageWithSignatures) *types.ArbitrarySmartContractCall {
 					return msg.Msg.(*types.ArbitrarySmartContractCall)
 				},
 			),
-			typeMapSlice(
+			slice.Map(
 				msgs,
 				func(msg chain.MessageWithSignatures) uint64 {
 					return msg.ID
@@ -106,11 +113,4 @@ func (p Processor) processArbitraryLogic(ctx context.Context, queueTypeName stri
 		}
 	}
 	return nil
-}
-
-func typeMapSlice[A any, B any](slice []A, fnc func(A) B) (res []B) {
-	for _, item := range slice {
-		res = append(res, fnc(item))
-	}
-	return
 }
