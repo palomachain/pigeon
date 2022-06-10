@@ -31,21 +31,28 @@ type Client struct {
 
 	creator        string
 	creatorValoper string
+	valAddr        sdk.ValAddress
 }
 
 func (c *Client) Init() {
 	c.creator = getCreator(*c)
 	c.creatorValoper = getCreatorAsValoper(*c)
+	c.valAddr = sdk.ValAddress(getMainAddress(*c).Bytes())
 }
 
 // QueryMessagesForSigning returns a list of messages from a given queueTypeName that
 // need to be signed by the provided validator given the valAddress.
 func (c Client) QueryMessagesForSigning(
 	ctx context.Context,
-	valAddress sdk.ValAddress,
 	queueTypeName string,
 ) ([]chain.QueuedMessage, error) {
-	return queryMessagesForSigning(ctx, c.GRPCClient, c.L.Codec.Marshaler, valAddress, queueTypeName)
+	return queryMessagesForSigning(
+		ctx,
+		c.GRPCClient,
+		c.L.Codec.Marshaler,
+		c.valAddr,
+		queueTypeName,
+	)
 }
 
 func queryMessagesForSigning(
@@ -132,16 +139,17 @@ func queryMessagesInQueue(
 }
 
 type BroadcastMessageSignatureIn struct {
-	ID            uint64
-	QueueTypeName string
-	Signature     []byte
-	ExtraData     []byte
+	ID              uint64
+	QueueTypeName   string
+	Signature       []byte
+	ExtraData       []byte
+	SignedByAddress string
 }
 
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
 // It build the message and sends it over.
 func (c Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
-	return broadcastMessageSignatures(ctx, c.MessageSender, signatures...)
+	return broadcastMessageSignatures(ctx, c.MessageSender, c.creator, signatures...)
 }
 
 // QueryValidatorInfo returns info about the validator.
@@ -207,6 +215,7 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 func broadcastMessageSignatures(
 	ctx context.Context,
 	ms MessageSender,
+	creator string,
 	signatures ...BroadcastMessageSignatureIn,
 ) error {
 	if len(signatures) == 0 {
@@ -215,13 +224,15 @@ func broadcastMessageSignatures(
 	var signedMessages []*consensus.MsgAddMessagesSignatures_MsgSignedMessage
 	for _, sig := range signatures {
 		signedMessages = append(signedMessages, &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
-			Id:            sig.ID,
-			QueueTypeName: sig.QueueTypeName,
-			Signature:     sig.Signature,
-			ExtraData:     sig.ExtraData,
+			Id:              sig.ID,
+			QueueTypeName:   sig.QueueTypeName,
+			Signature:       sig.Signature,
+			ExtraData:       sig.ExtraData,
+			SignedByAddress: sig.SignedByAddress,
 		})
 	}
 	msg := &consensus.MsgAddMessagesSignatures{
+		Creator:        creator,
 		SignedMessages: signedMessages,
 	}
 	_, err := ms.SendMsg(ctx, msg)
@@ -232,20 +243,20 @@ func (c Client) Keyring() keyring.Keyring {
 	return c.L.Keybase
 }
 
-func getCreator(c Client) string {
+func getMainAddress(c Client) sdk.Address {
 	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
 	if err != nil {
 		panic(err)
 	}
-	return c.addressString(key.GetAddress())
+	return key.GetAddress()
+}
+
+func getCreator(c Client) string {
+	return c.addressString(getMainAddress(c))
 }
 
 func getCreatorAsValoper(c Client) string {
-	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
-	if err != nil {
-		panic(err)
-	}
-	return c.addressString(sdk.ValAddress(key.GetAddress()))
+	return c.addressString(sdk.ValAddress(getMainAddress(c).Bytes()))
 }
 
 func (c Client) addressString(val sdk.Address) string {

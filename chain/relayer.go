@@ -15,7 +15,8 @@ type QueuedMessage struct {
 
 type SignedQueuedMessage struct {
 	QueuedMessage
-	Signature []byte
+	Signature       []byte
+	SignedByAddress string
 }
 
 type MessageToProcess struct {

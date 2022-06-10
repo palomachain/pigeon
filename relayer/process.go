@@ -12,29 +12,32 @@ func (r *Relayer) Process(ctx context.Context) error {
 	for _, p := range r.processors {
 		for _, queueName := range p.SupportedQueues() {
 			// TODO: remove comments once signing is done on the paloma side.
-			// queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, r.validatorAddress, queueName)
+			queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, queueName)
+			fmt.Println("messages to sign", queuedMessages)
 
-			// if err != nil {
-			// 	return err
-			// }
-			// signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
-			// if err != nil {
-			// 	return err
-			// }
+			if err != nil {
+				return err
+			}
+			signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
+			if err != nil {
+				return err
+			}
+			fmt.Println("signed messages", signedMessages)
 
-			// if err = r.broadcastSignaturesAndProcessAttestation(ctx, queueName, signedMessages); err != nil {
-			// 	fmt.Println(err)
-			// 	return err
-			// }
+			if err = r.broadcastSignaturesAndProcessAttestation(ctx, queueName, signedMessages); err != nil {
+				fmt.Println(err)
+				return err
+			}
 
 			relayCandidateMsgs, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
 			if err != nil {
 				return err
 			}
-			if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
-				fmt.Println("error processing a message", err)
-				return err
-			}
+			fmt.Println("messages to relay", relayCandidateMsgs)
+			// if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
+			// 	fmt.Println("error processing a message", err)
+			// 	return err
+			// }
 		}
 	}
 
@@ -61,10 +64,11 @@ func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, 
 		}
 
 		broadcastMessageSignatures = append(broadcastMessageSignatures, paloma.BroadcastMessageSignatureIn{
-			ID:            sig.ID,
-			QueueTypeName: queueTypeName,
-			Signature:     sig.Signature,
-			ExtraData:     extraData,
+			ID:              sig.ID,
+			QueueTypeName:   queueTypeName,
+			Signature:       sig.Signature,
+			ExtraData:       extraData,
+			SignedByAddress: sig.SignedByAddress,
 		})
 	}
 

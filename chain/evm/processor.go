@@ -49,8 +49,9 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 			return nil, err
 		}
 		signed = append(signed, chain.SignedQueuedMessage{
-			QueuedMessage: msg,
-			Signature:     sig,
+			QueuedMessage:   msg,
+			Signature:       sig,
+			SignedByAddress: p.c.addr.Hex(),
 		})
 	}
 

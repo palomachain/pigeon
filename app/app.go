@@ -159,6 +159,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Name:  "paloma",
 				Iface: (*sdk.Msg)(nil),
 				Msgs: []proto.Message{
+					&consensustypes.MsgAddMessagesSignatures{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
 					&consensustypes.MsgDeleteJob{},
 				},

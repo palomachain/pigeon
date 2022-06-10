@@ -20,6 +20,7 @@ type PalomaClienter interface {
 	QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
+	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
 }
 
 type Relayer struct {
