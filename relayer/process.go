@@ -18,15 +18,18 @@ func (r *Relayer) Process(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
-			if err != nil {
-				return err
-			}
-			fmt.Println("signed messages", signedMessages)
 
-			if err = r.broadcastSignaturesAndProcessAttestation(ctx, queueName, signedMessages); err != nil {
-				fmt.Println(err)
-				return err
+			if len(queuedMessages) > 0 {
+				signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
+				if err != nil {
+					return err
+				}
+				fmt.Println("signed messages", signedMessages)
+
+				if err = r.broadcastSignaturesAndProcessAttestation(ctx, queueName, signedMessages); err != nil {
+					fmt.Println(err)
+					return err
+				}
 			}
 
 			relayCandidateMsgs, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)

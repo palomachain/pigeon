@@ -33,15 +33,9 @@ func TestProcessing(t *testing.T) {
 		{
 			name: "it relays messages",
 			setup: func(t *testing.T) *Relayer {
+
 				p := chainmocks.NewProcessor(t)
 				p.On("SupportedQueues").Return([]string{"a"})
-				pal := mocks.NewPalomaClienter(t)
-				pal.On("QueryMessagesInQueue", ctx, "a").Return(
-					[]chain.MessageWithSignatures{
-						{}, {},
-					},
-					nil,
-				)
 				p.On(
 					"ProcessMessages",
 					ctx,
@@ -49,7 +43,19 @@ func TestProcessing(t *testing.T) {
 					[]chain.MessageWithSignatures{
 						{}, {},
 					},
-				).Return(nil)
+				).Return(nil).Maybe() // todo: remove maybe later
+
+				pal := mocks.NewPalomaClienter(t)
+				pal.On("QueryMessagesInQueue", ctx, "a").Return(
+					[]chain.MessageWithSignatures{
+						{}, {},
+					},
+					nil,
+				)
+				pal.On("QueryMessagesForSigning", ctx, "a").Return(
+					[]chain.QueuedMessage{},
+					nil,
+				)
 				return New(
 					config.Root{},
 					pal,

@@ -501,6 +501,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 			err := broadcastMessageSignatures(
 				ctx,
 				tt.msgSender,
+				"bob",
 				tt.signatures...,
 			)
 			require.ErrorIs(t, tt.expErr, err)

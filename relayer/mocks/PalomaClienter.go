@@ -63,6 +63,29 @@ func (_m *PalomaClienter) BroadcastMessageSignatures(ctx context.Context, signat
 	return r0
 }
 
+// QueryMessagesForSigning provides a mock function with given fields: ctx, queueTypeName
+func (_m *PalomaClienter) QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error) {
+	ret := _m.Called(ctx, queueTypeName)
+
+	var r0 []chain.QueuedMessage
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.QueuedMessage); ok {
+		r0 = rf(ctx, queueTypeName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.QueuedMessage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, queueTypeName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // QueryMessagesInQueue provides a mock function with given fields: ctx, queueTypeName
 func (_m *PalomaClienter) QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
 	ret := _m.Called(ctx, queueTypeName)
