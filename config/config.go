@@ -2,11 +2,13 @@ package config
 
 import (
 	"io"
+	"math/big"
 	"os"
 	"os/user"
 	"path"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 
 	"gopkg.in/yaml.v2"
@@ -67,6 +69,16 @@ type Paloma struct {
 }
 
 func (p *Paloma) init() {
+}
+
+func (e EVM) GetChainID() *big.Int {
+	id, ok := big.NewInt(0).SetString(e.ChainID, 10)
+	if !ok {
+		log.WithFields(log.Fields{
+			"evm-config": e,
+		}).Panic("evm config chain's id is not valid")
+	}
+	return id
 }
 
 func KeyringPassword(envKey string) string {

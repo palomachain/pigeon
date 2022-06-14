@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/palomachain/sparrow/app"
 	"github.com/palomachain/sparrow/chain/evm"
 	"github.com/spf13/cobra"
 )
@@ -44,6 +45,17 @@ var (
 			return nil
 		},
 	}
+
+	evmListEventsCmd = &cobra.Command{
+		Use:   "events",
+		Short: "lists accounts in the keystore",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r := app.GetEvmProcessors()["ropsten"]
+			rr := r.(evm.Processor)
+			rr.FindLatestValsetMessageID(cmd.Context())
+			return nil
+		},
+	}
 	// TODO: add import
 	evmKeysGenerateCmd = &cobra.Command{
 		Use:   "generate-new [directory]",
@@ -70,10 +82,12 @@ var (
 )
 
 func init() {
+	configRequired(evmListEventsCmd)
 	rootCmd.AddCommand(evmCmd)
 
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
+		evmListEventsCmd,
 	)
 
 	evmCmd.AddCommand(

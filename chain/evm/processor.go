@@ -3,8 +3,10 @@ package evm
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
@@ -19,6 +21,8 @@ type Processor struct {
 	c         Client
 	chainType string
 	chainID   string
+
+	turnstoneEVMContract common.Address
 }
 
 func NewProcessor(c Client, chainID string) Processor {
@@ -97,6 +101,51 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 		Address:   p.c.addr.Hex(),
 		PubKey:    p.c.addr.Bytes(),
 	}
+}
+
+func (p Processor) FindLatestValsetMessageID(ctx context.Context) {
+	valsetID, err := p.c.FindLastValsetMessageID(ctx)
+}
+
+func (p Processor) executeArbitrarySmartContractCallViaTurnstone(ctx context.Context) {
+
+	executed, err := p.c.TurnstoneIsMessageExecuted(ctx, msg.ID)
+	if err != nil {
+		// we do nothing
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("unable to get if turnstone message is already executed")
+	}
+
+	if executed {
+		// we do nothing
+		log.WithFields(log.Fields{
+			"msg": msg,
+		}).Info("message is already executed on the turnstone-evm contract")
+		return nil
+	}
+
+	valsetID, err := p.c.FindLastValsetMessageID(ctx)
+	if err != nil {
+		return
+	}
+
+	snapshot, err := p.paloma.QueryGetSnapshotByID(ctx, valsetID)
+	if err != nil {
+		return
+	}
+
+	// sort them by power and transform the
+	p.transformSnapshot(snapshot)
+	transformedSnapshot := []any{}
+
+	sort.Slice(transformedSnapshot, func(i, j int) bool {
+		less := transformedSnapshot[i].Power < transformedSnapshot[j].Power
+		// we want a reverse sort! Higher powers go first!
+		return !less
+	})
+
+	p.c.callSmartContractArbitraryLogicExec()
 }
 
 // TODO don't use types.ArbitrarySmartContractCall

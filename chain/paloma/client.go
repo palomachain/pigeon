@@ -117,8 +117,10 @@ func queryMessagesInQueue(
 		valSigs := []chain.ValidatorSignature{}
 		for _, vs := range msg.SignData {
 			valSigs = append(valSigs, chain.ValidatorSignature{
-				ValAddress: vs.ValAddress,
-				Signature:  vs.Signature,
+				ValAddress:      vs.GetValAddress(),
+				Signature:       vs.GetSignature(),
+				SignedByAddress: vs.GetExternalAccountAddress(),
+				PublicKey:       vs.GetPublicKey(),
 			})
 		}
 		var ptr consensus.Message
@@ -166,6 +168,21 @@ func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChain
 	}
 
 	return valInfoRes.ChainInfos, nil
+}
+
+func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error) {
+	qc := valset.NewQueryClient(c.GRPCClient)
+	snapshotRes, err := qc.GetSnapshotByID(ctx, &valset.QueryGetSnapshotByIDRequest{
+		SnapshotId: id,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "item not found in store") {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return snapshotRes.Snapshot, nil
 }
 
 // TODO: this is only temporary for easier testing

@@ -25,8 +25,10 @@ type MessageToProcess struct {
 }
 
 type ValidatorSignature struct {
-	ValAddress sdk.ValAddress
-	Signature  []byte
+	ValAddress      sdk.ValAddress
+	Signature       []byte
+	SignedByAddress string
+	PublicKey       []byte
 }
 
 type MessageWithSignatures struct {
