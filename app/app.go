@@ -87,7 +87,7 @@ func GetEvmClients() map[string]evm.Client {
 			}).Fatal("chain with chainName already registered")
 		}
 
-		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient())
+		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient(), chainName)
 	}
 
 	return _evmClients

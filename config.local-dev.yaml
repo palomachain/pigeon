@@ -10,7 +10,7 @@ paloma:
   validator-address: ${PALOMA_VALIDATOR_ADDRESS}
   base-rpc-url: http://palomachain:26657
   gas-adjustment: 1.1
-  gas-prices: 0.01dove
+  gas-prices: 0.01grain
   account-prefix: paloma
 
 terra:

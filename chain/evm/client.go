@@ -12,12 +12,15 @@ import (
 	"io/fs"
 	"io/ioutil"
 
+	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	etherumtypes "github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
@@ -87,12 +90,14 @@ func StoredContracts() map[string]StoredContract {
 
 type PalomaClienter interface {
 	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
+	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
 
 type Client struct {
 	config config.EVM
 
-	smartContractAbi abi.ABI
+	smartContractAbi     abi.ABI
+	turnstoneEVMContract common.Address
 
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
@@ -100,12 +105,19 @@ type Client struct {
 	conn *ethclient.Client
 
 	paloma PalomaClienter
+
+	internalChainID string
 }
 
-func NewClient(cfg config.EVM, palomaClient PalomaClienter) Client {
+func NewClient(
+	cfg config.EVM,
+	palomaClient PalomaClienter,
+	internalChainID string,
+) Client {
 	client := &Client{
-		config: cfg,
-		paloma: palomaClient,
+		config:          cfg,
+		paloma:          palomaClient,
+		internalChainID: internalChainID,
 	}
 
 	whoops.Assert(client.init())
@@ -160,26 +172,26 @@ type executeSmartContractIn struct {
 	arguments []any
 }
 
-func executeSmartContract(
+func callSmartContract(
 	ctx context.Context,
 	args executeSmartContractIn,
-	abiBytes []byte,
-	packedBytes []byte,
-) error {
+) (*etherumtypes.Transaction, error) {
 	logger := log.WithFields(log.Fields{
-		"chain-id":        args.chainID,
-		"arguments":       args.arguments,
-		"contract-addr":   args.contract,
+		"chain-id":      args.chainID,
+		"contract-addr": args.contract,
+
+		"method":    args.method,
+		"arguments": args.arguments,
+
 		"gas-adjustments": args.gasAdjustment,
-		"method":          args.method,
-		"signing-addr":    args.signingAddr,
+
+		"signing-addr": args.signingAddr,
 	})
-	return whoops.Try(func() {
-		// TODO
-		// packedBytes := whoops.Must(args.abi.Pack(
-		// 	args.method,
-		// 	args.arguments...,
-		// ))
+	return whoops.TryVal(func() *etherumtypes.Transaction {
+		packedBytes := whoops.Must(args.abi.Pack(
+			args.method,
+			args.arguments...,
+		))
 
 		nonce := whoops.Must(
 			args.ethClient.PendingNonceAt(ctx, args.signingAddr),
@@ -199,13 +211,9 @@ func executeSmartContract(
 			}).Info("adusted gas price")
 		}
 
-		aabi := whoops.Must(abi.JSON(bytes.NewBuffer(abiBytes)))
-
 		boundContract := bind.NewBoundContract(
 			args.contract,
-			// TODO:
-			// args.abi,
-			aabi,
+			args.abi,
 			args.ethClient,
 			args.ethClient,
 			args.ethClient,
@@ -226,21 +234,18 @@ func executeSmartContract(
 		logger = logger.WithFields(log.Fields{
 			"tx-opts": txOpts,
 		})
+
 		logger.Info("executing tx")
 
 		tx := whoops.Must(boundContract.RawTransact(txOpts, packedBytes))
+
 		logger.WithFields(log.Fields{
 			"tx-hash":      tx.Hash(),
 			"tx-gas-limit": tx.Gas(),
 			"tx-gas-price": tx.GasPrice(),
 			"tx-cost":      tx.Cost(),
 		}).Info("tx executed")
-
-		_ = tx
-
-		// TODO: return tx hash and rest of the stuff
-
-		return
+		return tx
 	})
 }
 
@@ -248,32 +253,87 @@ func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 	return c.keystore.SignHash(accounts.Account{Address: c.addr}, bytes)
 }
 
-// TODO: this is just a placeholder
-func (c Client) executeArbitraryMessage(
-	ctx context.Context,
-	// TODO
-	msg *types.ArbitrarySmartContractCall,
-) error {
-	chainID := &big.Int{}
-	chainID.SetString(c.config.ChainID, 10)
+// processAllLogs will gather all logs given a FilterQuery. If it encounters an
+// error saying that there are too many results in the provided block window,
+// then it's going to try to do this using a binary search approach while
+// splitting the  possible set in two, recursively.
+func (c Client) processAllLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
+	if currBlockHeight == nil {
+		header, err := c.conn.HeaderByNumber(ctx, nil)
+		if err != nil {
+			panic(err)
+		}
+		currBlockHeight = header.Number
+	}
 
-	return executeSmartContract(
+	if fq.BlockHash == nil {
+		if fq.ToBlock == nil {
+			fq.ToBlock = currBlockHeight
+		}
+		if fq.FromBlock == nil {
+			fq.FromBlock = big.NewInt(0)
+		}
+	}
+
+	logs, err := c.conn.FilterLogs(ctx, fq)
+
+	switch {
+	case err == nil:
+		// awesome!
+		if len(logs) == 0 {
+			return true, nil
+		}
+		return fn(logs), nil
+	case err.Error() == "query returned more than 10000 results":
+		// this appears to be ropsten specifict, but keepeing the logic here just in case
+		mid := big.NewInt(0).Sub(
+			fq.ToBlock,
+			fq.FromBlock,
+		)
+		mid.Div(mid, big.NewInt(2))
+		mid.Add(fq.FromBlock, mid)
+
+		fqLeft := fq
+		fqLeft.ToBlock = mid
+		shouldContinue, err := c.processAllLogs(ctx, fqLeft, currBlockHeight, fn)
+		if err != nil {
+			return false, err
+		}
+		if !shouldContinue {
+			return false, nil
+		}
+		fqRight := fq
+		fqRight.FromBlock = big.NewInt(0).Add(mid, big.NewInt(1))
+
+		shouldContinue, err = c.processAllLogs(ctx, fqRight, currBlockHeight, fn)
+		if err != nil {
+			return false, err
+		}
+		if !shouldContinue {
+			return false, nil
+		}
+	}
+	return false, err
+}
+
+func (c Client) callSmartContract(
+	ctx context.Context,
+	method string,
+	arguments []any,
+) (*etherumtypes.Transaction, error) {
+	return callSmartContract(
 		ctx,
 		executeSmartContractIn{
 			ethClient:     c.conn,
-			chainID:       chainID,
+			chainID:       c.config.GetChainID(),
 			gasAdjustment: c.config.GasAdjustment,
 			abi:           c.smartContractAbi,
-			// contract:      ethcommon.HexToAddress(c.config.EVMSpecificClientConfig.SmartContractAddress),
-			contract:    ethcommon.HexToAddress(msg.GetHexAddress()),
-			signingAddr: c.addr,
-			keystore:    c.keystore,
-			method:      "store",
-			arguments: []any{
-				big.NewInt(111),
-			},
+			contract:      c.turnstoneEVMContract,
+			signingAddr:   c.addr,
+			keystore:      c.keystore,
+
+			method:    method,
+			arguments: arguments,
 		},
-		msg.GetAbi(),
-		msg.GetPayload(),
 	)
 }

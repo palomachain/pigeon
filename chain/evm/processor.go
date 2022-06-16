@@ -5,25 +5,30 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	queueArbitraryLogic = "evm-arbitrary-smart-contract-call"
+	queueArbitraryLogic   = "evm-arbitrary-smart-contract-call"
+	queueTurnstoneMessage = "evm-turnstone-message"
 )
 
 type Processor struct {
-	c         Client
+	c         Compass
 	chainType string
 	chainID   string
+
+	turnstoneEVMContract common.Address
 }
 
 func NewProcessor(c Client, chainID string) Processor {
 	return Processor{
-		c:         c,
+		c: Compass{
+			Client: c,
+		},
 		chainType: "EVM",
 		chainID:   chainID,
 	}
@@ -68,22 +73,28 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	// TODO: check for signatures
 	switch {
-	case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
-		return p.processArbitraryLogic(
+	// case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
+	// 	return p.processArbitraryLogic(
+	// 		ctx,
+	// 		queueTypeName,
+	// 		msgs,
+	// 		slice.Map(
+	// 			msgs,
+	// 			func(msg chain.MessageWithSignatures) *types.ArbitrarySmartContractCall {
+	// 				return msg.Msg.(*types.ArbitrarySmartContractCall)
+	// 			},
+	// 		),
+	// 		slice.Map(
+	// 			msgs,
+	// 			func(msg chain.MessageWithSignatures) uint64 {
+	// 				return msg.ID
+	// 			},
+	// 		),
+	// 	)
+	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
+		return p.c.processMessages(
 			ctx,
-			queueTypeName,
-			slice.Map(
-				msgs,
-				func(msg chain.MessageWithSignatures) *types.ArbitrarySmartContractCall {
-					return msg.Msg.(*types.ArbitrarySmartContractCall)
-				},
-			),
-			slice.Map(
-				msgs,
-				func(msg chain.MessageWithSignatures) uint64 {
-					return msg.ID
-				},
-			),
+			msgs,
 		)
 	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
@@ -99,18 +110,18 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 	}
 }
 
-// TODO don't use types.ArbitrarySmartContractCall
-func (p Processor) processArbitraryLogic(ctx context.Context, queueTypeName string, msgs []*types.ArbitrarySmartContractCall, ids []uint64) error {
-	for i, msg := range msgs {
-		err := p.c.executeArbitraryMessage(ctx, msg)
-		if err != nil {
-			return err
-		}
-		fmt.Println("THIS IS TEMPORARY ONLY: DELETING JOB FROM QUEUE GIVEN THAT IT WAS SENT")
-		err = p.c.paloma.DeleteJob(ctx, queueTypeName, ids[i])
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// // TODO don't use types.ArbitrarySmartContractCall
+// func (p Processor) processArbitraryLogic(ctx context.Context, queueTypeName string, msgs []*types.ArbitrarySmartContractCall, ids []uint64) error {
+// 	for i, msg := range msgs {
+// 		err := p.c.executeArbitraryMessage(ctx, msg)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		fmt.Println("THIS IS TEMPORARY ONLY: DELETING JOB FROM QUEUE GIVEN THAT IT WAS SENT")
+// 		err = p.c.paloma.DeleteJob(ctx, queueTypeName, ids[i])
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }

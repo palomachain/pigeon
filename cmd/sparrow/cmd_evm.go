@@ -44,6 +44,14 @@ var (
 			return nil
 		},
 	}
+
+	evmListEventsCmd = &cobra.Command{
+		Use:   "events",
+		Short: "lists accounts in the keystore",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
 	// TODO: add import
 	evmKeysGenerateCmd = &cobra.Command{
 		Use:   "generate-new [directory]",
@@ -70,10 +78,12 @@ var (
 )
 
 func init() {
+	configRequired(evmListEventsCmd)
 	rootCmd.AddCommand(evmCmd)
 
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
+		evmListEventsCmd,
 	)
 
 	evmCmd.AddCommand(
