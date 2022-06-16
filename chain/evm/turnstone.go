@@ -3,59 +3,47 @@ package evm
 import (
 	"context"
 	"math/big"
-	"sort"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain"
-	evmtypes "github.com/palomachain/sparrow/types/paloma/x/evm/types"
-	"github.com/palomachain/sparrow/types/paloma/x/valset/types"
-	valsettypes "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
 	"github.com/vizualni/whoops"
 )
 
-const (
-	maxPower = 1 << 32
-)
-
-type Turnstone struct {
+type Compass struct {
 	Client
+
+	CompassID []byte
+	ChainID   string
 }
 
-type valset struct {
-	Validators []common.Address
-	Powers     []uint32
-	ValsetID   *big.Int
-}
 type signature struct {
 	R []byte
 	S []byte
 	V uint8
 }
 type consensus struct {
-	Valset     valset
+	Valset     *types.Valset
 	Signatures []signature
 }
 
-func (t Turnstone) updateValset(
+func (t Compass) updateValset(
 	ctx context.Context,
-	newSnapshot *valsettypes.Snapshot,
+	newValset *types.Valset,
 	signatures []chain.ValidatorSignature,
 ) error {
 	return whoops.Try(func() {
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		snapshot, err := t.Client.paloma.GetSnapshotByID(ctx, valsetID)
+		currentValset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
 		whoops.Assert(err)
 
-		con := t.buildConsensus(ctx, snapshot, signatures)
-
-		newValset := t.buildConsensus(ctx, newSnapshot, nil).Valset
+		con := t.buildConsensus(ctx, currentValset, signatures)
 
 		_, err = t.callSmartContract(ctx, "update_valset", []any{
 			con,
@@ -67,10 +55,10 @@ func (t Turnstone) updateValset(
 	})
 }
 
-func (t Turnstone) submitLogicCall(
+func (t Compass) submitLogicCall(
 	ctx context.Context,
 	messageID uint64,
-	msg *evmtypes.ArbitrarySmartContractCall,
+	msg *types.SubmitLogicCall,
 	signatures []chain.ValidatorSignature,
 ) error {
 	return whoops.Try(func() {
@@ -83,15 +71,16 @@ func (t Turnstone) submitLogicCall(
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		snapshot, err := t.Client.paloma.GetSnapshotByID(ctx, valsetID)
+		valset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
 		whoops.Assert(err)
 
-		con := t.buildConsensus(ctx, snapshot, signatures)
+		con := t.buildConsensus(ctx, valset, signatures)
 
 		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
 			con,
-			common.HexToAddress(msg.HexAddress),
-			msg.Payload,
+			common.HexToAddress(msg.GetHexContractAddress()),
+			msg.GetPayload(),
+			msg.GetDeadline(),
 		})
 		whoops.Assert(err)
 
@@ -99,7 +88,43 @@ func (t Turnstone) submitLogicCall(
 	})
 }
 
-func (t Turnstone) findLastValsetMessageID(ctx context.Context) (uint64, error) {
+// func (t Compass) uploadSmartContract(
+// 	ctx context.Context,
+// 	messageID uint64,
+// 	turnstoneID []byte,
+// 	msg *types.UploadSmartContract,
+// 	signatures []chain.ValidatorSignature,
+// ) error {
+// 	return whoops.Try(func() {
+// 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
+// 		whoops.Assert(err)
+// 		if executed {
+// 			return
+// 		}
+
+// 		valsetID, err := t.findLastValsetMessageID(ctx)
+// 		whoops.Assert(err)
+
+// 		snapshot, err := t.Client.paloma.GetSnapshotByID(ctx, valsetID)
+// 		whoops.Assert(err)
+
+// 		bind.DeployContract()
+
+// 		con := t.buildConsensus(ctx, snapshot, signatures)
+
+// 		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
+// 			con,
+// 			common.HexToAddress(msg.GetHexContractAddress()),
+// 			msg.GetPayload(),
+// 			msg.GetDeadline(),
+// 		})
+// 		whoops.Assert(err)
+
+// 		return
+// 	})
+// }
+
+func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
 			t.turnstoneEVMContract,
@@ -149,7 +174,7 @@ func (t Turnstone) findLastValsetMessageID(ctx context.Context) (uint64, error) 
 	return uint64(latestMessageID.Int64()), nil
 }
 
-func (t Turnstone) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
+func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
 			t.turnstoneEVMContract,
@@ -177,65 +202,57 @@ func (t Turnstone) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID
 	return found, nil
 }
 
-func (t Turnstone) buildConsensus(
+func (t Compass) buildConsensus(
 	ctx context.Context,
-	snapshot *types.Snapshot,
+	valset *types.Valset,
 	signatures []chain.ValidatorSignature,
 ) consensus {
 
-	validators := snapshot.GetValidators()
-	sort.Slice(validators, func(i, j int) bool {
-		// we want a reverse sort! Higher powers go first!
-		return validators[i].ShareCount.GTE(validators[j].ShareCount)
-	})
-
-	var signatureMap map[string]chain.ValidatorSignature
-	if signatures != nil {
-		signatureMap = slice.MakeMapKeys(
-			signatures,
-			func(sig chain.ValidatorSignature) string {
-				return sig.ValAddress.String()
-			},
-		)
+	signatureMap := slice.MakeMapKeys(
+		signatures,
+		func(sig chain.ValidatorSignature) string {
+			return sig.SignedByAddress
+		},
+	)
+	con := consensus{
+		Valset: valset,
 	}
 
-	con := consensus{}
-	con.Valset.ValsetID = 123
-
-	totalShare := slice.Reduce(validators, func(prevSum sdk.Int, val types.Validator) sdk.Int {
-		return prevSum.Add(val.ShareCount)
-	}).Int64()
-
-	for _, val := range validators {
-		for _, ext := range val.GetExternalChainInfos() {
-
-			if !(ext.ChainID == t.ChainID && ext.TurnstoneID == t.turnstoneID) {
-				continue
-			}
-
-			power := maxPower * (val.ShareCount.Int64() / totalShare)
-			// yay
-			con.Valset.Powers = append(con.Valset.Powers, uint32(power))
-			con.Valset.Validators = append(con.Valset.Validators, common.HexToAddress(ext.Address))
-
-			if signatures != nil {
-				sig, ok := signatureMap[val.Address.String()]
-				if !ok {
-					con.Signatures = append(con.Signatures, signature{})
-				} else {
-					con.Signatures = append(con.Signatures, signature{
-						R: sig.Signature[:32],
-						S: sig.Signature[32:64],
-						V: uint8(int(sig.Signature[64])) + 27,
-					})
-				}
-			}
-
-			// exiting the external chain info loop given that we have found
-			// what we need
-			break
+	for i := range valset.HexAddress {
+		sig, ok := signatureMap[valset.HexAddress[i]]
+		if !ok {
+			con.Signatures = append(con.Signatures, signature{})
+		} else {
+			con.Signatures = append(con.Signatures, signature{
+				R: sig.Signature[:32],
+				S: sig.Signature[32:64],
+				V: uint8(int(sig.Signature[64])) + 27,
+			})
 		}
 	}
 
 	return con
+}
+
+func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSignatures) error {
+	for _, rawMsg := range msgs {
+		msg := rawMsg.Msg.(*types.Message)
+
+		switch action := msg.GetAction().(type) {
+		case *types.Message_SubmitLogicCall:
+			return t.submitLogicCall(
+				ctx,
+				rawMsg.ID,
+				action.SubmitLogicCall,
+				rawMsg.Signatures,
+			)
+		case *types.Message_UpdateValset:
+			return t.updateValset(
+				ctx,
+				action.UpdateValset.Valset,
+				rawMsg.Signatures,
+			)
+		}
+	}
+	return nil
 }

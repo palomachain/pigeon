@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/palomachain/sparrow/app"
 	"github.com/palomachain/sparrow/chain/evm"
 	"github.com/spf13/cobra"
 )
@@ -50,9 +49,6 @@ var (
 		Use:   "events",
 		Short: "lists accounts in the keystore",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			r := app.GetEvmProcessors()["ropsten"]
-			rr := r.(evm.Processor)
-			rr.FindLatestValsetMessageID(cmd.Context())
 			return nil
 		},
 	}

@@ -12,6 +12,8 @@ import (
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/config"
 	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
+	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	evm "github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
 	"github.com/palomachain/sparrow/util/slice"
 )
@@ -183,6 +185,22 @@ func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Sn
 	}
 
 	return snapshotRes.Snapshot, nil
+}
+
+func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error) {
+	qc := evm.NewQueryClient(c.GRPCClient)
+	valsetRes, err := qc.GetValsetByID(ctx, &evm.QueryGetValsetByIDRequest{
+		ValsetID: id,
+		ChainID:  chainID,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "item not found in store") {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return valsetRes.Valset, nil
 }
 
 // TODO: this is only temporary for easier testing

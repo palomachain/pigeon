@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
-	valsettypes "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
@@ -90,7 +90,7 @@ func StoredContracts() map[string]StoredContract {
 
 type PalomaClienter interface {
 	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
-	GetSnapshotByID(ctx context.Context, id uint64) (*valsettypes.Snapshot, error)
+	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
 
 type Client struct {
@@ -105,12 +105,19 @@ type Client struct {
 	conn *ethclient.Client
 
 	paloma PalomaClienter
+
+	internalChainID string
 }
 
-func NewClient(cfg config.EVM, palomaClient PalomaClienter) Client {
+func NewClient(
+	cfg config.EVM,
+	palomaClient PalomaClienter,
+	internalChainID string,
+) Client {
 	client := &Client{
-		config: cfg,
-		paloma: palomaClient,
+		config:          cfg,
+		paloma:          palomaClient,
+		internalChainID: internalChainID,
 	}
 
 	whoops.Assert(client.init())
@@ -324,8 +331,9 @@ func (c Client) callSmartContract(
 			contract:      c.turnstoneEVMContract,
 			signingAddr:   c.addr,
 			keystore:      c.keystore,
-			method:        method,
-			arguments:     arguments,
+
+			method:    method,
+			arguments: arguments,
 		},
 	)
 }
