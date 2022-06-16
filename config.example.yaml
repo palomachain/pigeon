@@ -20,3 +20,4 @@ evm:
     keyring-pass-env-name: ROPSTEN_PASS
     signing-key: 0x2f6F5d01f2c4276a759D42e7D9fD01df8D265d5E
     keyring-dir: ~/.sparrow/keys/evm/ropsten
+    smart-contract-address: 0xf433321228C244df82FfFD54B06465d0344ae825

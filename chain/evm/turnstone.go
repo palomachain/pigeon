@@ -2,6 +2,7 @@ package evm
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -22,13 +23,18 @@ type Compass struct {
 }
 
 type signature struct {
-	R []byte
-	S []byte
-	V uint8
+	V *big.Int
+	R *big.Int
+	S *big.Int
+}
+type valset struct {
+	Validators []common.Address
+	Powers     []*big.Int
+	ValsetId   *big.Int
 }
 type consensus struct {
-	Valset     *types.Valset
-	Signatures []signature
+	Valset     valset
+	Signatures []*big.Int
 }
 
 func (t Compass) updateValset(
@@ -36,6 +42,10 @@ func (t Compass) updateValset(
 	newValset *types.Valset,
 	signatures []chain.ValidatorSignature,
 ) error {
+	if newValset.ValsetID <= 16 {
+		fmt.Println("skipping", newValset.ValsetID)
+		return nil
+	}
 	return whoops.Try(func() {
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
@@ -43,12 +53,11 @@ func (t Compass) updateValset(
 		currentValset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
 		whoops.Assert(err)
 
-		con := t.buildConsensus(ctx, currentValset, signatures)
-
 		_, err = t.callSmartContract(ctx, "update_valset", []any{
-			con,
-			newValset,
+			t.buildConsensus(ctx, currentValset, signatures),
+			typesValsetToValset(newValset),
 		})
+
 		whoops.Assert(err)
 
 		return
@@ -204,7 +213,7 @@ func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 
 func (t Compass) buildConsensus(
 	ctx context.Context,
-	valset *types.Valset,
+	v *types.Valset,
 	signatures []chain.ValidatorSignature,
 ) consensus {
 
@@ -215,19 +224,34 @@ func (t Compass) buildConsensus(
 		},
 	)
 	con := consensus{
-		Valset: valset,
+		Valset: typesValsetToValset(v),
 	}
 
-	for i := range valset.HexAddress {
-		sig, ok := signatureMap[valset.HexAddress[i]]
+	for i := range v.GetValidators() {
+		sig, ok := signatureMap[v.GetValidators()[i]]
 		if !ok {
-			con.Signatures = append(con.Signatures, signature{})
+			con.Signatures = append(con.Signatures, nil)
 		} else {
-			con.Signatures = append(con.Signatures, signature{
-				R: sig.Signature[:32],
-				S: sig.Signature[32:64],
-				V: uint8(int(sig.Signature[64])) + 27,
-			})
+			con.Signatures = append(con.Signatures, new(big.Int).SetBytes(
+				append(
+					[]byte{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						0,
+						sig.Signature[64] + 27,
+					},
+					append(
+						sig.Signature[:32][:],
+						sig.Signature[32:64]...,
+					)...,
+				),
+			))
+			// con.Signatures = append(con.Signatures, signature{
+			// 	R: new(big.Int).SetBytes(sig.Signature[:32]),
+			// 	S: new(big.Int).SetBytes(sig.Signature[32:64]),
+			// 	V: new(big.Int).SetInt64(int64(sig.Signature[64]) + 27),
+			// })
 		}
 	}
 
@@ -240,19 +264,35 @@ func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSi
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
-			return t.submitLogicCall(
+			if err := t.submitLogicCall(
 				ctx,
 				rawMsg.ID,
 				action.SubmitLogicCall,
 				rawMsg.Signatures,
-			)
+			); err != nil {
+				return err
+			}
 		case *types.Message_UpdateValset:
-			return t.updateValset(
+			if err := t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
 				rawMsg.Signatures,
-			)
+			); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+func typesValsetToValset(val *types.Valset) valset {
+	return valset{
+		slice.Map(val.GetValidators(), func(s string) common.Address {
+			return common.HexToAddress(s)
+		}),
+		slice.Map(val.GetPowers(), func(p uint64) *big.Int {
+			return big.NewInt(int64(p))
+		}),
+		big.NewInt(int64(val.GetValsetID())),
+	}
 }

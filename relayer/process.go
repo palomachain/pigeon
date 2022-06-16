@@ -19,7 +19,9 @@ func (r *Relayer) Process(ctx context.Context) error {
 			// TODO: remove comments once signing is done on the paloma side.
 			queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, queueName)
 			loggerQueuedMessages := logger.WithFields(log.Fields{
-				"messages": queuedMessages,
+				"message-ids": slice.Map(queuedMessages, func(msg chain.QueuedMessage) uint64 {
+					return msg.ID
+				}),
 			})
 			loggerQueuedMessages.Info("messages to sign")
 
@@ -37,7 +39,12 @@ func (r *Relayer) Process(ctx context.Context) error {
 					return err
 				}
 				loggerQueuedMessages = loggerQueuedMessages.WithFields(log.Fields{
-					"signed-messages": signedMessages,
+					"signed-messages": slice.Map(signedMessages, func(msg chain.SignedQueuedMessage) log.Fields {
+						return log.Fields{
+							"id":        msg.ID,
+							"signature": msg.Signature,
+						}
+					}),
 				})
 				loggerQueuedMessages.Info("signed messages")
 
@@ -57,13 +64,16 @@ func (r *Relayer) Process(ctx context.Context) error {
 				return err
 			}
 
-			logger.WithFields(log.Fields{
-				"messages-to-relay": relayCandidateMsgs,
-			}).Info("relaying messages")
-			// if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
-			// 	fmt.Println("error processing a message", err)
-			// 	return err
-			// }
+			logger = logger.WithFields(log.Fields{
+				"messages-to-relay": slice.Map(relayCandidateMsgs, func(msg chain.MessageWithSignatures) uint64 {
+					return msg.ID
+				}),
+			})
+			logger.Info("relaying messages")
+			if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
+				logger.WithField("err", err).Error("error relaying messages")
+				return err
+			}
 		}
 	}
 

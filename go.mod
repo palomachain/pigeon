@@ -3,6 +3,7 @@ module github.com/palomachain/sparrow
 go 1.18
 
 require (
+	github.com/coinbase/rosetta-sdk-go v0.7.0
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/gogo/protobuf v1.3.3

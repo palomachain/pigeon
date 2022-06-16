@@ -39,7 +39,8 @@ var _ chain.Processor = Processor{}
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
 		[]string{
-			queueArbitraryLogic,
+			// queueArbitraryLogic,
+			queueTurnstoneMessage,
 		},
 		func(q string) string {
 			return fmt.Sprintf("%s:%s:%s", p.chainType, p.chainID, q)
@@ -74,6 +75,7 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 	// TODO: check for signatures
 	switch {
 	// case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
+	// 	return nil
 	// 	return p.processArbitraryLogic(
 	// 		ctx,
 	// 		queueTypeName,

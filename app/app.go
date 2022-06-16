@@ -180,6 +180,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Iface: (*consensustypes.Message)(nil),
 				Msgs: []proto.Message{
 					&evmtypes.ArbitrarySmartContractCall{},
+					&evmtypes.Message{},
 				},
 			},
 		},

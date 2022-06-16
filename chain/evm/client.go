@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"fmt"
 	"math/big"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,7 @@ import (
 )
 
 const (
-	smartContractFilename = "simple"
+	smartContractFilename = "compass-evm"
 )
 
 type StoredContract struct {
@@ -139,6 +140,11 @@ func (c *Client) init() error {
 		}
 		c.addr = ethcommon.HexToAddress(c.config.SigningKey)
 
+		if !ethcommon.IsHexAddress(c.config.SmartContractAddress) {
+			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SmartContractAddress)))
+		}
+		c.turnstoneEVMContract = ethcommon.HexToAddress(c.config.SmartContractAddress)
+
 		c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
 		if !c.keystore.HasAddress(c.addr) {
 			whoops.Assert(errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path())))
@@ -193,6 +199,9 @@ func callSmartContract(
 			args.arguments...,
 		))
 
+		m := make(map[string]any)
+
+		fmt.Println("UNPACKAM", args.abi.UnpackIntoMap(m, args.method, packedBytes), m)
 		nonce := whoops.Must(
 			args.ethClient.PendingNonceAt(ctx, args.signingAddr),
 		)
