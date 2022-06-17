@@ -104,6 +104,7 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
 		return p.c.processMessages(
 			ctx,
+			queueTypeName,
 			msgs,
 		)
 	default:

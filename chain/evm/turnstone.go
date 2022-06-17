@@ -250,7 +250,7 @@ func buildConsensus(
 	return con
 }
 
-func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSignatures) error {
+func (t Compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	for _, rawMsg := range msgs {
 		msg := rawMsg.Msg.(*types.Message)
 
@@ -273,6 +273,9 @@ func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSi
 				return err
 			}
 		}
+		// TODO: this is temporary
+		// if no error, then we can simply delete it
+		_ = t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
 	}
 	return nil
 }
