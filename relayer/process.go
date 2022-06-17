@@ -69,6 +69,7 @@ func (r *Relayer) Process(ctx context.Context) error {
 					return msg.ID
 				}),
 			})
+
 			logger.Info("relaying messages")
 			if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
 				logger.WithField("err", err).Error("error relaying messages")

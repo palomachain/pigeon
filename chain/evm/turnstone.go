@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -13,6 +12,11 @@ import (
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
 	"github.com/vizualni/whoops"
+)
+
+const (
+	powerThreshold  uint64 = 2_863_311_530
+	signaturePrefix        = "\x19Ethereum Signed Message:\n32"
 )
 
 type Compass struct {
@@ -40,12 +44,8 @@ type consensus struct {
 func (t Compass) updateValset(
 	ctx context.Context,
 	newValset *types.Valset,
-	signatures []chain.ValidatorSignature,
+	origMessage chain.MessageWithSignatures,
 ) error {
-	if newValset.ValsetID <= 16 {
-		fmt.Println("skipping", newValset.ValsetID)
-		return nil
-	}
 	return whoops.Try(func() {
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
@@ -53,11 +53,14 @@ func (t Compass) updateValset(
 		currentValset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
 		whoops.Assert(err)
 
+		if !isConsensusReached(currentValset, origMessage) {
+			return
+		}
+
 		_, err = t.callSmartContract(ctx, "update_valset", []any{
-			t.buildConsensus(ctx, currentValset, signatures),
+			buildConsensus(ctx, currentValset, origMessage.Signatures),
 			typesValsetToValset(newValset),
 		})
-
 		whoops.Assert(err)
 
 		return
@@ -68,7 +71,7 @@ func (t Compass) submitLogicCall(
 	ctx context.Context,
 	messageID uint64,
 	msg *types.SubmitLogicCall,
-	signatures []chain.ValidatorSignature,
+	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
@@ -83,7 +86,11 @@ func (t Compass) submitLogicCall(
 		valset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
 		whoops.Assert(err)
 
-		con := t.buildConsensus(ctx, valset, signatures)
+		if !isConsensusReached(valset, origMessage) {
+			return
+		}
+
+		con := buildConsensus(ctx, valset, origMessage.Signatures)
 
 		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
 			con,
@@ -161,7 +168,7 @@ func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 				}
 				id, ok := mm["valset_id"].(*big.Int)
 				if !ok {
-					panic("NOW WHAT")
+					panic("unhandled error :)")
 				}
 
 				if id.Cmp(latestMessageID) == 1 {
@@ -211,7 +218,7 @@ func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	return found, nil
 }
 
-func (t Compass) buildConsensus(
+func buildConsensus(
 	ctx context.Context,
 	v *types.Valset,
 	signatures []chain.ValidatorSignature,
@@ -230,28 +237,13 @@ func (t Compass) buildConsensus(
 	for i := range v.GetValidators() {
 		sig, ok := signatureMap[v.GetValidators()[i]]
 		if !ok {
-			con.Signatures = append(con.Signatures, nil)
+			con.Signatures = append(con.Signatures, big.NewInt(0), big.NewInt(0), big.NewInt(0))
 		} else {
-			con.Signatures = append(con.Signatures, new(big.Int).SetBytes(
-				append(
-					[]byte{
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						0,
-						sig.Signature[64] + 27,
-					},
-					append(
-						sig.Signature[:32][:],
-						sig.Signature[32:64]...,
-					)...,
-				),
-			))
-			// con.Signatures = append(con.Signatures, signature{
-			// 	R: new(big.Int).SetBytes(sig.Signature[:32]),
-			// 	S: new(big.Int).SetBytes(sig.Signature[32:64]),
-			// 	V: new(big.Int).SetInt64(int64(sig.Signature[64]) + 27),
-			// })
+			con.Signatures = append(con.Signatures,
+				new(big.Int).SetInt64(int64(sig.Signature[64])+27),
+				new(big.Int).SetBytes(sig.Signature[:32]),
+				new(big.Int).SetBytes(sig.Signature[32:64]),
+			)
 		}
 	}
 
@@ -268,7 +260,7 @@ func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSi
 				ctx,
 				rawMsg.ID,
 				action.SubmitLogicCall,
-				rawMsg.Signatures,
+				rawMsg,
 			); err != nil {
 				return err
 			}
@@ -276,7 +268,7 @@ func (t Compass) processMessages(ctx context.Context, msgs []chain.MessageWithSi
 			if err := t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
-				rawMsg.Signatures,
+				rawMsg,
 			); err != nil {
 				return err
 			}
@@ -295,4 +287,37 @@ func typesValsetToValset(val *types.Valset) valset {
 		}),
 		big.NewInt(int64(val.GetValsetID())),
 	}
+}
+
+func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool {
+	var s uint64
+	for i := range val.Validators {
+		val, pow := val.Validators[i], val.Powers[i]
+		for _, sig := range msg.Signatures {
+			if len(sig.Signature) > 0 {
+				bytesToVerify := crypto.Keccak256(append(
+					[]byte(signaturePrefix),
+					msg.BytesToSign...,
+				))
+				recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
+				if err != nil {
+					return false
+				}
+				pk, err := crypto.UnmarshalPubkey(recoveredPK)
+				if err != nil {
+					return false
+				}
+				recoveredAddr := crypto.PubkeyToAddress(*pk)
+				if val == recoveredAddr.Hex() {
+					s += pow
+					break
+				}
+			}
+		}
+
+		if s >= powerThreshold {
+			return true
+		}
+	}
+	return false
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"fmt"
 	"math/big"
 	"path/filepath"
 	"strings"
@@ -194,21 +193,19 @@ func callSmartContract(
 		"signing-addr": args.signingAddr,
 	})
 	return whoops.TryVal(func() *etherumtypes.Transaction {
-		packedBytes := whoops.Must(args.abi.Pack(
+		packedBytes, err := args.abi.Pack(
 			args.method,
 			args.arguments...,
-		))
-
-		m := make(map[string]any)
-
-		fmt.Println("UNPACKAM", args.abi.UnpackIntoMap(m, args.method, packedBytes), m)
-		nonce := whoops.Must(
-			args.ethClient.PendingNonceAt(ctx, args.signingAddr),
 		)
+		whoops.Assert(err)
 
-		gasPrice := whoops.Must(
-			args.ethClient.SuggestGasPrice(ctx),
-		)
+		nonce, err := args.ethClient.PendingNonceAt(ctx, args.signingAddr)
+		whoops.Assert(err)
+
+		gasPrice, err := args.ethClient.SuggestGasPrice(ctx)
+		whoops.Assert(err)
+
+		logger.WithField("suggested-gas-price", gasPrice).Info("suggested gas price")
 
 		// adjusting the gas price
 		if args.gasAdjustment > 0.0 {
@@ -228,25 +225,29 @@ func callSmartContract(
 			args.ethClient,
 		)
 
-		txOpts := whoops.Must(
-			bind.NewKeyStoreTransactorWithChainID(
-				args.keystore,
-				accounts.Account{Address: args.signingAddr},
-				args.chainID,
-			),
+		txOpts, err := bind.NewKeyStoreTransactorWithChainID(
+			args.keystore,
+			accounts.Account{Address: args.signingAddr},
+			args.chainID,
 		)
+		whoops.Assert(err)
 
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.GasPrice = gasPrice
 		txOpts.From = args.signingAddr
 
 		logger = logger.WithFields(log.Fields{
-			"tx-opts": txOpts,
+			"gas-limit": txOpts.GasLimit,
+			"gas-price": txOpts.GasPrice,
+			"nonce":     txOpts.Nonce,
+			"from":      txOpts.From,
+			"signer":    txOpts.Signer,
 		})
 
 		logger.Info("executing tx")
 
-		tx := whoops.Must(boundContract.RawTransact(txOpts, packedBytes))
+		tx, err := boundContract.RawTransact(txOpts, packedBytes)
+		whoops.Assert(err)
 
 		logger.WithFields(log.Fields{
 			"tx-hash":      tx.Hash(),
@@ -259,7 +260,10 @@ func callSmartContract(
 }
 
 func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
-	return c.keystore.SignHash(accounts.Account{Address: c.addr}, bytes)
+	return c.keystore.SignHash(
+		accounts.Account{Address: c.addr},
+		bytes,
+	)
 }
 
 // processAllLogs will gather all logs given a FilterQuery. If it encounters an

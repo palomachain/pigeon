@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -12,6 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vizualni/whoops"
+)
+
+const (
+	signaturePrefix = "\x19Ethereum Signed Message:\n32"
 )
 
 var (
@@ -40,10 +46,11 @@ var (
 	}
 
 	evmKeysListCmd = &cobra.Command{
-		Use:   "list",
+		Use:   "list [directory]",
 		Short: "lists accounts in the keystore",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ks := evm.OpenKeystore("/tmp")
+			ks := evm.OpenKeystore(args[0])
 			for _, acc := range ks.Accounts() {
 				fmt.Println(acc)
 			}
@@ -102,6 +109,55 @@ var (
 			return nil
 		},
 	}
+
+	evmKeysImportCmd = &cobra.Command{
+		Use:   "import [directory]",
+		Short: "generates a new account and adds it to keystore",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ks := evm.OpenKeystore(args[0])
+			fmt.Println("Paste the private key in HEX format:")
+			pkHex := readLineFromStdin(false)
+			pk, err := crypto.HexToECDSA(pkHex)
+			if err != nil {
+				return err
+			}
+			pass := doubleReadInput("Password to encode your key: ", true, 3)
+			acc, err := ks.ImportECDSA(pk, pass)
+			if err != nil {
+				return err
+			}
+			fmt.Println()
+			fmt.Println("Key created in", args[0], "directory")
+			fmt.Println("Don't lose your password! Otherwise you'd lose access to your key!")
+			fmt.Println(acc)
+			return nil
+		},
+	}
+
+	zero            [32]byte
+	evmDebugSignCmd = &cobra.Command{
+		Use:   "sign-test [directory]",
+		Short: "generates a new account and adds it to keystore",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ks := evm.OpenKeystore(args[0])
+			hash := crypto.Keccak256([]byte{})
+			protectedHash := crypto.Keccak256Hash(append([]byte(signaturePrefix), hash...))
+
+			sig, err := ks.SignHashWithPassphrase(accounts.Account{
+				Address: common.HexToAddress("0xe4Ab6f4D62Ba7e0bBC4CF6c5E8153e105108FBa9"),
+			}, "aaaaaaaa", protectedHash.Bytes())
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println(new(big.Int).SetBytes([]byte{(sig[64])}))
+			fmt.Println(new(big.Int).SetBytes(sig[:32]))
+			fmt.Println(new(big.Int).SetBytes(sig[32:64]))
+			return nil
+		},
+	}
 )
 
 func init() {
@@ -111,6 +167,7 @@ func init() {
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
 		evmDeploySmartContractCmd,
+		evmDebugSignCmd,
 	)
 
 	evmCmd.AddCommand(
@@ -121,5 +178,6 @@ func init() {
 	evmKeysCmd.AddCommand(
 		evmKeysListCmd,
 		evmKeysGenerateCmd,
+		evmKeysImportCmd,
 	)
 }

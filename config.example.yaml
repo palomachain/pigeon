@@ -18,6 +18,7 @@ evm:
     chain-id: 3
     base-rpc-url: https://ropsten.infura.io/v3/d697ced03e7c49209a1fe2a1c8858821
     keyring-pass-env-name: ROPSTEN_PASS
-    signing-key: 0x2f6F5d01f2c4276a759D42e7D9fD01df8D265d5E
+    signing-key: 0xe4Ab6f4D62Ba7e0bBC4CF6c5E8153e105108FBa9
     keyring-dir: ~/.sparrow/keys/evm/ropsten
-    smart-contract-address: 0xf433321228C244df82FfFD54B06465d0344ae825
+    smart-contract-address: 0x16f8B65cB794D20086c1e5309e58C04C39C6eDE9
+    gas-adjustment: 2.0

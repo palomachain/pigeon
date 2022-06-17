@@ -132,9 +132,10 @@ func queryMessagesInQueue(
 		}
 		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
-				ID:    msg.Id,
-				Nonce: msg.Nonce,
-				Msg:   ptr,
+				ID:          msg.Id,
+				Nonce:       msg.Nonce,
+				Msg:         ptr,
+				BytesToSign: msg.GetBytesToSign(),
 			},
 			Signatures: valSigs,
 		})

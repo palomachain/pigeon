@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -88,7 +87,6 @@ func rawDeploy(opts *bind.TransactOpts, abi abi.ABI, bytecode []byte, backend bi
 	c := bind.NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
 	tx, err := c.RawTransact(opts, append(bytecode, packedConstructorInput...))
-	fmt.Println("NOOOOOOO", err)
 	if err != nil {
 		return common.Address{}, nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/util/slice"
 	log "github.com/sirupsen/logrus"
@@ -49,30 +50,37 @@ func (p Processor) SupportedQueues() []string {
 }
 
 func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
-	return slice.MapErr(
-		messages,
-		func(msg chain.QueuedMessage) (chain.SignedQueuedMessage, error) {
-			sig, err := p.c.sign(ctx, msg.BytesToSign)
-			log.WithFields(log.Fields{
-				"msg": msg,
-				"sig": sig,
-				"err": err,
-			}).Info("signing a message")
-			if err != nil {
-				return chain.SignedQueuedMessage{}, err
-			}
-			return chain.SignedQueuedMessage{
-				QueuedMessage:   msg,
-				Signature:       sig,
-				SignedByAddress: p.c.addr.Hex(),
-			}, nil
-		},
+	return slice.MapErr(messages, func(msg chain.QueuedMessage) (chain.SignedQueuedMessage, error) {
+		bbbbbbbb := crypto.Keccak256(
+			append(
+				[]byte(signaturePrefix),
+				msg.BytesToSign...,
+			),
+		)
+		sig, err := p.c.sign(ctx, bbbbbbbb)
+		log.WithFields(log.Fields{
+			"msg": msg,
+			"sig": sig,
+			"err": err,
+		}).Info("signing a message")
+
+		if err != nil {
+			return chain.SignedQueuedMessage{}, err
+		}
+
+		return chain.SignedQueuedMessage{
+			QueuedMessage:   msg,
+			Signature:       sig,
+			SignedByAddress: p.c.addr.Hex(),
+		}, nil
+	},
 	)
 
 }
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	// TODO: check for signatures
+
 	switch {
 	// case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
 	// 	return nil

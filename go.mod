@@ -3,9 +3,8 @@ module github.com/palomachain/sparrow
 go 1.18
 
 require (
-	github.com/coinbase/rosetta-sdk-go v0.7.0
 	github.com/cosmos/cosmos-sdk v0.45.1
-	github.com/ethereum/go-ethereum v1.10.17
+	github.com/ethereum/go-ethereum v1.10.19
 	github.com/gogo/protobuf v1.3.3
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/sirupsen/logrus v1.8.1
@@ -32,7 +31,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.7.0 // indirect
