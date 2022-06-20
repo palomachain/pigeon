@@ -51,13 +51,13 @@ func (p Processor) SupportedQueues() []string {
 
 func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
 	return slice.MapErr(messages, func(msg chain.QueuedMessage) (chain.SignedQueuedMessage, error) {
-		bbbbbbbb := crypto.Keccak256(
+		msgBytes := crypto.Keccak256(
 			append(
-				[]byte(signaturePrefix),
+				[]byte(SignedMessagePrefix),
 				msg.BytesToSign...,
 			),
 		)
-		sig, err := p.c.sign(ctx, bbbbbbbb)
+		sig, err := p.c.sign(ctx, msgBytes)
 		log.WithFields(log.Fields{
 			"msg": msg,
 			"sig": sig,
@@ -79,28 +79,7 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 }
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
-	// TODO: check for signatures
-
 	switch {
-	// case strings.HasSuffix(queueTypeName, queueArbitraryLogic):
-	// 	return nil
-	// 	return p.processArbitraryLogic(
-	// 		ctx,
-	// 		queueTypeName,
-	// 		msgs,
-	// 		slice.Map(
-	// 			msgs,
-	// 			func(msg chain.MessageWithSignatures) *types.ArbitrarySmartContractCall {
-	// 				return msg.Msg.(*types.ArbitrarySmartContractCall)
-	// 			},
-	// 		),
-	// 		slice.Map(
-	// 			msgs,
-	// 			func(msg chain.MessageWithSignatures) uint64 {
-	// 				return msg.ID
-	// 			},
-	// 		),
-	// 	)
 	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
 		return p.c.processMessages(
 			ctx,
@@ -120,19 +99,3 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 		PubKey:    p.c.addr.Bytes(),
 	}
 }
-
-// // TODO don't use types.ArbitrarySmartContractCall
-// func (p Processor) processArbitraryLogic(ctx context.Context, queueTypeName string, msgs []*types.ArbitrarySmartContractCall, ids []uint64) error {
-// 	for i, msg := range msgs {
-// 		err := p.c.executeArbitraryMessage(ctx, msg)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		fmt.Println("THIS IS TEMPORARY ONLY: DELETING JOB FROM QUEUE GIVEN THAT IT WAS SENT")
-// 		err = p.c.paloma.DeleteJob(ctx, queueTypeName, ids[i])
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }

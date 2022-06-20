@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -134,30 +132,6 @@ var (
 			return nil
 		},
 	}
-
-	zero            [32]byte
-	evmDebugSignCmd = &cobra.Command{
-		Use:   "sign-test [directory]",
-		Short: "generates a new account and adds it to keystore",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ks := evm.OpenKeystore(args[0])
-			hash := crypto.Keccak256([]byte{})
-			protectedHash := crypto.Keccak256Hash(append([]byte(signaturePrefix), hash...))
-
-			sig, err := ks.SignHashWithPassphrase(accounts.Account{
-				Address: common.HexToAddress("0xe4Ab6f4D62Ba7e0bBC4CF6c5E8153e105108FBa9"),
-			}, "aaaaaaaa", protectedHash.Bytes())
-			if err != nil {
-				panic(err)
-			}
-
-			fmt.Println(new(big.Int).SetBytes([]byte{(sig[64])}))
-			fmt.Println(new(big.Int).SetBytes(sig[:32]))
-			fmt.Println(new(big.Int).SetBytes(sig[32:64]))
-			return nil
-		},
-	}
 )
 
 func init() {
@@ -167,7 +141,6 @@ func init() {
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
 		evmDeploySmartContractCmd,
-		evmDebugSignCmd,
 	)
 
 	evmCmd.AddCommand(

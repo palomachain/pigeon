@@ -6,24 +6,44 @@ import (
 
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain"
+	"github.com/palomachain/sparrow/errors"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
 	"github.com/vizualni/whoops"
 )
 
 const (
-	powerThreshold  uint64 = 2_863_311_530
-	signaturePrefix        = "\x19Ethereum Signed Message:\n32"
+	powerThreshold      uint64 = 2_863_311_530
+	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
 )
+
+type evmClienter interface {
+}
 
 type Compass struct {
 	Client
 
 	CompassID []byte
 	ChainID   string
+
+	smartContractAddr common.Address
+}
+
+func NewCompassClient(
+	smartContractAddrStr string,
+) Compass {
+	if !ethcommon.IsHexAddress(smartContractAddrStr) {
+		whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
+	}
+	c := Compass{
+		smartContractAddr: common.HexToAddress(smartContractAddrStr),
+	}
+
+	return c
 }
 
 type signature struct {
@@ -57,7 +77,7 @@ func (t Compass) updateValset(
 			return
 		}
 
-		_, err = t.callSmartContract(ctx, "update_valset", []any{
+		_, err = t.callCompass(ctx, "update_valset", []any{
 			buildConsensus(ctx, currentValset, origMessage.Signatures),
 			typesValsetToValset(newValset),
 		})
@@ -92,7 +112,7 @@ func (t Compass) submitLogicCall(
 
 		con := buildConsensus(ctx, valset, origMessage.Signatures)
 
-		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
+		_, err = t.callCompass(ctx, "submit_logic_call", []any{
 			con,
 			common.HexToAddress(msg.GetHexContractAddress()),
 			msg.GetPayload(),
@@ -156,7 +176,7 @@ func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	latestMessageID := big.NewInt(0)
 
 	var retErr error
-	_, err := t.processAllLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		for _, log := range logs {
 			if log.BlockNumber > highestBlock {
 				highestBlock = log.BlockNumber
@@ -206,7 +226,7 @@ func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	}
 
 	var found bool
-	_, err := t.processAllLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		found = true
 		return false
 	})
@@ -299,7 +319,7 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 		for _, sig := range msg.Signatures {
 			if len(sig.Signature) > 0 {
 				bytesToVerify := crypto.Keccak256(append(
-					[]byte(signaturePrefix),
+					[]byte(SignedMessagePrefix),
 					msg.BytesToSign...,
 				))
 				recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
@@ -323,4 +343,26 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 		}
 	}
 	return false
+}
+
+func (c Compass) callCompass(
+	ctx context.Context,
+	method string,
+	arguments []any,
+) (*etherumtypes.Transaction, error) {
+	return callSmartContract(
+		ctx,
+		executeSmartContractIn{
+			ethClient:     c.conn,
+			chainID:       c.config.GetChainID(),
+			gasAdjustment: c.config.GasAdjustment,
+			abi:           c.smartContractAbi,
+			contract:      c.turnstoneEVMContract,
+			signingAddr:   c.addr,
+			keystore:      c.keystore,
+
+			method:    method,
+			arguments: arguments,
+		},
+	)
 }
