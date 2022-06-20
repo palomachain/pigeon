@@ -1,8 +1,8 @@
-# Conductor
+# Pigeon
 
 ## ISSUES
 
-Please use https://github.com/palomachain/paloma/issues to submit issues and add sparrow label!
+Please use https://github.com/palomachain/paloma/issues to submit issues and add pigeon label!
 
 
 # Instructions to test sending messages to EVM
@@ -10,14 +10,14 @@ Please use https://github.com/palomachain/paloma/issues to submit issues and add
 ## Install
 
 ```shell
-wget -O - https://github.com/palomachain/sparrow/releases/download/{version}/{version}_Linux_x86_64.tar.gz | \
-tar -C /usr/local/bin -xvzf - sparrow
-chmod +x /usr/local/bin/sparrow
-mkdir ~/.sparrow
+wget -O - https://github.com/palomachain/pigeon/releases/download/{version}/{version}_Linux_x86_64.tar.gz | \
+tar -C /usr/local/bin -xvzf - pigeon
+chmod +x /usr/local/bin/pigeon
+mkdir ~/.pigeon
 
 # setting up the EVM keys for ropsten testnet.
 # don't forget your password!
-sparrow evm keys generate-new ~/.sparrow/keys/evm/ropsten
+pigeon evm keys generate-new ~/.pigeon/keys/evm/ropsten
 ```
 
 ### Config setup
@@ -44,13 +44,13 @@ evm:
     base-rpc-url: https://ropsten.infura.io/v3/d697ced03e7c49209a1fe2a1c8858821
     keyring-pass-env-name: ROPSTEN_PASS
     signing-key: 0x378d6991F6b5207d7cC2b5270AD2Afb3Dd328E82
-    keyring-dir: ~/.sparrow/keys/evm/ropsten
+    keyring-dir: ~/.pigeon/keys/evm/ropsten
 ```
 
 Important things to set up are:
   - for paloma key:
 	- keyring-dir
-      - right now it's not really super important where this points. The important things for the future is that Sparrow needs to send transactions to Paloma using it's validator (operator) key!
+      - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using it's validator (operator) key!
 	  - it's best to leave it as is
 	- keyring-pass-env-name
 	  - this one is super important!
@@ -58,7 +58,7 @@ Important things to set up are:
 	  - you are not writing password here!! You are writing the ENV variable's name where the password is stored.
 	  - you should obviously use a bit more advanced method than shown here, but here is the example:
 	    - if the `keyring-pass-env-name` is set to `MY_SUPER_SECRET_PASS` then you should provide ENV variable `MY_SUPER_SECRET_PASS` and store the password there
-	    - e.g. `MY_SUPER_SECRET_PASS=abcd sparrow start`
+	    - e.g. `MY_SUPER_SECRET_PASS=abcd pigeon start`
 	- keyring-type
 	  - it should be the same as it's defined for paloma's client. Look under the ~/.paloma/config/client.toml
 	- signing-key
@@ -66,19 +66,19 @@ Important things to set up are:
 	- validator-address
 	  - a bit redundant, but it's **your** validator's address.
 	- gas-adustment:
-	  - gas multiplier. The Sparrow will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
+	  - gas multiplier. The pigeon will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
  - for evm -> ropsten:
     - base-rpc-url
 	  - this one is my private url but you are more than welcome to provide your own
 	  - you can also change this to the mainnet if you want to
 	- keyring-pass-env-name: as as above for paloma.
 	- signing-key
-	  - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `sparrow evm keys generate-new` from the install section)
+	  - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `pigeon evm keys generate-new` from the install section)
 	- keyring-dir:
 	  - a directory where keys to communicate with the EVM network is stored
 
 
-Once you are done setting this up, you can take the config and put it here `~/.sparrow/config.yaml`.
+Once you are done setting this up, you can take the config and put it here `~/.pigeon/config.yaml`.
 
 
 A careful reader might notice that there can be as many EVM networks as you wish. That is true, but at the moment of writing this, only the first one will be used.
@@ -116,18 +116,18 @@ palomad tx evm submit-new-job --from my_validator --fees 200dove --broadcast-mod
 ```
 
 
-### Start sparrow
+### Start pigeon
 
 Open a new terminal window and run:
 
 ```shell
 YOUR_ENV_VARIABLE_WITH_PALOMA_PASS=abcd
 YOUR_ENV_VARIABLE_WITH_EVM_ROPSTEN_PASS=efgh
-sparrow start
+pigeon start
 ```
 
-- Open sparrow window and look at the logs to get the TX HASH which you can look on the explorer.
-- Feel free to add more jobs to the queue while Sparrows are running
+- Open pigeon window and look at the logs to get the TX HASH which you can look on the explorer.
+- Feel free to add more jobs to the queue while pigeons are running
 
 ## Can you run this on the mainnet?
 
@@ -139,4 +139,4 @@ Right now we can't import existing keys, so you need to use generated ones.
 # Notes!
 
 - Right now there is no routing of jobs based on which network they are supposed to belong to. It simply sends it to whatever is the first chain defined in the config file under the evm key.
-- Sparrows are not signing anything now. All sparrows are going to try their best to get the available messages that are in the queue and they will not sign those messages. They are simply going to take them and send them away.
+- pigeons are not signing anything now. All pigeons are going to try their best to get the available messages that are in the queue and they will not sign those messages. They are simply going to take them and send them away.
