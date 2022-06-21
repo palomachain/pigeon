@@ -27,6 +27,7 @@ type CosmosSpecificClientConfig struct {
 
 type EVMSpecificClientConfig struct {
 	SmartContractAddress string `yaml:"smart-contract-address"`
+	CompassID            string `yaml:"compass-id"`
 }
 
 type ChainClientConfig struct {

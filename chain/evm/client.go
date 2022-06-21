@@ -89,7 +89,8 @@ func StoredContracts() map[string]StoredContract {
 	return _contracts
 }
 
-type PalomaClienter interface {
+//go:generate mockery --name=palomaClienter --inpackage --testonly
+type palomaClienter interface {
 	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
@@ -97,22 +98,21 @@ type PalomaClienter interface {
 type Client struct {
 	config config.EVM
 
-	smartContractAbi     abi.ABI
-	turnstoneEVMContract common.Address
+	smartContractAbi abi.ABI
 
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
 	conn *ethclient.Client
 
-	paloma PalomaClienter
+	paloma palomaClienter
 
 	internalChainID string
 }
 
 func NewClient(
 	cfg config.EVM,
-	palomaClient PalomaClienter,
+	palomaClient palomaClienter,
 	internalChainID string,
 ) Client {
 	client := &Client{
@@ -139,11 +139,6 @@ func (c *Client) init() error {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))
 		}
 		c.addr = ethcommon.HexToAddress(c.config.SigningKey)
-
-		if !ethcommon.IsHexAddress(c.config.SmartContractAddress) {
-			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SmartContractAddress)))
-		}
-		c.turnstoneEVMContract = ethcommon.HexToAddress(c.config.SmartContractAddress)
 
 		c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
 		if !c.keystore.HasAddress(c.addr) {
@@ -352,4 +347,22 @@ func filterLogs(
 	}
 
 	return false, err
+}
+
+func (c Client) ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error) {
+	return callSmartContract(
+		ctx,
+		executeSmartContractIn{
+			ethClient:     c.conn,
+			chainID:       c.config.GetChainID(),
+			gasAdjustment: c.config.GasAdjustment,
+			abi:           contractAbi,
+			contract:      addr,
+			signingAddr:   c.addr,
+			keystore:      c.keystore,
+
+			method:    method,
+			arguments: arguments,
+		},
+	)
 }

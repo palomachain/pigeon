@@ -18,7 +18,8 @@ const (
 )
 
 type Processor struct {
-	c         Compass
+	compass   compass
+	evmClient Client
 	chainType string
 	chainID   string
 
@@ -26,10 +27,17 @@ type Processor struct {
 }
 
 func NewProcessor(c Client, chainID string) Processor {
+	comp := newCompassClient(
+		c.config.SmartContractAddress,
+		c.config.CompassID,
+		c.internalChainID,
+		c.smartContractAbi,
+		c.paloma,
+		c,
+	)
 	return Processor{
-		c: Compass{
-			Client: c,
-		},
+		compass:   comp,
+		evmClient: c,
 		chainType: "EVM",
 		chainID:   chainID,
 	}
@@ -57,7 +65,7 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 				msg.BytesToSign...,
 			),
 		)
-		sig, err := p.c.sign(ctx, msgBytes)
+		sig, err := p.evmClient.sign(ctx, msgBytes)
 		log.WithFields(log.Fields{
 			"msg": msg,
 			"sig": sig,
@@ -71,7 +79,7 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 		return chain.SignedQueuedMessage{
 			QueuedMessage:   msg,
 			Signature:       sig,
-			SignedByAddress: p.c.addr.Hex(),
+			SignedByAddress: p.evmClient.addr.Hex(),
 		}, nil
 	},
 	)
@@ -81,7 +89,7 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	switch {
 	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
-		return p.c.processMessages(
+		return p.compass.processMessages(
 			ctx,
 			queueTypeName,
 			msgs,
@@ -95,7 +103,7 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 	return chain.ExternalAccount{
 		ChainType: p.chainType,
 		ChainID:   p.chainID,
-		Address:   p.c.addr.Hex(),
-		PubKey:    p.c.addr.Bytes(),
+		Address:   p.evmClient.addr.Hex(),
+		PubKey:    p.evmClient.addr.Bytes(),
 	}
 }

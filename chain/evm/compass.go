@@ -5,9 +5,11 @@ import (
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/errors"
@@ -19,31 +21,45 @@ import (
 const (
 	powerThreshold      uint64 = 2_863_311_530
 	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
+
+	valsetUpdatedABISignature = "ValsetUpdated(bytes32,uint256)"
 )
 
+//go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
+	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
+	ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
 }
 
-type Compass struct {
-	Client
-
-	CompassID []byte
+type compass struct {
+	CompassID string
 	ChainID   string
 
+	compassAbi        abi.ABI
 	smartContractAddr common.Address
+	paloma            palomaClienter
+	evm               evmClienter
 }
 
-func NewCompassClient(
-	smartContractAddrStr string,
-) Compass {
+func newCompassClient(
+	smartContractAddrStr,
+	compassID,
+	chainID string,
+	compassAbi abi.ABI,
+	paloma palomaClienter,
+	evm evmClienter,
+) compass {
 	if !ethcommon.IsHexAddress(smartContractAddrStr) {
 		whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
 	}
-	c := Compass{
+	return compass{
+		CompassID:         compassID,
+		ChainID:           chainID,
 		smartContractAddr: common.HexToAddress(smartContractAddrStr),
+		compassAbi:        compassAbi,
+		paloma:            paloma,
+		evm:               evm,
 	}
-
-	return c
 }
 
 type signature struct {
@@ -61,7 +77,7 @@ type consensus struct {
 	Signatures []*big.Int
 }
 
-func (t Compass) updateValset(
+func (t compass) updateValset(
 	ctx context.Context,
 	newValset *types.Valset,
 	origMessage chain.MessageWithSignatures,
@@ -70,7 +86,7 @@ func (t Compass) updateValset(
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		currentValset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
+		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
 		if !isConsensusReached(currentValset, origMessage) {
@@ -87,7 +103,7 @@ func (t Compass) updateValset(
 	})
 }
 
-func (t Compass) submitLogicCall(
+func (t compass) submitLogicCall(
 	ctx context.Context,
 	messageID uint64,
 	msg *types.SubmitLogicCall,
@@ -103,7 +119,7 @@ func (t Compass) submitLogicCall(
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		valset, err := t.Client.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.internalChainID)
+		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
 		if !isConsensusReached(valset, origMessage) {
@@ -124,7 +140,7 @@ func (t Compass) submitLogicCall(
 	})
 }
 
-// func (t Compass) uploadSmartContract(
+// func (t compass) uploadSmartContract(
 // 	ctx context.Context,
 // 	messageID uint64,
 // 	turnstoneID []byte,
@@ -160,14 +176,14 @@ func (t Compass) submitLogicCall(
 // 	})
 // }
 
-func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
+func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
-			t.turnstoneEVMContract,
+			t.smartContractAddr,
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("ValsetUpdated(bytes32,uint256)")),
+				crypto.Keccak256Hash([]byte(valsetUpdatedABISignature)),
 			},
 		},
 	}
@@ -176,19 +192,19 @@ func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	latestMessageID := big.NewInt(0)
 
 	var retErr error
-	_, err := t.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		for _, log := range logs {
 			if log.BlockNumber > highestBlock {
 				highestBlock = log.BlockNumber
 				mm := make(map[string]any)
-				err := t.smartContractAbi.Events["ValsetUpdated"].Inputs.UnpackIntoMap(mm, log.Data)
+				err := t.compassAbi.Events["ValsetUpdated"].Inputs.UnpackIntoMap(mm, log.Data)
 				if err != nil {
 					retErr = err
 					return false
 				}
 				id, ok := mm["valset_id"].(*big.Int)
 				if !ok {
-					panic("unhandled error :)")
+					panic("valset_id should be big.Int, but it's not")
 				}
 
 				if id.Cmp(latestMessageID) == 1 {
@@ -199,21 +215,21 @@ func (t Compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 		return true
 	})
 
-	if err != nil {
-		return 0, err
-	}
+	var g whoops.Group
+	g.Add(retErr)
+	g.Add(err)
 
-	if retErr != nil {
-		return 0, retErr
+	if g.Err() {
+		return 0, g
 	}
 
 	return uint64(latestMessageID.Int64()), nil
 }
 
-func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
+func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
-			t.turnstoneEVMContract,
+			t.smartContractAddr,
 		},
 		Topics: [][]common.Hash{
 			{
@@ -226,7 +242,7 @@ func (t Compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	}
 
 	var found bool
-	_, err := t.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		found = true
 		return false
 	})
@@ -270,33 +286,39 @@ func buildConsensus(
 	return con
 }
 
-func (t Compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+	var gErr whoops.Group
 	for _, rawMsg := range msgs {
 		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
-			if err := t.submitLogicCall(
+			err := t.submitLogicCall(
 				ctx,
 				rawMsg.ID,
 				action.SubmitLogicCall,
 				rawMsg,
-			); err != nil {
-				return err
-			}
+			)
+			gErr.Add(err)
 		case *types.Message_UpdateValset:
-			if err := t.updateValset(
+			err := t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
 				rawMsg,
-			); err != nil {
-				return err
-			}
+			)
+			gErr.Add(err)
+		default:
+			return ErrUnsupportedMessageType.Format(action)
 		}
 		// TODO: this is temporary
-		// if no error, then we can simply delete it
-		_ = t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
+		err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
+		gErr.Add(err)
 	}
+
+	if gErr.Err() {
+		return gErr
+	}
+
 	return nil
 }
 
@@ -345,24 +367,10 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 	return false
 }
 
-func (c Compass) callCompass(
+func (c compass) callCompass(
 	ctx context.Context,
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
-	return callSmartContract(
-		ctx,
-		executeSmartContractIn{
-			ethClient:     c.conn,
-			chainID:       c.config.GetChainID(),
-			gasAdjustment: c.config.GasAdjustment,
-			abi:           c.smartContractAbi,
-			contract:      c.turnstoneEVMContract,
-			signingAddr:   c.addr,
-			keystore:      c.keystore,
-
-			method:    method,
-			arguments: arguments,
-		},
-	)
+	return c.evm.ExecuteSmartContract(ctx, c.compassAbi, c.smartContractAddr, method, arguments)
 }
