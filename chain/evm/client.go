@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 
+	"github.com/ethereum/go-ethereum"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -88,7 +89,8 @@ func StoredContracts() map[string]StoredContract {
 	return _contracts
 }
 
-type PalomaClienter interface {
+//go:generate mockery --name=palomaClienter --inpackage --testonly
+type palomaClienter interface {
 	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
@@ -96,22 +98,21 @@ type PalomaClienter interface {
 type Client struct {
 	config config.EVM
 
-	smartContractAbi     abi.ABI
-	turnstoneEVMContract common.Address
+	smartContractAbi abi.ABI
 
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
 	conn *ethclient.Client
 
-	paloma PalomaClienter
+	paloma palomaClienter
 
 	internalChainID string
 }
 
 func NewClient(
 	cfg config.EVM,
-	palomaClient PalomaClienter,
+	palomaClient palomaClienter,
 	internalChainID string,
 ) Client {
 	client := &Client{
@@ -138,11 +139,6 @@ func (c *Client) init() error {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))
 		}
 		c.addr = ethcommon.HexToAddress(c.config.SigningKey)
-
-		if !ethcommon.IsHexAddress(c.config.SmartContractAddress) {
-			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SmartContractAddress)))
-		}
-		c.turnstoneEVMContract = ethcommon.HexToAddress(c.config.SmartContractAddress)
 
 		c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
 		if !c.keystore.HasAddress(c.addr) {
@@ -266,15 +262,31 @@ func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 	)
 }
 
-// processAllLogs will gather all logs given a FilterQuery. If it encounters an
+// FilterLogs will gather all logs given a FilterQuery. If it encounters an
 // error saying that there are too many results in the provided block window,
-// then it's going to try to do this using a binary search approach while
+// then it's going to try to do this using a "binary search" approach while
 // splitting the  possible set in two, recursively.
-func (c Client) processAllLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
+func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
+	return filterLogs(ctx, c.conn, fq, currBlockHeight, fn)
+}
+
+//go:generate mockery --name=ethClientToFilterLogs --inpackage --testonly
+type ethClientToFilterLogs interface {
+	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]etherumtypes.Log, error)
+	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
+}
+
+func filterLogs(
+	ctx context.Context,
+	ethClient ethClientToFilterLogs,
+	fq etherum.FilterQuery,
+	currBlockHeight *big.Int,
+	fn func(logs []ethtypes.Log) bool,
+) (bool, error) {
 	if currBlockHeight == nil {
-		header, err := c.conn.HeaderByNumber(ctx, nil)
+		header, err := ethClient.HeaderByNumber(ctx, nil)
 		if err != nil {
-			panic(err)
+			return false, err
 		}
 		currBlockHeight = header.Number
 	}
@@ -288,7 +300,7 @@ func (c Client) processAllLogs(ctx context.Context, fq etherum.FilterQuery, curr
 		}
 	}
 
-	logs, err := c.conn.FilterLogs(ctx, fq)
+	logs, err := ethClient.FilterLogs(ctx, fq)
 
 	switch {
 	case err == nil:
@@ -308,40 +320,44 @@ func (c Client) processAllLogs(ctx context.Context, fq etherum.FilterQuery, curr
 
 		fqLeft := fq
 		fqLeft.ToBlock = mid
-		shouldContinue, err := c.processAllLogs(ctx, fqLeft, currBlockHeight, fn)
+		shouldContinue, err := filterLogs(
+			ctx,
+			ethClient,
+			fqLeft,
+			currBlockHeight,
+			fn,
+		)
 		if err != nil {
 			return false, err
 		}
 		if !shouldContinue {
 			return false, nil
 		}
+
 		fqRight := fq
 		fqRight.FromBlock = big.NewInt(0).Add(mid, big.NewInt(1))
 
-		shouldContinue, err = c.processAllLogs(ctx, fqRight, currBlockHeight, fn)
-		if err != nil {
-			return false, err
-		}
-		if !shouldContinue {
-			return false, nil
-		}
+		return filterLogs(
+			ctx,
+			ethClient,
+			fqRight,
+			currBlockHeight,
+			fn,
+		)
 	}
+
 	return false, err
 }
 
-func (c Client) callSmartContract(
-	ctx context.Context,
-	method string,
-	arguments []any,
-) (*etherumtypes.Transaction, error) {
+func (c Client) ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error) {
 	return callSmartContract(
 		ctx,
 		executeSmartContractIn{
 			ethClient:     c.conn,
 			chainID:       c.config.GetChainID(),
 			gasAdjustment: c.config.GasAdjustment,
-			abi:           c.smartContractAbi,
-			contract:      c.turnstoneEVMContract,
+			abi:           contractAbi,
+			contract:      addr,
 			signingAddr:   c.addr,
 			keystore:      c.keystore,
 

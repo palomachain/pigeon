@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/sparrow/chain"
 	"github.com/stretchr/testify/require"
 )
 
-func TestEvmtSigning(t *testing.T) {
+func TestEvmSigning(t *testing.T) {
 	c := Client{
 		keystore: OpenKeystore(t.TempDir()),
 	}
@@ -18,6 +19,7 @@ func TestEvmtSigning(t *testing.T) {
 	require.NoError(t, err)
 	c.keystore.Unlock(acc, "abcd")
 	c.addr = acc.Address
+	c.config.SmartContractAddress = common.BytesToAddress([]byte("abc")).Hex()
 
 	p := NewProcessor(c, "test")
 
@@ -35,7 +37,9 @@ func TestEvmtSigning(t *testing.T) {
 	for i := range msgsToSign {
 		orig, signed := msgsToSign[i], signed[i]
 
-		pubkey, err := crypto.Ecrecover(orig.BytesToSign, signed.Signature)
+		signedMsg := crypto.Keccak256(append([]byte(SignedMessagePrefix), orig.BytesToSign...))
+
+		pubkey, err := crypto.Ecrecover(signedMsg, signed.Signature)
 		require.NoError(t, err)
 
 		pk, err := crypto.UnmarshalPubkey(pubkey)
