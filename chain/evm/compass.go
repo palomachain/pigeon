@@ -2,6 +2,7 @@ package evm
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -19,6 +20,7 @@ import (
 )
 
 const (
+	maxPower            uint64 = 1 << 32
 	powerThreshold      uint64 = 2_863_311_530
 	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
 
@@ -89,7 +91,9 @@ func (t compass) updateValset(
 		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
-		if !isConsensusReached(currentValset, origMessage) {
+		consensusReached, err := isConsensusReached(currentValset, origMessage)
+		whoops.Assert(err)
+		if !consensusReached {
 			return
 		}
 
@@ -122,7 +126,9 @@ func (t compass) submitLogicCall(
 		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
-		if !isConsensusReached(valset, origMessage) {
+		consensusReached, err := isConsensusReached(valset, origMessage)
+		whoops.Assert(err)
+		if !consensusReached {
 			return
 		}
 
@@ -243,8 +249,8 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 
 	var found bool
 	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
-		found = true
-		return false
+		found = len(logs) > 0
+		return !found
 	})
 
 	if err != nil {
@@ -334,37 +340,51 @@ func typesValsetToValset(val *types.Valset) valset {
 	}
 }
 
-func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool {
+func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (bool, error) {
+	signaturesMap := make(map[string]chain.ValidatorSignature)
+	for _, sig := range msg.Signatures {
+		_, ok := signaturesMap[sig.SignedByAddress]
+		if ok {
+			return false, ErrMessageSignedMultipleTimesByTheSameValidator.Format(
+				msg.ID,
+				sig.ValAddress.String(),
+				sig.SignedByAddress,
+			)
+		}
+
+		signaturesMap[sig.SignedByAddress] = sig
+	}
 	var s uint64
 	for i := range val.Validators {
 		val, pow := val.Validators[i], val.Powers[i]
-		for _, sig := range msg.Signatures {
-			if len(sig.Signature) > 0 {
-				bytesToVerify := crypto.Keccak256(append(
-					[]byte(SignedMessagePrefix),
-					msg.BytesToSign...,
-				))
-				recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
-				if err != nil {
-					return false
-				}
-				pk, err := crypto.UnmarshalPubkey(recoveredPK)
-				if err != nil {
-					return false
-				}
-				recoveredAddr := crypto.PubkeyToAddress(*pk)
-				if val == recoveredAddr.Hex() {
-					s += pow
-					break
-				}
-			}
+		sig, ok := signaturesMap[val]
+		if !ok {
+			continue
 		}
-
-		if s >= powerThreshold {
-			return true
+		fmt.Println("NASAO")
+		bytesToVerify := crypto.Keccak256(append(
+			[]byte(SignedMessagePrefix),
+			msg.BytesToSign...,
+		))
+		recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
+		if err != nil {
+			continue
+		}
+		pk, err := crypto.UnmarshalPubkey(recoveredPK)
+		if err != nil {
+			continue
+		}
+		recoveredAddr := crypto.PubkeyToAddress(*pk)
+		fmt.Println("VAL", val, "REC", recoveredAddr.String())
+		if val == recoveredAddr.Hex() {
+			s += pow
 		}
 	}
-	return false
+	if s >= powerThreshold {
+		return true, nil
+	}
+	fmt.Println(s, powerThreshold)
+	return false, nil
 }
 
 func (c compass) callCompass(
