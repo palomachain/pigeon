@@ -90,8 +90,7 @@ func (t compass) updateValset(
 		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
-		consensusReached, err := isConsensusReached(currentValset, origMessage)
-		whoops.Assert(err)
+		consensusReached := isConsensusReached(currentValset, origMessage)
 		if !consensusReached {
 			return
 		}
@@ -125,8 +124,7 @@ func (t compass) submitLogicCall(
 		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
-		consensusReached, err := isConsensusReached(valset, origMessage)
-		whoops.Assert(err)
+		consensusReached := isConsensusReached(valset, origMessage)
 		if !consensusReached {
 			return
 		}
@@ -339,18 +337,9 @@ func typesValsetToValset(val *types.Valset) valset {
 	}
 }
 
-func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (bool, error) {
+func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool {
 	signaturesMap := make(map[string]chain.ValidatorSignature)
 	for _, sig := range msg.Signatures {
-		_, ok := signaturesMap[sig.SignedByAddress]
-		if ok {
-			return false, ErrMessageSignedMultipleTimesByTheSameValidator.Format(
-				msg.ID,
-				sig.ValAddress.String(),
-				sig.SignedByAddress,
-			)
-		}
-
 		signaturesMap[sig.SignedByAddress] = sig
 	}
 	var s uint64
@@ -378,9 +367,9 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (boo
 		}
 	}
 	if s >= powerThreshold {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
 func (c compass) callCompass(

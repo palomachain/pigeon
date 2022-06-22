@@ -16,6 +16,26 @@ import (
 	"github.com/vizualni/whoops"
 )
 
+var (
+	smartContractAddr        = common.HexToAddress("0xDEF")
+	ethCompatibleBytesToSign = crypto.Keccak256([]byte("sign me"))
+
+	bobPK, _   = crypto.GenerateKey()
+	alicePK, _ = crypto.GenerateKey()
+	frankPK, _ = crypto.GenerateKey()
+)
+
+func signMessage(bz []byte, pk *ecdsa.PrivateKey) chain.ValidatorSignature {
+	return chain.ValidatorSignature{
+		SignedByAddress: crypto.PubkeyToAddress(pk.PublicKey).Hex(),
+		Signature: whoops.Must(crypto.Sign(
+			crypto.Keccak256(
+				append([]byte(SignedMessagePrefix), bz...),
+			), pk)),
+		PublicKey: crypto.FromECDSAPub(&pk.PublicKey),
+	}
+}
+
 func powerFromPercentage(p float64) uint64 {
 	if p > 1 || p < 0 {
 		panic("invalid value for percentage")
@@ -41,22 +61,9 @@ func valsetUpdatedEvent(blockNumber uint64, checkpoint string, valsetID int64) e
 }
 
 func TestMessageProcessing(t *testing.T) {
-	smartContractAddr := common.HexToAddress("0xDEF")
-	ethCompatibleBytesToSign := crypto.Keccak256([]byte("sign me"))
-
-	bobPK, _ := crypto.GenerateKey()
-	alicePK, _ := crypto.GenerateKey()
-	frankPK, _ := crypto.GenerateKey()
 
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
-		return chain.ValidatorSignature{
-			SignedByAddress: crypto.PubkeyToAddress(pk.PublicKey).Hex(),
-			Signature: whoops.Must(crypto.Sign(
-				crypto.Keccak256(
-					append([]byte(SignedMessagePrefix), ethCompatibleBytesToSign...),
-				), pk)),
-			PublicKey: crypto.FromECDSAPub(&pk.PublicKey),
-		}
+		return signMessage(ethCompatibleBytesToSign, pk)
 	}
 
 	for _, tt := range []struct {
@@ -358,6 +365,180 @@ func TestMessageProcessing(t *testing.T) {
 
 			err := comp.processMessages(ctx, "queue-name", tt.msgs)
 			require.ErrorIs(t, err, tt.expErr)
+		})
+	}
+}
+
+func TestIfTheConsensusHasBeenReached(t *testing.T) {
+
+	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
+		return signMessage(ethCompatibleBytesToSign, pk)
+	}
+
+	for _, tt := range []struct {
+		name       string
+		valset     *types.Valset
+		msgWithSig chain.MessageWithSignatures
+		expRes     bool
+	}{
+		{
+			name:   "all valid",
+			expRes: true,
+			valset: &types.Valset{
+				Validators: []string{
+					crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+				},
+				Powers: []uint64{
+					powerFromPercentage(0.4),
+					powerFromPercentage(0.2),
+					powerFromPercentage(0.1),
+				},
+			},
+			msgWithSig: chain.MessageWithSignatures{
+				QueuedMessage: chain.QueuedMessage{
+					ID:          555,
+					BytesToSign: ethCompatibleBytesToSign,
+					Msg: &types.Message{
+						Action: &types.Message_SubmitLogicCall{
+							SubmitLogicCall: &types.SubmitLogicCall{
+								HexContractAddress: "0xABC",
+								Abi:                []byte("abi"),
+								Payload:            []byte("payload"),
+								Deadline:           123,
+							},
+						},
+					},
+				},
+				Signatures: []chain.ValidatorSignature{
+					addValidSignature(bobPK),
+					addValidSignature(alicePK),
+					addValidSignature(frankPK),
+				},
+			},
+		},
+		{
+			name:   "not enough to reach consensus",
+			expRes: false,
+			valset: &types.Valset{
+				Validators: []string{
+					crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+				},
+				Powers: []uint64{
+					powerFromPercentage(0.1),
+					powerFromPercentage(0.2),
+					powerFromPercentage(0.1),
+				},
+			},
+			msgWithSig: chain.MessageWithSignatures{
+				QueuedMessage: chain.QueuedMessage{
+					ID:          555,
+					BytesToSign: ethCompatibleBytesToSign,
+					Msg: &types.Message{
+						Action: &types.Message_SubmitLogicCall{
+							SubmitLogicCall: &types.SubmitLogicCall{
+								HexContractAddress: "0xABC",
+								Abi:                []byte("abi"),
+								Payload:            []byte("payload"),
+								Deadline:           123,
+							},
+						},
+					},
+				},
+				Signatures: []chain.ValidatorSignature{
+					addValidSignature(bobPK),
+					addValidSignature(alicePK),
+					addValidSignature(frankPK),
+				},
+			},
+		},
+		{
+			name:   "incorrect pk key",
+			expRes: false,
+			valset: &types.Valset{
+				Validators: []string{
+					crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+				},
+				Powers: []uint64{
+					powerFromPercentage(0.5),
+					powerFromPercentage(0.2),
+					powerFromPercentage(0.1),
+				},
+			},
+			msgWithSig: chain.MessageWithSignatures{
+				QueuedMessage: chain.QueuedMessage{
+					ID:          555,
+					BytesToSign: ethCompatibleBytesToSign,
+					Msg: &types.Message{
+						Action: &types.Message_SubmitLogicCall{
+							SubmitLogicCall: &types.SubmitLogicCall{
+								HexContractAddress: "0xABC",
+								Abi:                []byte("abi"),
+								Payload:            []byte("payload"),
+								Deadline:           123,
+							},
+						},
+					},
+				},
+				Signatures: []chain.ValidatorSignature{
+					// this one is invalid
+					chain.ValidatorSignature{
+						SignedByAddress: crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+						Signature:       []byte("this is invalid"),
+						PublicKey:       crypto.FromECDSAPub(&bobPK.PublicKey),
+					},
+					addValidSignature(alicePK),
+					addValidSignature(frankPK),
+				},
+			},
+		},
+		{
+			name:   "valid signature, but incorrect signer",
+			expRes: false,
+			valset: &types.Valset{
+				Validators: []string{
+					crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+					crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+				},
+				Powers: []uint64{
+					powerFromPercentage(0.5),
+					powerFromPercentage(0.2),
+					powerFromPercentage(0.1),
+				},
+			},
+			msgWithSig: chain.MessageWithSignatures{
+				QueuedMessage: chain.QueuedMessage{
+					ID:          555,
+					BytesToSign: ethCompatibleBytesToSign,
+					Msg: &types.Message{
+						Action: &types.Message_SubmitLogicCall{
+							SubmitLogicCall: &types.SubmitLogicCall{
+								HexContractAddress: "0xABC",
+								Abi:                []byte("abi"),
+								Payload:            []byte("payload"),
+								Deadline:           123,
+							},
+						},
+					},
+				},
+				Signatures: []chain.ValidatorSignature{
+					// this one should be bob
+					addValidSignature(alicePK),
+					addValidSignature(alicePK),
+					addValidSignature(frankPK),
+				},
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			res := isConsensusReached(tt.valset, tt.msgWithSig)
+			require.Equal(t, tt.expRes, res)
 		})
 	}
 }
