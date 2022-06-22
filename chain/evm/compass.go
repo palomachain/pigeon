@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -361,7 +360,6 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (boo
 		if !ok {
 			continue
 		}
-		fmt.Println("NASAO")
 		bytesToVerify := crypto.Keccak256(append(
 			[]byte(SignedMessagePrefix),
 			msg.BytesToSign...,
@@ -375,7 +373,6 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (boo
 			continue
 		}
 		recoveredAddr := crypto.PubkeyToAddress(*pk)
-		fmt.Println("VAL", val, "REC", recoveredAddr.String())
 		if val == recoveredAddr.Hex() {
 			s += pow
 		}
@@ -383,7 +380,6 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) (boo
 	if s >= powerThreshold {
 		return true, nil
 	}
-	fmt.Println(s, powerThreshold)
 	return false, nil
 }
 
