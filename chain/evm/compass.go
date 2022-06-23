@@ -30,6 +30,7 @@ const (
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
+	DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode []byte, constructorArgs []any) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 }
 
 type compass struct {
@@ -107,12 +108,11 @@ func (t compass) updateValset(
 
 func (t compass) submitLogicCall(
 	ctx context.Context,
-	messageID uint64,
 	msg *types.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
-		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
+		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 		whoops.Assert(err)
 		if executed {
 			return
@@ -143,41 +143,29 @@ func (t compass) submitLogicCall(
 	})
 }
 
-// func (t compass) uploadSmartContract(
-// 	ctx context.Context,
-// 	messageID uint64,
-// 	turnstoneID []byte,
-// 	msg *types.UploadSmartContract,
-// 	signatures []chain.ValidatorSignature,
-// ) error {
-// 	return whoops.Try(func() {
-// 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
-// 		whoops.Assert(err)
-// 		if executed {
-// 			return
-// 		}
+func (t compass) uploadSmartContract(
+	ctx context.Context,
+	msg *types.UploadSmartContract,
+	origMessage chain.MessageWithSignatures,
+) error {
+	return whoops.Try(func() {
+		contractABI, err := abi.JSON(msg.GetABI())
+		whoops.Assert(err)
 
-// 		valsetID, err := t.findLastValsetMessageID(ctx)
-// 		whoops.Assert(err)
+		// 0 means to get the latest valset
+		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainID)
+		whoops.Assert(err)
 
-// 		snapshot, err := t.Client.paloma.GetSnapshotByID(ctx, valsetID)
-// 		whoops.Assert(err)
+		consensusReached := isConsensusReached(latestValset, origMessage)
+		if !consensusReached {
+			return
+		}
 
-// 		bind.DeployContract()
-
-// 		con := t.buildConsensus(ctx, snapshot, signatures)
-
-// 		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
-// 			con,
-// 			common.HexToAddress(msg.GetHexContractAddress()),
-// 			msg.GetPayload(),
-// 			msg.GetDeadline(),
-// 		})
-// 		whoops.Assert(err)
-
-// 		return
-// 	})
-// }
+		addr, tx, err := t.evm.DeployContract(ctx, contractABI, msg.GetBytecode(), msg.GetConstructorInput())
+		whoops.Assert(err)
+		return
+	})
+}
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	filter := etherum.FilterQuery{
@@ -298,7 +286,6 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		case *types.Message_SubmitLogicCall:
 			err := t.submitLogicCall(
 				ctx,
-				rawMsg.ID,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
@@ -307,6 +294,13 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			err := t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
+				rawMsg,
+			)
+			gErr.Add(err)
+		case *types.Message_UploadSmartContract:
+			err := t.uploadSmartContract(
+				ctx,
+				action.UploadSmartContract,
 				rawMsg,
 			)
 			gErr.Add(err)
