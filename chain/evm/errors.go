@@ -9,4 +9,6 @@ const (
 	ErrInvalidAddress            = whoops.Errorf("provided address: '%s' is not valid")
 	ErrAddressNotFoundInKeyStore = whoops.Errorf("address: '%s' not found in keystore: %s")
 	ErrUnsupportedMessageType    = whoops.Errorf("unsupported message type: %T")
+
+	ErrNoConsensus = whoops.String("no consensus reached")
 )

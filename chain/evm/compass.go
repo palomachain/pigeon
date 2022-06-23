@@ -1,7 +1,10 @@
 package evm
 
 import (
+	"bytes"
 	"context"
+	goerrors "errors"
+	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -15,6 +18,7 @@ import (
 	"github.com/palomachain/sparrow/errors"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
 
@@ -30,6 +34,7 @@ const (
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
+	DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 }
 
 type compass struct {
@@ -90,9 +95,13 @@ func (t compass) updateValset(
 		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
+		if currentValset == nil {
+			whoops.Assert(fmt.Errorf("oh no"))
+		}
+
 		consensusReached := isConsensusReached(currentValset, origMessage)
 		if !consensusReached {
-			return
+			whoops.Assert(ErrNoConsensus)
 		}
 
 		_, err = t.callCompass(ctx, "update_valset", []any{
@@ -107,12 +116,11 @@ func (t compass) updateValset(
 
 func (t compass) submitLogicCall(
 	ctx context.Context,
-	messageID uint64,
 	msg *types.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
-		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
+		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 		whoops.Assert(err)
 		if executed {
 			return
@@ -126,7 +134,7 @@ func (t compass) submitLogicCall(
 
 		consensusReached := isConsensusReached(valset, origMessage)
 		if !consensusReached {
-			return
+			whoops.Assert(ErrNoConsensus)
 		}
 
 		con := buildConsensus(ctx, valset, origMessage.Signatures)
@@ -143,41 +151,32 @@ func (t compass) submitLogicCall(
 	})
 }
 
-// func (t compass) uploadSmartContract(
-// 	ctx context.Context,
-// 	messageID uint64,
-// 	turnstoneID []byte,
-// 	msg *types.UploadSmartContract,
-// 	signatures []chain.ValidatorSignature,
-// ) error {
-// 	return whoops.Try(func() {
-// 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, messageID)
-// 		whoops.Assert(err)
-// 		if executed {
-// 			return
-// 		}
+func (t compass) uploadSmartContract(
+	ctx context.Context,
+	msg *types.UploadSmartContract,
+	origMessage chain.MessageWithSignatures,
+) error {
+	return whoops.Try(func() {
+		contractABI, err := abi.JSON(bytes.NewReader(msg.GetAbi()))
+		whoops.Assert(err)
 
-// 		valsetID, err := t.findLastValsetMessageID(ctx)
-// 		whoops.Assert(err)
+		// 0 means to get the latest valset
+		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainID)
+		whoops.Assert(err)
 
-// 		snapshot, err := t.Client.paloma.GetSnapshotByID(ctx, valsetID)
-// 		whoops.Assert(err)
+		consensusReached := isConsensusReached(latestValset, origMessage)
+		if !consensusReached {
+			whoops.Assert(ErrNoConsensus)
+		}
 
-// 		bind.DeployContract()
-
-// 		con := t.buildConsensus(ctx, snapshot, signatures)
-
-// 		_, err = t.callSmartContract(ctx, "submit_logic_call", []any{
-// 			con,
-// 			common.HexToAddress(msg.GetHexContractAddress()),
-// 			msg.GetPayload(),
-// 			msg.GetDeadline(),
-// 		})
-// 		whoops.Assert(err)
-
-// 		return
-// 	})
-// }
+		addr, tx, err := t.evm.DeployContract(ctx, contractABI, msg.GetBytecode(), msg.GetConstructorInput())
+		// TODO: do attestation
+		_ = addr
+		_ = tx
+		whoops.Assert(err)
+		return
+	})
+}
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	filter := etherum.FilterQuery{
@@ -292,30 +291,48 @@ func buildConsensus(
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
 	for _, rawMsg := range msgs {
+		var processingErr error
+		logger := log.WithFields(log.Fields{
+			"processor-chain-id": t.ChainID,
+			"queue-name":         queueTypeName,
+			"msg-id":             rawMsg.ID,
+		})
+		logger.Info("processing")
 		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
-			err := t.submitLogicCall(
+			processingErr = t.submitLogicCall(
 				ctx,
-				rawMsg.ID,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
-			gErr.Add(err)
 		case *types.Message_UpdateValset:
-			err := t.updateValset(
+			processingErr = t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
 				rawMsg,
 			)
-			gErr.Add(err)
+		case *types.Message_UploadSmartContract:
+			processingErr = t.uploadSmartContract(
+				ctx,
+				action.UploadSmartContract,
+				rawMsg,
+			)
 		default:
 			return ErrUnsupportedMessageType.Format(action)
 		}
-		// TODO: this is temporary
-		err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
-		gErr.Add(err)
+
+		switch {
+		case processingErr == nil:
+			// TODO: this is temporary
+			err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
+			gErr.Add(err)
+		case goerrors.Is(processingErr, ErrNoConsensus):
+			// does nothing
+		default:
+			gErr.Add(processingErr)
+		}
 	}
 
 	if gErr.Err() {

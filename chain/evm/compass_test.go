@@ -99,7 +99,6 @@ func TestMessageProcessing(t *testing.T) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
 					fn(isArbitraryCallExecutedLogs)
 				})
-
 				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(666)).Return(nil)
 
 				return evm, paloma
@@ -208,7 +207,6 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(555)).Return(nil)
 
 				return evm, paloma
 			},
@@ -345,7 +343,86 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				return evm, paloma
+			},
+		},
+		{
+			name: "upload_smart_contract/happy path",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UploadSmartContract{
+								UploadSmartContract: &types.UploadSmartContract{
+									Bytecode:         []byte("bytecode"),
+									Abi:              StoredContracts()["simple"].Source,
+									ConstructorInput: []byte("constructor input"),
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+
+				currentValsetID := int64(0)
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{powerThreshold + 1},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				evm.On("DeployContract", mock.Anything, StoredContracts()["simple"].ABI, []byte("bytecode"), []byte("constructor input")).Return(nil, nil, nil)
+
 				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(555)).Return(nil)
+				return evm, paloma
+			},
+		},
+		{
+			name: "upload_smart_contract/without a consensus it returns an error",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UploadSmartContract{
+								UploadSmartContract: &types.UploadSmartContract{
+									Bytecode:         []byte("bytecode"),
+									Abi:              StoredContracts()["simple"].Source,
+									ConstructorInput: []byte("constructor input"),
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+
+				currentValsetID := int64(0)
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{5},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
 				return evm, paloma
 			},
 		},
