@@ -15,7 +15,7 @@ import (
 	"github.com/vizualni/whoops"
 )
 
-func (c Client) DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode []byte, constructorArgs []any) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
+func (c Client) DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
 	return deployContract(
 		ctx,
 		c.conn,
@@ -24,7 +24,7 @@ func (c Client) DeployContract(ctx context.Context, contractAbi abi.ABI, bytecod
 		c.config.GetChainID(),
 		contractAbi,
 		bytecode,
-		constructorArgs,
+		constructorInput,
 	)
 }
 
@@ -36,11 +36,10 @@ func deployContract(
 	chainID *big.Int,
 	contractAbi abi.ABI,
 	bytecode []byte,
-	constructorArgs []any,
+	constructorInput []byte,
 ) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
 	logger := log.WithField("chainID", chainID)
 	err = whoops.Try(func() {
-
 		nonce, err := ethClient.PendingNonceAt(ctx, signingAddr)
 		whoops.Assert(err)
 
@@ -61,6 +60,11 @@ func deployContract(
 		logger = logger.WithFields(log.Fields{
 			"tx-opts": txOpts,
 		})
+
+		// hack begins here
+		constructorArgs, err := contractAbi.Constructor.Inputs.Unpack(constructorInput)
+		whoops.Assert(err)
+		// hack ends here
 
 		logger.Info("deploying contract")
 		contractAddr, tx, _, err = bind.DeployContract(

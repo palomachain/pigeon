@@ -64,15 +64,11 @@ var (
 			chainID, contractABIbz, bytecode, packedInput := args[0], args[1], args[2], args[3]
 			c := app.GetEvmClients()[chainID]
 			contractABI := whoops.Must(abi.JSON(strings.NewReader(contractABIbz)))
-			constructorArgs, err := contractABI.Constructor.Inputs.Unpack(common.FromHex(packedInput))
-			if err != nil {
-				return err
-			}
 			addr, tx, err := c.DeployContract(
 				cmd.Context(),
 				contractABI,
 				common.FromHex(bytecode),
-				constructorArgs,
+				common.FromHex(packedInput),
 			)
 			if err != nil {
 				return err

@@ -1,7 +1,10 @@
 package evm
 
 import (
+	"bytes"
 	"context"
+	goerrors "errors"
+	"fmt"
 	"math/big"
 
 	etherum "github.com/ethereum/go-ethereum"
@@ -15,6 +18,7 @@ import (
 	"github.com/palomachain/sparrow/errors"
 	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
 	"github.com/palomachain/sparrow/util/slice"
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
 
@@ -30,7 +34,7 @@ const (
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
-	DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode []byte, constructorArgs []any) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
+	DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 }
 
 type compass struct {
@@ -91,9 +95,13 @@ func (t compass) updateValset(
 		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
 		whoops.Assert(err)
 
+		if currentValset == nil {
+			whoops.Assert(fmt.Errorf("oh no"))
+		}
+
 		consensusReached := isConsensusReached(currentValset, origMessage)
 		if !consensusReached {
-			return
+			whoops.Assert(ErrNoConsensus)
 		}
 
 		_, err = t.callCompass(ctx, "update_valset", []any{
@@ -126,7 +134,7 @@ func (t compass) submitLogicCall(
 
 		consensusReached := isConsensusReached(valset, origMessage)
 		if !consensusReached {
-			return
+			whoops.Assert(ErrNoConsensus)
 		}
 
 		con := buildConsensus(ctx, valset, origMessage.Signatures)
@@ -149,7 +157,7 @@ func (t compass) uploadSmartContract(
 	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
-		contractABI, err := abi.JSON(msg.GetABI())
+		contractABI, err := abi.JSON(bytes.NewReader(msg.GetAbi()))
 		whoops.Assert(err)
 
 		// 0 means to get the latest valset
@@ -158,10 +166,13 @@ func (t compass) uploadSmartContract(
 
 		consensusReached := isConsensusReached(latestValset, origMessage)
 		if !consensusReached {
-			return
+			whoops.Assert(ErrNoConsensus)
 		}
 
 		addr, tx, err := t.evm.DeployContract(ctx, contractABI, msg.GetBytecode(), msg.GetConstructorInput())
+		// TODO: do attestation
+		_ = addr
+		_ = tx
 		whoops.Assert(err)
 		return
 	})
@@ -280,36 +291,48 @@ func buildConsensus(
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
 	for _, rawMsg := range msgs {
+		var processingErr error
+		logger := log.WithFields(log.Fields{
+			"processor-chain-id": t.ChainID,
+			"queue-name":         queueTypeName,
+			"msg-id":             rawMsg.ID,
+		})
+		logger.Info("processing")
 		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
-			err := t.submitLogicCall(
+			processingErr = t.submitLogicCall(
 				ctx,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
-			gErr.Add(err)
 		case *types.Message_UpdateValset:
-			err := t.updateValset(
+			processingErr = t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
 				rawMsg,
 			)
-			gErr.Add(err)
 		case *types.Message_UploadSmartContract:
-			err := t.uploadSmartContract(
+			processingErr = t.uploadSmartContract(
 				ctx,
 				action.UploadSmartContract,
 				rawMsg,
 			)
-			gErr.Add(err)
 		default:
 			return ErrUnsupportedMessageType.Format(action)
 		}
-		// TODO: this is temporary
-		err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
-		gErr.Add(err)
+
+		switch {
+		case processingErr == nil:
+			// TODO: this is temporary
+			err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
+			gErr.Add(err)
+		case goerrors.Is(processingErr, ErrNoConsensus):
+			// does nothing
+		default:
+			gErr.Add(processingErr)
+		}
 	}
 
 	if gErr.Err() {

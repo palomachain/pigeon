@@ -9,7 +9,7 @@ paloma:
   signing-key: my_validator
   base-rpc-url: http://localhost:26657
   gas-adjustment: 2.0
-  gas-prices: 0.01grain
+  gas-prices: 0.001ugrain
   account-prefix: paloma
 
 

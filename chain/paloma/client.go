@@ -7,6 +7,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
+	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/sparrow/chain"
@@ -180,7 +181,11 @@ func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Sn
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
-			return nil, nil
+			return nil, whoops.Enrich(
+				chain.ErrNotFound,
+				chain.EnrichedItemType.Val("snapshot"),
+				chain.EnrichedID.Val(id),
+			)
 		}
 		return nil, err
 	}
@@ -196,7 +201,12 @@ func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID st
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
-			return nil, nil
+			return nil, whoops.Enrich(
+				chain.ErrNotFound,
+				chain.EnrichedChainID.Val(chainID),
+				chain.EnrichedID.Val(id),
+				chain.EnrichedItemType.Val("valset"),
+			)
 		}
 		return nil, err
 	}
