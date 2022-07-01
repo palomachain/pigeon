@@ -98,27 +98,21 @@ type palomaClienter interface {
 type Client struct {
 	config config.EVM
 
-	smartContractAbi abi.ABI
-
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
 	conn *ethclient.Client
 
 	paloma palomaClienter
-
-	internalChainID string
 }
 
 func NewClient(
 	cfg config.EVM,
 	palomaClient palomaClienter,
-	internalChainID string,
 ) Client {
 	client := &Client{
-		config:          cfg,
-		paloma:          palomaClient,
-		internalChainID: internalChainID,
+		config: cfg,
+		paloma: palomaClient,
 	}
 
 	whoops.Assert(client.init())
@@ -128,12 +122,6 @@ func NewClient(
 
 func (c *Client) init() error {
 	return whoops.Try(func() {
-		contracts := StoredContracts()
-		scabi, ok := contracts[smartContractFilename]
-		if !ok {
-			whoops.Assert(errors.Unrecoverable(ErrSmartContractNotFound.Format(smartContractFilename)))
-		}
-		c.smartContractAbi = scabi.ABI
 
 		if !ethcommon.IsHexAddress(c.config.SigningKey) {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))

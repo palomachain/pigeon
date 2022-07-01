@@ -27,11 +27,10 @@ type CosmosSpecificClientConfig struct {
 
 type EVMSpecificClientConfig struct {
 	SmartContractAddress string `yaml:"smart-contract-address"`
-	CompassID            string `yaml:"compass-id"`
+	SmartContractID      string `yaml:"smart-contract-id"`
 }
 
 type ChainClientConfig struct {
-	ChainID            string   `yaml:"chain-id"`
 	BaseRPCURL         string   `yaml:"base-rpc-url"`
 	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
 	SigningKey         string   `yaml:"signing-key"`

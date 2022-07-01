@@ -5,6 +5,7 @@ import (
 
 	"github.com/palomachain/pigeon/attest"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
@@ -30,15 +31,15 @@ type Relayer struct {
 
 	attestExecutor AttestExecutor
 
-	processors map[string]chain.Processor
+	evmFactory *evm.Factory
 }
 
-func New(config config.Root, palomaClient PalomaClienter, attestExecutor AttestExecutor, processors map[string]chain.Processor) *Relayer {
+func New(config config.Root, palomaClient PalomaClienter, attestExecutor AttestExecutor, evmFactory *evm.Factory) *Relayer {
 	return &Relayer{
 		config:         config,
 		palomaClient:   palomaClient,
 		attestExecutor: attestExecutor,
-		processors:     processors,
+		evmFactory:     evmFactory,
 	}
 }
 

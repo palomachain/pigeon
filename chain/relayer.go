@@ -37,11 +37,17 @@ type MessageWithSignatures struct {
 }
 
 type ExternalAccount struct {
-	ChainType string
-	ChainID   string
+	ChainType        string
+	ChainReferenceID string
 
 	Address string
 	PubKey  []byte
+}
+
+type ChainInfo interface {
+	ChainReferenceID() string
+	ChainID() string
+	ChainType() string
 }
 
 //go:generate mockery --name=Processor
@@ -57,4 +63,8 @@ type Processor interface {
 	// ProcessMessages will receive messages from the current queues and it's on the implementation
 	// to ensure that there are enough signatures for consensus.
 	ProcessMessages(context.Context, string, []MessageWithSignatures) error
+}
+
+type ProcessorBuilder interface {
+	Build(ChainInfo) (Processor, error)
 }

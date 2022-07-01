@@ -33,7 +33,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 		found := false
 		for _, currentChainInfo := range existingAccInfo {
 			if accAddr.ChainType == currentChainInfo.ChainType &&
-				accAddr.ChainID == currentChainInfo.ChainID &&
+				accAddr.ChainReferenceID == currentChainInfo.ChainReferenceID &&
 				accAddr.Address == currentChainInfo.Address {
 				found = true
 				break
@@ -41,7 +41,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 		}
 		if !found {
 			chainInfos = append(chainInfos, paloma.ChainInfoIn{
-				ChainID:    accAddr.ChainID,
+				ChainID:    accAddr.ChainReferenceID,
 				AccAddress: accAddr.Address,
 				ChainType:  accAddr.ChainType,
 				PubKey:     accAddr.PubKey,

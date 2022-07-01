@@ -36,8 +36,8 @@ type evmClienter interface {
 }
 
 type compass struct {
-	CompassID string
-	ChainID   string
+	CompassID        string
+	ChainReferenceID string
 
 	compassAbi        abi.ABI
 	smartContractAddr common.Address
@@ -48,7 +48,7 @@ type compass struct {
 func newCompassClient(
 	smartContractAddrStr,
 	compassID,
-	chainID string,
+	chainReferenceID string,
 	compassAbi abi.ABI,
 	paloma palomaClienter,
 	evm evmClienter,
@@ -58,7 +58,7 @@ func newCompassClient(
 	// }
 	return compass{
 		CompassID:         compassID,
-		ChainID:           chainID,
+		ChainReferenceID:  chainReferenceID,
 		smartContractAddr: common.HexToAddress(smartContractAddrStr),
 		compassAbi:        compassAbi,
 		paloma:            paloma,
@@ -90,7 +90,7 @@ func (t compass) updateValset(
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
+		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 		whoops.Assert(err)
 
 		if currentValset == nil {
@@ -127,7 +127,7 @@ func (t compass) submitLogicCall(
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainID)
+		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 		whoops.Assert(err)
 
 		consensusReached := isConsensusReached(valset, origMessage)
@@ -159,7 +159,7 @@ func (t compass) uploadSmartContract(
 		whoops.Assert(err)
 
 		// 0 means to get the latest valset
-		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainID)
+		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
 		whoops.Assert(err)
 
 		consensusReached := isConsensusReached(latestValset, origMessage)
@@ -291,7 +291,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	for _, rawMsg := range msgs {
 		var processingErr error
 		logger := log.WithFields(log.Fields{
-			"processor-chain-id": t.ChainID,
+			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
 			"msg-id":             rawMsg.ID,
 		})

@@ -28,8 +28,7 @@ var (
 
 	_palomaClient *paloma.Client
 
-	_evmClients    map[string]evm.Client
-	_evmProcessors map[string]chain.Processor
+	_evmFactory *evm.Factory
 
 	_attestRegistry *attest.Registry
 )
@@ -63,35 +62,12 @@ func SetConfigPath(path string) {
 	_configPath = path
 }
 
-func GetEvmProcessors() map[string]chain.Processor {
-	if _evmProcessors == nil {
-		_evmProcessors = make(map[string]chain.Processor)
+func EvmFactory() *evm.Factory {
+	if _evmFactory == nil {
+		_evmFactory = evm.NewFactory(PalomaClient())
 	}
 
-	for chainID, client := range GetEvmClients() {
-		_evmProcessors[chainID] = evm.NewProcessor(client, chainID)
-	}
-
-	return _evmProcessors
-}
-
-func GetEvmClients() map[string]evm.Client {
-	if _evmClients == nil {
-		_evmClients = make(map[string]evm.Client)
-	}
-
-	config := Config()
-	for chainName, evmConfig := range config.EVM {
-		if _, ok := _evmClients[chainName]; ok {
-			log.WithFields(log.Fields{
-				"chainName": chainName,
-			}).Fatal("chain with chainName already registered")
-		}
-
-		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient(), chainName)
-	}
-
-	return _evmClients
+	return _evmFactory
 }
 
 func Config() *config.Root {

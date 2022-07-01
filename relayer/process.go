@@ -10,12 +10,17 @@ import (
 )
 
 func (r *Relayer) Process(ctx context.Context) error {
-	for chainID, p := range r.processors {
+	processors, err := r.buildProcessors(ctx)
+	if err != nil {
+		return err
+	}
+	for chainID, p := range processors {
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{
 				"processor-chain-id": chainID,
 				"queue-name":         queueName,
 			})
+
 			// TODO: remove comments once signing is done on the paloma side.
 			queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, queueName)
 			loggerQueuedMessages := logger.WithFields(log.Fields{
