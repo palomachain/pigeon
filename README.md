@@ -15,16 +15,21 @@ tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
 
-# setting up the EVM keys for ropsten testnet.
+# setting up the EVM keys for ethereuem mainnet.
 # don't forget your password!
-pigeon evm keys generate-new ~/.pigeon/keys/evm/ropsten
+pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
 ```
+
+# or import existing you existing Ethereum evm private keys 
+pigeon evm keys import ~/.pigeon/keys/evm/eth-main
+
 
 ### Config setup
 
 VALIDATOR="$(palomad keys list --list-names | head -n1)"
 PUBKEY="$(palomad tendermint show-validator)"
 
+Create configuration file here `~/.pigeon/config.yaml`
 
 ```yaml
 loop-timeout: 5s
@@ -42,7 +47,7 @@ paloma:
   account-prefix: paloma
 
 evm:
-  ethreum-mainnet:
+  eth-main:
     chain-id: 1
     base-rpc-url: ETH_RPC_URL
     keyring-pass-env-name: ETH_PASSWORD
@@ -68,8 +73,7 @@ pigeon start
 - Remember to run pigeon as a systemd Service! If you have a good systemd service implementation for Ubuntu, please make a PR on this README and we will add it.
 
 
-### Paloma Notes for 
-
+### Definitions and Descriptions of Pigeons Variables
   - for paloma key:
 	- keyring-dir
       - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using it's validator (operator) key!
@@ -99,53 +103,3 @@ pigeon start
 	- keyring-dir:
 	  - a directory where keys to communicate with the EVM network is stored
 
-
-Once you are done setting this up, you can take the config and put it here `~/.pigeon/config.yaml`.
-
-
-A careful reader might notice that there can be as many EVM networks as you wish. That is true, but at the moment of writing this, only the first one will be used.
-(To be more correct, all of them are going to be used, but the first one will take all the messages and send them given that there is no routing yet for sending
-messages to different EVM chains.)
-
-### Open faucet and send coins to your key
-
-https://faucet.egorfine.com/
-
-Send some coins to your newly generated ETH address.
-
-### Prepare Smart Contract info that you wish to execute
-
-Now remember that you need to take the smart contract info from the network you are trying to execute this on. You can use ropsten as I did, but you can also do it on mainnet.
-Find the smart contract (or upload one) that you want to run and take its address and its ABI json encoded description.
-
-
-Paste the abi here: https://abi.hashex.org/
-
-and prepare the data for your function that you wish to run. Once you are done take the ABI encoded payload and use it to add a new job to Paloma.
-
-
-### Add a new job to Paloma chain to execute a smart contract
-Take the smart contract address, the ABI encoded payload and the contract's JSON ABI and run the `paloma tx evm submit-new-job` command:
-
-```shell
-palomad tx evm submit-new-job [smart contract address] [smart contract payload] [smart contract JSON abi]
-```
-
-An example of how I did it (note that the third argument (the Smart Contract JSON abi) is wrapped with `'` single quotes):
-
-```shell
-palomad tx evm submit-new-job --from my_validator --fees 200dove --broadcast-mode block -y 0x5a3e98aa540b2c3545311fc33d445a7f62eb16bf 6057361d0000000000000000000000000000000000000000000000000000000000001688 '[{"inputs":[],"name":"retrieve","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"store","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
-```
-
-
-## Can you run this on the mainnet?
-
-Yes! Generate yourself a new key (or use the one that you've generated for testing this on ropsten) and send some tokens to your newly created address. Change the rpc-url to point to the mainnet.
-Find a smart contract from the mainnet and its address to submit a job.
-
-Right now we can't import existing keys, so you need to use generated ones.
-
-# Notes!
-
-- Right now there is no routing of jobs based on which network they are supposed to belong to. It simply sends it to whatever is the first chain defined in the config file under the evm key.
-- pigeons are not signing anything now. All pigeons are going to try their best to get the available messages that are in the queue and they will not sign those messages. They are simply going to take them and send them away.
