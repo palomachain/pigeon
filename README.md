@@ -5,7 +5,7 @@
 Please use https://github.com/palomachain/paloma/issues to submit issues and add pigeon label!
 
 
-# Instructions to test sending messages to EVM
+# Instructions to sending messages to any EVM via Paloma
 
 ## Install
 
@@ -14,15 +14,19 @@ wget -O - https://github.com/palomachain/pigeon/releases/download/{version}/{ver
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
+```
 
-# setting up the EVM keys for ethereuem mainnet.
-# don't forget your password!
+## Seeting up your EVM Keys. Don't forget your password!
+
+```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
 ```
 
-# or import existing you existing Ethereum evm private keys 
-pigeon evm keys import ~/.pigeon/keys/evm/eth-main
+or import existing you existing Ethereum evm private keys 
 
+```
+pigeon evm keys import ~/.pigeon/keys/evm/eth-main
+```
 
 ### Config setup
 
