@@ -48,9 +48,9 @@ paloma:
 evm:
   eth-main:
     chain-id: 1
-    base-rpc-url: $ETH_RPC_URL
+    base-rpc-url: ${ETH_RPC_URL}
     keyring-pass-env-name: ETH_PASSWORD
-    signing-key: ETH_SIGNING_KEY
+    signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
 ```
 
