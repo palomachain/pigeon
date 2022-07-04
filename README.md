@@ -10,7 +10,7 @@ Please use https://github.com/palomachain/paloma/issues to submit issues and add
 ## Install
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.2.2-alpha/pigeon_0.2.2-alpha_Linux_x86_64v3.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.2.3-alpha/pigeon_0.2.3-alpha_Linux_x86_64v3.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
