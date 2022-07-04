@@ -244,6 +244,10 @@ func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBloc
 	return filterLogs(ctx, c.conn, fq, currBlockHeight, fn)
 }
 
+func (c Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
+	return c.conn.TransactionByHash(ctx, txHash)
+}
+
 //go:generate mockery --name=ethClientToFilterLogs --inpackage --testonly
 type ethClientToFilterLogs interface {
 	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]etherumtypes.Log, error)

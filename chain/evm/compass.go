@@ -33,6 +33,7 @@ type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
+	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 }
 
 type compass struct {
@@ -122,6 +123,17 @@ func (t compass) submitLogicCall(
 	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
+
+		if len(origMessage.PublicProof) > 0 {
+			data, pending, err := t.evm.TransactionByHash(ctx, origMessage.PublicProof)
+			whoops.Assert(err)
+
+			bz, err := data.MarshalJSON()
+			whoops.Assert(err)
+
+			return
+		}
+
 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 		whoops.Assert(err)
 		if executed {
@@ -299,6 +311,11 @@ func buildConsensus(
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
 	for _, rawMsg := range msgs {
+
+		if len(rawMsg.AccessableVia) > 0 {
+			// maybe I don't have to process it anymore.
+
+		}
 		var processingErr error
 		logger := log.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
