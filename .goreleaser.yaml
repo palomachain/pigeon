@@ -1,8 +1,8 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
 builds:
-  - main: ./cmd/sparrow
-    binary: sparrow
+  - main: ./cmd/pigeon
+    binary: pigeon
     tags:
       - netgo
       - gcc
