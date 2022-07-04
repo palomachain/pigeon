@@ -26,8 +26,7 @@ pigeon evm keys import ~/.pigeon/keys/evm/eth-main
 
 ### Config setup
 
-VALIDATOR="$(palomad keys list --list-names | head -n1)"
-PUBKEY="$(palomad tendermint show-validator)"
+`VALIDATOR="$(palomad keys list --list-names | head -n1)"`
 
 Create configuration file here `~/.pigeon/config.yaml`
 
@@ -39,20 +38,20 @@ paloma:
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
-  keyring-type: testnest
-  signing-key: VALIDATOR
+  keyring-type: test
+  signing-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
-  gas-adjustment: 2.0
+  gas-adjustment: 1.5
   gas-prices: 0.001ugrain
   account-prefix: paloma
 
 evm:
   eth-main:
     chain-id: 1
-    base-rpc-url: ETH_RPC_URL
+    base-rpc-url: $ETH_RPC_URL
     keyring-pass-env-name: ETH_PASSWORD
     signing-key: ETH_SIGNING_KEY
-    keyring-dir: ~/.pigeon/keys/evm/ethereum-mainnet
+    keyring-dir: ~/.pigeon/keys/evm/eth-main
 ```
 
 
@@ -67,8 +66,6 @@ ETH_PASSWORD=<Your ETH Key Password>
 ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
 pigeon start
 ```
-
-- Open pigeon window and look at the logs to get the TX HASH which you can look on the explorer.
 
 - Remember to run pigeon as a systemd Service! If you have a good systemd service implementation for Ubuntu, please make a PR on this README and we will add it.
 
