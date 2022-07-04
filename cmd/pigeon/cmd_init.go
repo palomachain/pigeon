@@ -13,13 +13,13 @@ import (
 var (
 	initCmd = &cobra.Command{
 		Use:   "init [keyring-backend] [keyring-location]",
-		Short: "initializes the sparrow",
+		Short: "initializes the pigeon",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// check if the signing key exists,
 			// if does not, it creates one which it reads from the passed in config.
 			key := "signing-key"
-			kr, err := keyring.New("sparrow", args[0], args[1], os.Stdin)
+			kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin)
 			if err != nil {
 				return err
 			}

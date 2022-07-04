@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	chain "github.com/palomachain/sparrow/chain"
+	chain "github.com/palomachain/pigeon/chain"
 
 	mock "github.com/stretchr/testify/mock"
 

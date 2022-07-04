@@ -3,14 +3,14 @@ package relayer
 import (
 	"context"
 
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/chain/paloma"
-	"github.com/palomachain/sparrow/util/slice"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/chain/paloma"
+	"github.com/palomachain/pigeon/util/slice"
 )
 
 func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 	// this returns info about the current validator's keys.
-	// if this sparrow is trying to register with a key that the other validator
+	// if this pigeon is trying to register with a key that the other validator
 	// has registered, then it's going to fail as well!
 	existingAccInfo, err := r.palomaClient.QueryValidatorInfo(ctx)
 	if err != nil {

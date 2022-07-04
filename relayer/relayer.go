@@ -3,11 +3,11 @@ package relayer
 import (
 	"context"
 
-	"github.com/palomachain/sparrow/attest"
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/chain/paloma"
-	"github.com/palomachain/sparrow/config"
-	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
+	"github.com/palomachain/pigeon/attest"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/chain/paloma"
+	"github.com/palomachain/pigeon/config"
+	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 )
 
 type AttestExecutor interface {

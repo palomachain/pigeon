@@ -1,4 +1,4 @@
-module github.com/palomachain/sparrow
+module github.com/palomachain/pigeon
 
 go 1.18
 

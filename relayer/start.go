@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/palomachain/sparrow/errors"
+	"github.com/palomachain/pigeon/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )

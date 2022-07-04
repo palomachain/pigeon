@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/palomachain/sparrow/app"
+	"github.com/palomachain/pigeon/app"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:          "sparrow",
+		Use:          "pigeon",
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			found := false
@@ -40,5 +40,5 @@ func configRequired(cmd *cobra.Command) {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&flagConfigPath, "config", "c", "~/.sparrow/config.yaml", "path to the config file")
+	rootCmd.PersistentFlags().StringVarP(&flagConfigPath, "config", "c", "~/.pigeon/config.yaml", "path to the config file")
 }

@@ -15,7 +15,7 @@ RUN cd /tmp && go install github.com/cespare/reflex@latest
 
 COPY <<EOF /hack-start-because-cosmos-always-wants-to-read-pass-from-stdin.sh
 #!/usr/bin/env bash
-go run ./cmd/sparrow -c config.local-dev.yaml start < /dev/null
+go run ./cmd/pigeon -c config.local-dev.yaml start < /dev/null
 EOF
 RUN chmod +x /hack-start-because-cosmos-always-wants-to-read-pass-from-stdin.sh
 

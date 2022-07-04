@@ -16,7 +16,7 @@ import (
 
 const (
 	ChainName = "paloma"
-	Name      = "sparrow"
+	Name      = "pigeon"
 )
 
 type CosmosSpecificClientConfig struct {

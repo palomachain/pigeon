@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/palomachain/sparrow/attest"
-	"github.com/palomachain/sparrow/chain"
-	chainmocks "github.com/palomachain/sparrow/chain/mocks"
-	"github.com/palomachain/sparrow/config"
-	"github.com/palomachain/sparrow/relayer/mocks"
+	"github.com/palomachain/pigeon/attest"
+	"github.com/palomachain/pigeon/chain"
+	chainmocks "github.com/palomachain/pigeon/chain/mocks"
+	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/relayer/mocks"
 	"github.com/stretchr/testify/require"
 )
 

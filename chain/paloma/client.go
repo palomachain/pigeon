@@ -10,13 +10,13 @@ import (
 	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/config"
-	consensus "github.com/palomachain/sparrow/types/paloma/x/consensus/types"
-	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
-	evm "github.com/palomachain/sparrow/types/paloma/x/evm/types"
-	valset "github.com/palomachain/sparrow/types/paloma/x/valset/types"
-	"github.com/palomachain/sparrow/util/slice"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/config"
+	consensus "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
+	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	evm "github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	"github.com/palomachain/pigeon/util/slice"
 )
 
 //go:generate mockery --name=MessageSender
@@ -232,7 +232,7 @@ type ChainInfoIn struct {
 }
 
 // AddExternalChainInfo adds info about the external chain. It adds the chain's
-// account addresses that the sparrow knows about.
+// account addresses that the pigeon knows about.
 func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInfoIn) error {
 	if len(chainInfos) == 0 {
 		return nil

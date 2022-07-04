@@ -3,9 +3,9 @@ package relayer
 import (
 	"context"
 
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/chain/paloma"
-	"github.com/palomachain/sparrow/util/slice"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/chain/paloma"
+	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 

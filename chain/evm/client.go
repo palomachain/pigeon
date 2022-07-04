@@ -23,9 +23,9 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/palomachain/sparrow/config"
-	"github.com/palomachain/sparrow/errors"
-	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )

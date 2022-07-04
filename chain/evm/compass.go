@@ -10,14 +10,12 @@ import (
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	ethcommon "github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/errors"
-	"github.com/palomachain/sparrow/types/paloma/x/evm/types"
-	"github.com/palomachain/sparrow/util/slice"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
@@ -55,9 +53,9 @@ func newCompassClient(
 	paloma palomaClienter,
 	evm evmClienter,
 ) compass {
-	if !ethcommon.IsHexAddress(smartContractAddrStr) {
-		whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
-	}
+	// if !ethcommon.IsHexAddress(smartContractAddrStr) {
+	// 	whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
+	// }
 	return compass{
 		CompassID:         compassID,
 		ChainID:           chainID,
