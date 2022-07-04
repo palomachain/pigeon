@@ -22,32 +22,54 @@ pigeon evm keys generate-new ~/.pigeon/keys/evm/ropsten
 
 ### Config setup
 
+VALIDATOR="$(palomad keys list --list-names | head -n1)"
+PUBKEY="$(palomad tendermint show-validator)"
+
+
 ```yaml
 loop-timeout: 5s
 
 paloma:
-  chain-id: paloma
+  chain-id: paloma-testnet-6
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
-  keyring-type: test
-  signing-key: my_validator
-  validator-address: palomavaloper107ur3w38qvjnx44a732ayphp0yfh4f0jmxsn0e
+  keyring-type: testnest
+  signing-key: VALIDATOR
   base-rpc-url: http://localhost:26657
   gas-adjustment: 2.0
-  gas-prices: 0.01dove
+  gas-prices: 0.001ugrain
   account-prefix: paloma
 
 evm:
-  ropsten:
-    chain-id: 3
-    base-rpc-url: https://ropsten.infura.io/v3/d697ced03e7c49209a1fe2a1c8858821
-    keyring-pass-env-name: ROPSTEN_PASS
-    signing-key: 0x378d6991F6b5207d7cC2b5270AD2Afb3Dd328E82
-    keyring-dir: ~/.pigeon/keys/evm/ropsten
+  ethreum-mainnet:
+    chain-id: 1
+    base-rpc-url: ETH_RPC_URL
+    keyring-pass-env-name: ETH_PASSWORD
+    signing-key: ETH_SIGNING_KEY
+    keyring-dir: ~/.pigeon/keys/evm/ethereum-mainnet
 ```
 
-Important things to set up are:
+
+### Start pigeon
+
+Open a new terminal window and run:
+
+```shell
+PALOMA_KEYRING_PASS=<your Paloma key password>
+ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
+ETH_PASSWORD=<Your ETH Key Password>
+ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
+pigeon start
+```
+
+- Open pigeon window and look at the logs to get the TX HASH which you can look on the explorer.
+
+- Remember to run pigeon as a systemd Service! If you have a good systemd service implementation for Ubuntu, please make a PR on this README and we will add it.
+
+
+### Paloma Notes for 
+
   - for paloma key:
 	- keyring-dir
       - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using it's validator (operator) key!
@@ -115,19 +137,6 @@ An example of how I did it (note that the third argument (the Smart Contract JSO
 palomad tx evm submit-new-job --from my_validator --fees 200dove --broadcast-mode block -y 0x5a3e98aa540b2c3545311fc33d445a7f62eb16bf 6057361d0000000000000000000000000000000000000000000000000000000000001688 '[{"inputs":[],"name":"retrieve","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"store","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
 ```
 
-
-### Start pigeon
-
-Open a new terminal window and run:
-
-```shell
-YOUR_ENV_VARIABLE_WITH_PALOMA_PASS=abcd
-YOUR_ENV_VARIABLE_WITH_EVM_ROPSTEN_PASS=efgh
-pigeon start
-```
-
-- Open pigeon window and look at the logs to get the TX HASH which you can look on the explorer.
-- Feel free to add more jobs to the queue while pigeons are running
 
 ## Can you run this on the mainnet?
 
