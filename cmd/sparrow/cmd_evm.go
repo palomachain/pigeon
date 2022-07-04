@@ -80,7 +80,6 @@ var (
 			return nil
 		},
 	}
-	// TODO: add import
 	evmKeysGenerateCmd = &cobra.Command{
 		Use:   "generate-new [directory]",
 		Short: "generates a new account and adds it to keystore",
@@ -106,7 +105,7 @@ var (
 
 	evmKeysImportCmd = &cobra.Command{
 		Use:   "import [directory]",
-		Short: "generates a new account and adds it to keystore",
+		Short: "imports an existing key into the keyring's directory",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ks := evm.OpenKeystore(args[0])
