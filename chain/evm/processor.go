@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
@@ -19,34 +18,11 @@ const (
 
 type Processor struct {
 	compass          compass
-	evmClient        Client
+	evmClient        *Client
 	chainType        string
 	chainReferenceID string
 
 	turnstoneEVMContract common.Address
-}
-
-func NewProcessor(
-	c Client,
-	chainReferenceID string,
-	smartContractID string,
-	smartContractABI abi.ABI,
-	smartContractAddress string,
-) Processor {
-	comp := newCompassClient(
-		smartContractAddress,
-		smartContractID,
-		chainReferenceID,
-		smartContractABI,
-		c.paloma,
-		c,
-	)
-	return Processor{
-		compass:          comp,
-		evmClient:        c,
-		chainType:        "EVM",
-		chainReferenceID: chainReferenceID,
-	}
 }
 
 var _ chain.Processor = Processor{}
@@ -57,7 +33,7 @@ func (p Processor) SupportedQueues() []string {
 			queueTurnstoneMessage,
 		},
 		func(q string) string {
-			return fmt.Sprintf("%s:%s:%s", p.chainType, p.chainReferenceID, q)
+			return fmt.Sprintf("%s/%s/%s", p.chainType, p.chainReferenceID, q)
 		},
 	)
 }

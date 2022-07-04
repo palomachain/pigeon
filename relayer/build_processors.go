@@ -2,9 +2,12 @@ package relayer
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/palomachain/sparrow/chain"
 	"github.com/palomachain/sparrow/errors"
+	evmtypes "github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
 
@@ -13,10 +16,11 @@ var (
 )
 
 func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error) {
-	chainsInfos, err := r.palomaClient.QueryChainsInfos(ctx)
+	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	log.WithField("chains-infos", chainsInfos).Info("got chain infos")
 
 	processors := []chain.Processor{}
 	for _, chainInfo := range chainsInfos {
@@ -31,24 +35,27 @@ func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error
 	return processors, nil
 }
 
-func (r *Relayer) processorFactory(chainInfo chain.ChainInfo) (chain.Processor, error) {
-	retErr := whoops.Wrap(ErrMissingChainConfig, whoops.Errorf("reference chain id: %s").Format(chainInfo.ChainReferenceID()))
+func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Processor, error) {
+	// TODO: add support of other types of chains! Right now, only EVM types are supported!
+	retErr := whoops.Wrap(ErrMissingChainConfig, whoops.Errorf("reference chain id: %s").Format(chainInfo.GetChainReferenceID()))
 
-	switch chainInfo.ChainType() {
-	case "EVM":
-		cfg, ok := r.config.EVM[chainInfo.ChainReferenceID()]
-		if !ok {
-			return nil, retErr
-		}
-		processor, err := r.evmFactory.Build(
-			cfg,
-			chainInfo.ChainReferenceID(),
-		)
-		if err != nil {
-			return nil, whoops.Wrap(err, retErr)
-		}
-		return processor, nil
+	cfg, ok := r.config.EVM[chainInfo.GetChainReferenceID()]
+	if !ok {
+		return nil, retErr
 	}
 
-	return nil, retErr
+	chainID := big.NewInt(int64(chainInfo.GetChainID()))
+
+	processor, err := r.evmFactory.Build(
+		cfg,
+		chainInfo.GetChainReferenceID(),
+		chainInfo.GetSmartContractID(),
+		chainInfo.GetAbi(),
+		chainInfo.GetSmartContractAddr(),
+		chainID,
+	)
+	if err != nil {
+		return nil, whoops.Wrap(err, retErr)
+	}
+	return processor, nil
 }

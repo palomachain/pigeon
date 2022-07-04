@@ -1,9 +1,11 @@
 package evm
 
 import (
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/sparrow/config"
 	"github.com/palomachain/sparrow/errors"
 )
@@ -24,11 +26,43 @@ func (f *Factory) Build(
 	smartContractID,
 	smartContractABIJson,
 	smartContractAddress string,
+	chainID *big.Int,
 ) (Processor, error) {
-	smartContractABI, err := abi.JSON(strings.NewReader(smartContractABIJson))
-	if err != nil {
-		return Processor{}, errors.Unrecoverable(err)
+
+	var smartContractABI *abi.ABI
+	if len(smartContractABIJson) > 0 {
+		aabi, err := abi.JSON(strings.NewReader(smartContractABIJson))
+		if err != nil {
+			return Processor{}, errors.Unrecoverable(err)
+		}
+		smartContractABI = &aabi
 	}
-	client := NewClient(cfg, f.palomaClienter)
-	return NewProcessor(client, chainReferenceID, smartContractID, smartContractABI, smartContractAddress), nil
+
+	client := &Client{
+		config: cfg,
+		paloma: f.palomaClienter,
+	}
+
+	if err := client.init(); err != nil {
+		return Processor{}, err
+	}
+
+	// if !ethcommon.IsHexAddress(smartContractAddress) {
+	// 	return Processor{}, errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddress))
+	// }
+
+	return Processor{
+		compass: compass{
+			CompassID:         smartContractID,
+			ChainReferenceID:  chainReferenceID,
+			smartContractAddr: common.HexToAddress(smartContractAddress),
+			chainID:           chainID,
+			compassAbi:        smartContractABI,
+			paloma:            f.palomaClienter,
+			evm:               client,
+		},
+		evmClient:        client,
+		chainType:        "EVM",
+		chainReferenceID: chainReferenceID,
+	}, nil
 }

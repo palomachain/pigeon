@@ -106,20 +106,6 @@ type Client struct {
 	paloma palomaClienter
 }
 
-func NewClient(
-	cfg config.EVM,
-	palomaClient palomaClienter,
-) Client {
-	client := &Client{
-		config: cfg,
-		paloma: palomaClient,
-	}
-
-	whoops.Assert(client.init())
-
-	return *client
-}
-
 func (c *Client) init() error {
 	return whoops.Try(func() {
 
@@ -349,12 +335,19 @@ func filterLogs(
 	return false, err
 }
 
-func (c Client) ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error) {
+func (c Client) ExecuteSmartContract(
+	ctx context.Context,
+	chainID *big.Int,
+	contractAbi abi.ABI,
+	addr common.Address,
+	method string,
+	arguments []any,
+) (*etherumtypes.Transaction, error) {
 	return callSmartContract(
 		ctx,
 		executeSmartContractIn{
 			ethClient:     c.conn,
-			chainID:       c.config.GetChainID(),
+			chainID:       chainID,
 			gasAdjustment: c.config.GasAdjustment,
 			abi:           contractAbi,
 			contract:      addr,

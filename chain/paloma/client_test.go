@@ -309,10 +309,10 @@ func TestQueryValidatorInfo(t *testing.T) {
 	fakeErr := errors.New("something")
 	fakeExternalInfo := []*valset.ExternalChainInfo{
 		{
-			ChainType: "abc",
-			ChainID:   "123",
-			Address:   "123",
-			Pubkey:    []byte("abc"),
+			ChainType:        "abc",
+			ChainReferenceID: "123",
+			Address:          "123",
+			Pubkey:           []byte("abc"),
 		},
 	}
 	for _, tt := range []struct {
@@ -390,15 +390,15 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		{
 			name: "happy path",
 			chainInfo: []ChainInfoIn{
-				{ChainID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
-				{ChainID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
+				{ChainReferenceID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
+				{ChainReferenceID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)
 				srv.On("SendMsg", mock.Anything, &valset.MsgAddExternalChainInfoForValidator{
 					ChainInfos: []*valset.ExternalChainInfo{
-						{ChainID: "chain1", Address: "addr1", ChainType: "chain-type-1", Pubkey: []byte("pk1")},
-						{ChainID: "chain2", Address: "addr2", ChainType: "chain-type-2", Pubkey: []byte("pk2")},
+						{ChainReferenceID: "chain1", Address: "addr1", ChainType: "chain-type-1", Pubkey: []byte("pk1")},
+						{ChainReferenceID: "chain2", Address: "addr2", ChainType: "chain-type-2", Pubkey: []byte("pk2")},
 					},
 				}).Return(nil, nil).Once()
 				return srv
@@ -407,8 +407,8 @@ func TestAddingExternalChainInfo(t *testing.T) {
 		{
 			name: "with SendMsg returning errors",
 			chainInfo: []ChainInfoIn{
-				{ChainID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
-				{ChainID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
+				{ChainReferenceID: "chain1", AccAddress: "addr1", ChainType: "chain-type-1", PubKey: []byte("pk1")},
+				{ChainReferenceID: "chain2", AccAddress: "addr2", ChainType: "chain-type-2", PubKey: []byte("pk2")},
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)

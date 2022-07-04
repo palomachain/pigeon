@@ -9,11 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) Process(ctx context.Context) error {
-	processors, err := r.buildProcessors(ctx)
-	if err != nil {
-		return err
-	}
+func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
 	for chainID, p := range processors {
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{

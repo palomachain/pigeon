@@ -2,16 +2,10 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/chain/evm"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vizualni/whoops"
 )
 
 const (
@@ -61,22 +55,23 @@ var (
 		Short: "deploys a smart contract",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chainID, contractABIbz, bytecode, packedInput := args[0], args[1], args[2], args[3]
-			c := app.GetEvmClients()[chainID]
-			contractABI := whoops.Must(abi.JSON(strings.NewReader(contractABIbz)))
-			addr, tx, err := c.DeployContract(
-				cmd.Context(),
-				contractABI,
-				common.FromHex(bytecode),
-				common.FromHex(packedInput),
-			)
-			if err != nil {
-				return err
-			}
-			log.WithFields(log.Fields{
-				"address": addr,
-				"tx":      tx,
-			}).Info("smart contract deployed")
+			return nil
+			// chainID, contractABIbz, bytecode, packedInput := args[0], args[1], args[2], args[3]
+			// c := app.GetEvmClients()[chainID]
+			// contractABI := whoops.Must(abi.JSON(strings.NewReader(contractABIbz)))
+			// addr, tx, err := c.DeployContract(
+			// 	cmd.Context(),
+			// 	contractABI,
+			// 	common.FromHex(bytecode),
+			// 	common.FromHex(packedInput),
+			// )
+			// if err != nil {
+			// 	return err
+			// }
+			// log.WithFields(log.Fields{
+			// 	"address": addr,
+			// 	"tx":      tx,
+			// }).Info("smart contract deployed")
 			return nil
 		},
 	}

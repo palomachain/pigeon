@@ -193,17 +193,17 @@ func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Sn
 	return snapshotRes.Snapshot, nil
 }
 
-func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error) {
+func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainReferenceID string) (*types.Valset, error) {
 	qc := evm.NewQueryClient(c.GRPCClient)
 	valsetRes, err := qc.GetValsetByID(ctx, &evm.QueryGetValsetByIDRequest{
-		ValsetID: id,
-		ChainID:  chainID,
+		ValsetID:         id,
+		ChainReferenceID: chainReferenceID,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
 			return nil, whoops.Enrich(
 				chain.ErrNotFound,
-				chain.EnrichedChainID.Val(chainID),
+				chain.EnrichedChainReferenceID.Val(chainReferenceID),
 				chain.EnrichedID.Val(id),
 				chain.EnrichedItemType.Val("valset"),
 			)
@@ -212,6 +212,17 @@ func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID st
 	}
 
 	return valsetRes.Valset, nil
+}
+
+// TODO: this should return all chain infos. Not the ones from EVM only.
+func (c Client) QueryGetEVMChainInfos(ctx context.Context) ([]*evm.ChainInfo, error) {
+	qc := evm.NewQueryClient(c.GRPCClient)
+	chainInfosRes, err := qc.ChainsInfos(ctx, &evm.QueryChainsInfosRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return chainInfosRes.ChainsInfos, nil
 }
 
 // TODO: this is only temporary for easier testing
@@ -225,10 +236,10 @@ func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) 
 }
 
 type ChainInfoIn struct {
-	ChainType  string
-	ChainID    string
-	AccAddress string
-	PubKey     []byte
+	ChainType        string
+	ChainReferenceID string
+	AccAddress       string
+	PubKey           []byte
 }
 
 // AddExternalChainInfo adds info about the external chain. It adds the chain's
@@ -246,10 +257,10 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 		chainInfos,
 		func(in ChainInfoIn) *valset.ExternalChainInfo {
 			return &valset.ExternalChainInfo{
-				ChainType: in.ChainType,
-				ChainID:   in.ChainID,
-				Address:   in.AccAddress,
-				Pubkey:    in.PubKey,
+				ChainType:        in.ChainType,
+				ChainReferenceID: in.ChainReferenceID,
+				Address:          in.AccAddress,
+				Pubkey:           in.PubKey,
 			}
 		},
 	)

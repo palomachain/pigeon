@@ -40,7 +40,7 @@ func Relayer() *relayer.Relayer {
 			*Config(),
 			*PalomaClient(),
 			AttestRegistry(),
-			GetEvmProcessors(),
+			EvmFactory(),
 		)
 	}
 	return _relayer

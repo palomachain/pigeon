@@ -1,11 +1,11 @@
 package evm
 
 import (
-	"bytes"
 	"context"
 	goerrors "errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -31,25 +31,28 @@ const (
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
-	DeployContract(ctx context.Context, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
+	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 }
 
 type compass struct {
 	CompassID        string
 	ChainReferenceID string
 
-	compassAbi        abi.ABI
+	compassAbi        *abi.ABI
 	smartContractAddr common.Address
 	paloma            palomaClienter
 	evm               evmClienter
+
+	chainID *big.Int
 }
 
 func newCompassClient(
 	smartContractAddrStr,
 	compassID,
 	chainReferenceID string,
-	compassAbi abi.ABI,
+	chainID *big.Int,
+	compassAbi *abi.ABI,
 	paloma palomaClienter,
 	evm evmClienter,
 ) compass {
@@ -60,6 +63,7 @@ func newCompassClient(
 		CompassID:         compassID,
 		ChainReferenceID:  chainReferenceID,
 		smartContractAddr: common.HexToAddress(smartContractAddrStr),
+		chainID:           chainID,
 		compassAbi:        compassAbi,
 		paloma:            paloma,
 		evm:               evm,
@@ -155,7 +159,7 @@ func (t compass) uploadSmartContract(
 	origMessage chain.MessageWithSignatures,
 ) error {
 	return whoops.Try(func() {
-		contractABI, err := abi.JSON(bytes.NewReader(msg.GetAbi()))
+		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
 		whoops.Assert(err)
 
 		// 0 means to get the latest valset
@@ -167,7 +171,13 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		addr, tx, err := t.evm.DeployContract(ctx, contractABI, msg.GetBytecode(), msg.GetConstructorInput())
+		addr, tx, err := t.evm.DeployContract(
+			ctx,
+			t.chainID,
+			contractABI,
+			msg.GetBytecode(),
+			msg.GetConstructorInput(),
+		)
 		// TODO: do attestation
 		_ = addr
 		_ = tx
@@ -392,5 +402,8 @@ func (c compass) callCompass(
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
-	return c.evm.ExecuteSmartContract(ctx, c.compassAbi, c.smartContractAddr, method, arguments)
+	if c.compassAbi == nil {
+		return nil, ErrABINotInitialized
+	}
+	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, method, arguments)
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/palomachain/pigeon/util/slice"
 )
 
-func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
+func (r *Relayer) updateExternalChainInfos(ctx context.Context, processors []chain.Processor) error {
 	// this returns info about the current validator's keys.
 	// if this pigeon is trying to register with a key that the other validator
 	// has registered, then it's going to fail as well!
@@ -18,7 +18,7 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 	}
 
 	externalAccounts := slice.Map(
-		slice.FromMapValues(r.processors),
+		processors,
 		func(p chain.Processor) chain.ExternalAccount {
 			return p.ExternalAccount()
 		},
@@ -41,10 +41,10 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context) error {
 		}
 		if !found {
 			chainInfos = append(chainInfos, paloma.ChainInfoIn{
-				ChainID:    accAddr.ChainReferenceID,
-				AccAddress: accAddr.Address,
-				ChainType:  accAddr.ChainType,
-				PubKey:     accAddr.PubKey,
+				ChainReferenceID: accAddr.ChainReferenceID,
+				AccAddress:       accAddr.Address,
+				ChainType:        accAddr.ChainType,
+				PubKey:           accAddr.PubKey,
 			})
 		}
 	}

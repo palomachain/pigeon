@@ -8,6 +8,7 @@ import (
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
+	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 )
 
@@ -22,6 +23,7 @@ type PalomaClienter interface {
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
+	QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error)
 }
 
 type Relayer struct {
