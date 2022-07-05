@@ -276,6 +276,18 @@ type ethClientToFilterLogs interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
 }
 
+func shouldDoBinarySearchFromError(err error) bool {
+
+	switch {
+	case strings.Contains(err.Error(), "query returned more than 10000 results"):
+		return true
+	case strings.Contains(err.Error(), "eth_getLogs and eth_newFilter are limited to a 10,000 blocks range"):
+		return true
+	}
+
+	return false
+}
+
 func filterLogs(
 	ctx context.Context,
 	ethClient ethClientToFilterLogs,
@@ -309,7 +321,7 @@ func filterLogs(
 			return true, nil
 		}
 		return fn(logs), nil
-	case err.Error() == "query returned more than 10000 results":
+	case shouldDoBinarySearchFromError(err):
 		// this appears to be ropsten specifict, but keepeing the logic here just in case
 		mid := big.NewInt(0).Sub(
 			fq.ToBlock,
