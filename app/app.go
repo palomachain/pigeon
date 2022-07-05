@@ -48,6 +48,7 @@ func Relayer() *relayer.Relayer {
 }
 
 func SetConfigPath(path string) {
+	path = config.Filepath(path).Path()
 	fi, err := os.Stat(path)
 	if err != nil {
 		log.WithFields(log.Fields{

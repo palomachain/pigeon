@@ -35,14 +35,14 @@ type ChainClientConfig struct {
 	BaseRPCURL         string   `yaml:"base-rpc-url"`
 	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
 	SigningKey         string   `yaml:"signing-key"`
-	KeyringDirectory   filepath `yaml:"keyring-dir"`
+	KeyringDirectory   Filepath `yaml:"keyring-dir"`
 	CallTimeout        string   `yaml:"call-timeout"`
 	GasAdjustment      float64  `yaml:"gas-adjustment"`
 }
 
-type filepath string
+type Filepath string
 
-func (f filepath) Path() string {
+func (f Filepath) Path() string {
 	p := string(f)
 	homeDir := whoops.Must(user.Current()).HomeDir
 	p = strings.ReplaceAll(p, "~", homeDir)
