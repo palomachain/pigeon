@@ -64,10 +64,10 @@ evm:
 Open a new terminal window and run:
 
 ```shell
-PALOMA_KEYRING_PASS=<your Paloma key password>
-ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
-ETH_PASSWORD=<Your ETH Key Password>
-ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
+export PALOMA_KEYRING_PASS=<your Paloma key password>
+export ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
+export ETH_PASSWORD=<Your ETH Key Password>
+export ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
 pigeon start
 ```
 
