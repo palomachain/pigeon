@@ -124,7 +124,7 @@ pigeon start
 	  - right now it's again not important which key we are using. It can be any key that has enough balance to submit TXs to Paloma. It's best to use the same key that's set up for the validator.
 	- gas-adustment:
 	  - gas multiplier. The pigeon will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
- - for evm -> ropsten:
+ - for evm -> eth-main:
 	- keyring-pass-env-name: as as above for paloma.
 	- signing-key
 	  - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `pigeon evm keys generate-new` from the install section)
