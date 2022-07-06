@@ -13,7 +13,7 @@ For Crosschain software engineers that want simultaneous control of mulitiple sm
 - [Releases](#releases)
 - [Active Networks](#active-networks)
 - [Issues](#issues)
-- [Setup instructions](#instructions-to-setup-and-send-messages-to-any-evm-via-the-paloma-network)
+- [Install](#install)
 
 
 ## Talk to us
@@ -39,8 +39,6 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 This repo does not accept issues. Please use https://github.com/palomachain/paloma/issues to submit issues and add pigeon label!
 
 
-# Instructions to setup and send messages to any EVM via the Paloma network.
-
 ## Install
 
 ```shell
@@ -50,7 +48,7 @@ chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
 ```
 
-## Seeting up your EVM Keys. Don't forget your password!
+## Set up your EVM Keys. Don't forget your passwords!
 
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
