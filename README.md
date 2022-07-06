@@ -7,6 +7,32 @@
 
 For Crosschain software engineers that want simultaneous control of mulitiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scaleable, crosschain, smart contract execution with any data source.
 
+## Table of Contents
+
+- [Talk To Us](#talk-to-us)
+- [Releases](#releases)
+- [Active Networks](#active-networks)
+- [Issues](#issues)
+- [Setup instructions](#instructions-to-setup-and-send-messages-to-any-evm-via-the-paloma-network)
+
+
+## Talk to us
+
+We have active, helpful communities on Twitter and Telegram.
+
+* [Twitter](https://twitter.com/paloma_chain)
+* [Telegram](https://t.me/palomachain)
+
+## Releases
+
+See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
+
+## Active Networks
+
+### Public Testnest 6
+
+
+
 
 ## ISSUES
 
