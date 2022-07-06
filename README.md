@@ -1,16 +1,24 @@
+![Logo!](assets/paloma.png)
+
 # Pigeon
+
+> A Golang cross-chain message relayer system 
+> for Paloma validators to deliver messages to any blockchain.
+
+For Crosschain software engineers that want simultaneous control of mulitiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scaleable, crosschain, smart contract execution with any data source.
+
 
 ## ISSUES
 
-Please use https://github.com/palomachain/paloma/issues to submit issues and add pigeon label!
+This repo does not accept issues. Please use https://github.com/palomachain/paloma/issues to submit issues and add pigeon label!
 
 
-# Instructions to sending messages to any EVM via Paloma
+# Instructions to setup and send messages to any EVM via the Paloma network.
 
 ## Install
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.2.4-alpha/pigeon_0.2.4-alpha_Linux_x86_64v3.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.2.5-alpha/pigeon_0.2.5-alpha_Linux_x86_64v3.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
