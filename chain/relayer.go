@@ -7,10 +7,11 @@ import (
 )
 
 type QueuedMessage struct {
-	ID          uint64
-	Nonce       []byte
-	BytesToSign []byte
-	Msg         any
+	ID               uint64
+	Nonce            []byte
+	BytesToSign      []byte
+	PublicAccessData []byte
+	Msg              any
 }
 
 type SignedQueuedMessage struct {

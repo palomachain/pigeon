@@ -89,9 +89,10 @@ func StoredContracts() map[string]StoredContract {
 	return _contracts
 }
 
-//go:generate mockery --name=palomaClienter --inpackage --testonly
-type palomaClienter interface {
-	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
+//go:generate mockery --name=PalomaClienter
+type PalomaClienter interface {
+	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
+	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
 
@@ -103,7 +104,7 @@ type Client struct {
 
 	conn *ethclient.Client
 
-	paloma palomaClienter
+	paloma PalomaClienter
 }
 
 func (c *Client) init() error {
@@ -114,7 +115,10 @@ func (c *Client) init() error {
 		}
 		c.addr = ethcommon.HexToAddress(c.config.SigningKey)
 
-		c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
+		if c.keystore == nil {
+			c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
+		}
+
 		if !c.keystore.HasAddress(c.addr) {
 			whoops.Assert(errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path())))
 		}

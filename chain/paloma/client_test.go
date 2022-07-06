@@ -473,12 +473,12 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 				addMsgSigs, ok := msg.(*consensus.MsgAddMessagesSignatures)
 				require.True(t, ok, "incorrect msg type")
 				require.Len(t, addMsgSigs.SignedMessages, 2)
-				require.Equal(t, addMsgSigs.SignedMessages[0], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
+				require.Equal(t, addMsgSigs.SignedMessages[0], &consensus.ConsensusMessageSignature{
 					Id:            123,
 					QueueTypeName: "abc",
 					Signature:     []byte(`sig-123`),
 				})
-				require.Equal(t, addMsgSigs.SignedMessages[1], &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
+				require.Equal(t, addMsgSigs.SignedMessages[1], &consensus.ConsensusMessageSignature{
 					Id:            456,
 					QueueTypeName: "def",
 					Signature:     []byte(`sig-789`),

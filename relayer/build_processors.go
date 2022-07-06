@@ -4,9 +4,9 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/palomachain/sparrow/chain"
-	"github.com/palomachain/sparrow/errors"
-	evmtypes "github.com/palomachain/sparrow/types/paloma/x/evm/types"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/errors"
+	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )

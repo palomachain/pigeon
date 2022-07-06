@@ -133,10 +133,11 @@ func queryMessagesInQueue(
 		}
 		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
-				ID:          msg.Id,
-				Nonce:       msg.Nonce,
-				Msg:         ptr,
-				BytesToSign: msg.GetBytesToSign(),
+				ID:               msg.Id,
+				Nonce:            msg.Nonce,
+				Msg:              ptr,
+				BytesToSign:      msg.GetBytesToSign(),
+				PublicAccessData: msg.GetPublicAccessData(),
 			},
 			Signatures: valSigs,
 		})
@@ -148,7 +149,6 @@ type BroadcastMessageSignatureIn struct {
 	ID              uint64
 	QueueTypeName   string
 	Signature       []byte
-	ExtraData       []byte
 	SignedByAddress string
 }
 
@@ -269,6 +269,30 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 	return err
 }
 
+func (c Client) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error {
+	msg := &consensus.MsgAddEvidence{
+		Creator:       c.creator,
+		Proof:         proof,
+		MessageID:     messageID,
+		QueueTypeName: queueTypeName,
+	}
+
+	_, err := c.MessageSender.SendMsg(ctx, msg)
+	return err
+}
+
+func (c Client) SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
+	msg := &consensus.MsgSetPublicAccessData{
+		Creator:       c.creator,
+		Data:          data,
+		MessageID:     messageID,
+		QueueTypeName: queueTypeName,
+	}
+
+	_, err := c.MessageSender.SendMsg(ctx, msg)
+	return err
+}
+
 func broadcastMessageSignatures(
 	ctx context.Context,
 	ms MessageSender,
@@ -278,13 +302,12 @@ func broadcastMessageSignatures(
 	if len(signatures) == 0 {
 		return nil
 	}
-	var signedMessages []*consensus.MsgAddMessagesSignatures_MsgSignedMessage
+	var signedMessages []*consensus.ConsensusMessageSignature
 	for _, sig := range signatures {
-		signedMessages = append(signedMessages, &consensus.MsgAddMessagesSignatures_MsgSignedMessage{
+		signedMessages = append(signedMessages, &consensus.ConsensusMessageSignature{
 			Id:              sig.ID,
 			QueueTypeName:   sig.QueueTypeName,
 			Signature:       sig.Signature,
-			ExtraData:       sig.ExtraData,
 			SignedByAddress: sig.SignedByAddress,
 		})
 	}

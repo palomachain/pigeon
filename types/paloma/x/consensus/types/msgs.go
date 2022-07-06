@@ -35,3 +35,27 @@ func (msg *MsgDeleteJob) GetSigners() []sdk.AccAddress {
 func (msg *MsgDeleteJob) ValidateBasic() error {
 	return nil
 }
+
+func (msg *MsgAddEvidence) GetSigners() []sdk.AccAddress {
+	creator, err := sdk.AccAddressFromBech32(msg.Creator)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{creator}
+}
+
+func (msg *MsgAddEvidence) ValidateBasic() error {
+	return nil
+}
+
+func (msg *MsgSetPublicAccessData) GetSigners() []sdk.AccAddress {
+	creator, err := sdk.AccAddressFromBech32(msg.Creator)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{creator}
+}
+
+func (msg *MsgSetPublicAccessData) ValidateBasic() error {
+	return nil
+}

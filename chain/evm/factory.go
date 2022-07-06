@@ -6,15 +6,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/palomachain/sparrow/config"
-	"github.com/palomachain/sparrow/errors"
+	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/errors"
 )
 
 type Factory struct {
-	palomaClienter palomaClienter
+	palomaClienter PalomaClienter
 }
 
-func NewFactory(pc palomaClienter) *Factory {
+func NewFactory(pc PalomaClienter) *Factory {
 	return &Factory{
 		palomaClienter: pc,
 	}
@@ -27,7 +28,7 @@ func (f *Factory) Build(
 	smartContractABIJson,
 	smartContractAddress string,
 	chainID *big.Int,
-) (Processor, error) {
+) (chain.Processor, error) {
 
 	var smartContractABI *abi.ABI
 	if len(smartContractABIJson) > 0 {

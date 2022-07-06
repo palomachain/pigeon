@@ -39,6 +39,29 @@ func (_m *MsgServer) SubmitNewJob(_a0 context.Context, _a1 *types.MsgSubmitNewJo
 	return r0, r1
 }
 
+// UploadNewSmartContractTemp provides a mock function with given fields: _a0, _a1
+func (_m *MsgServer) UploadNewSmartContractTemp(_a0 context.Context, _a1 *types.MsgUploadNewSmartContractTemp) (*types.MsgUploadNewSmartContractTempResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.MsgUploadNewSmartContractTempResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MsgUploadNewSmartContractTemp) *types.MsgUploadNewSmartContractTempResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.MsgUploadNewSmartContractTempResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.MsgUploadNewSmartContractTemp) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewMsgServer creates a new instance of MsgServer. It also registers a cleanup function to assert the mocks expectations.
 func NewMsgServer(t testing.TB) *MsgServer {
 	mock := &MsgServer{}

@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
-	"github.com/palomachain/pigeon/attest"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -29,8 +28,6 @@ var (
 	_palomaClient *paloma.Client
 
 	_evmFactory *evm.Factory
-
-	_attestRegistry *attest.Registry
 )
 
 func Relayer() *relayer.Relayer {
@@ -39,7 +36,6 @@ func Relayer() *relayer.Relayer {
 		_relayer = relayer.New(
 			*Config(),
 			*PalomaClient(),
-			AttestRegistry(),
 			EvmFactory(),
 		)
 	}
@@ -121,13 +117,6 @@ func PalomaClient() *paloma.Client {
 	return _palomaClient
 }
 
-func AttestRegistry() *attest.Registry {
-	if _attestRegistry == nil {
-		_attestRegistry = attest.NewRegistry()
-	}
-	return _attestRegistry
-}
-
 func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 	var zero T
 	if proposedVal == zero {
@@ -149,6 +138,8 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgAddMessagesSignatures{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
 					&consensustypes.MsgDeleteJob{},
+					&consensustypes.MsgAddEvidence{},
+					&consensustypes.MsgSetPublicAccessData{},
 				},
 			},
 		},

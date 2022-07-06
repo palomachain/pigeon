@@ -2,19 +2,14 @@ package relayer
 
 import (
 	"context"
+	"math/big"
 
-	"github.com/palomachain/pigeon/attest"
 	"github.com/palomachain/pigeon/chain"
-	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 )
-
-type AttestExecutor interface {
-	Execute(context.Context, string, attest.Request) (attest.Evidence, error)
-}
 
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
@@ -24,6 +19,21 @@ type PalomaClienter interface {
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
 	QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error)
+	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
+	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
+	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
+}
+
+//go:generate mockery --name=EvmFactorier
+type EvmFactorier interface {
+	Build(
+		cfg config.EVM,
+		chainReferenceID,
+		smartContractID,
+		smartContractABIJson,
+		smartContractAddress string,
+		chainID *big.Int,
+	) (chain.Processor, error)
 }
 
 type Relayer struct {
@@ -31,17 +41,14 @@ type Relayer struct {
 
 	palomaClient PalomaClienter
 
-	attestExecutor AttestExecutor
-
-	evmFactory *evm.Factory
+	evmFactory EvmFactorier
 }
 
-func New(config config.Root, palomaClient PalomaClienter, attestExecutor AttestExecutor, evmFactory *evm.Factory) *Relayer {
+func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorier) *Relayer {
 	return &Relayer{
-		config:         config,
-		palomaClient:   palomaClient,
-		attestExecutor: attestExecutor,
-		evmFactory:     evmFactory,
+		config:       config,
+		palomaClient: palomaClient,
+		evmFactory:   evmFactory,
 	}
 }
 

@@ -42,7 +42,7 @@ type compass struct {
 
 	compassAbi        *abi.ABI
 	smartContractAddr common.Address
-	paloma            palomaClienter
+	paloma            PalomaClienter
 	evm               evmClienter
 
 	chainID *big.Int
@@ -54,7 +54,7 @@ func newCompassClient(
 	chainReferenceID string,
 	chainID *big.Int,
 	compassAbi *abi.ABI,
-	paloma palomaClienter,
+	paloma PalomaClienter,
 	evm evmClienter,
 ) compass {
 	// if !ethcommon.IsHexAddress(smartContractAddrStr) {
@@ -90,8 +90,8 @@ func (t compass) updateValset(
 	ctx context.Context,
 	newValset *types.Valset,
 	origMessage chain.MessageWithSignatures,
-) error {
-	return whoops.Try(func() {
+) (*ethtypes.Transaction, error) {
+	return whoops.TryVal(func() *ethtypes.Transaction {
 		valsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
@@ -107,13 +107,13 @@ func (t compass) updateValset(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		_, err = t.callCompass(ctx, "update_valset", []any{
+		tx, err := t.callCompass(ctx, "update_valset", []any{
 			buildConsensus(ctx, currentValset, origMessage.Signatures),
 			typesValsetToValset(newValset),
 		})
 		whoops.Assert(err)
 
-		return
+		return tx
 	})
 }
 
@@ -121,23 +121,13 @@ func (t compass) submitLogicCall(
 	ctx context.Context,
 	msg *types.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
-) error {
-	return whoops.Try(func() {
-
-		if len(origMessage.PublicProof) > 0 {
-			data, pending, err := t.evm.TransactionByHash(ctx, origMessage.PublicProof)
-			whoops.Assert(err)
-
-			bz, err := data.MarshalJSON()
-			whoops.Assert(err)
-
-			return
-		}
+) (*ethtypes.Transaction, error) {
+	return whoops.TryVal(func() *ethtypes.Transaction {
 
 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 		whoops.Assert(err)
 		if executed {
-			return
+			return nil
 		}
 
 		valsetID, err := t.findLastValsetMessageID(ctx)
@@ -153,7 +143,7 @@ func (t compass) submitLogicCall(
 
 		con := buildConsensus(ctx, valset, origMessage.Signatures)
 
-		_, err = t.callCompass(ctx, "submit_logic_call", []any{
+		tx, err := t.callCompass(ctx, "submit_logic_call", []any{
 			con,
 			common.HexToAddress(msg.GetHexContractAddress()),
 			msg.GetPayload(),
@@ -161,7 +151,7 @@ func (t compass) submitLogicCall(
 		})
 		whoops.Assert(err)
 
-		return
+		return tx
 	})
 }
 
@@ -169,8 +159,8 @@ func (t compass) uploadSmartContract(
 	ctx context.Context,
 	msg *types.UploadSmartContract,
 	origMessage chain.MessageWithSignatures,
-) error {
-	return whoops.Try(func() {
+) (*ethtypes.Transaction, error) {
+	return whoops.TryVal(func() *etherumtypes.Transaction {
 		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
 		whoops.Assert(err)
 
@@ -183,18 +173,15 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		addr, tx, err := t.evm.DeployContract(
+		_, tx, err := t.evm.DeployContract(
 			ctx,
 			t.chainID,
 			contractABI,
 			msg.GetBytecode(),
 			msg.GetConstructorInput(),
 		)
-		// TODO: do attestation
-		_ = addr
-		_ = tx
 		whoops.Assert(err)
-		return
+		return tx
 	})
 }
 
@@ -312,11 +299,16 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	var gErr whoops.Group
 	for _, rawMsg := range msgs {
 
-		if len(rawMsg.AccessableVia) > 0 {
-			// maybe I don't have to process it anymore.
+		if len(rawMsg.PublicAccessData) > 0 {
+			gErr.Add(
+				t.provideTxProof(ctx, queueTypeName, rawMsg),
+			)
+			continue
 
 		}
+
 		var processingErr error
+		var tx *ethtypes.Transaction
 		logger := log.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
@@ -327,19 +319,19 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
-			processingErr = t.submitLogicCall(
+			tx, processingErr = t.submitLogicCall(
 				ctx,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
 		case *types.Message_UpdateValset:
-			processingErr = t.updateValset(
+			tx, processingErr = t.updateValset(
 				ctx,
 				action.UpdateValset.Valset,
 				rawMsg,
 			)
 		case *types.Message_UploadSmartContract:
-			processingErr = t.uploadSmartContract(
+			tx, processingErr = t.uploadSmartContract(
 				ctx,
 				action.UploadSmartContract,
 				rawMsg,
@@ -350,9 +342,12 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		switch {
 		case processingErr == nil:
-			// TODO: this is temporary
-			err := t.paloma.DeleteJob(ctx, queueTypeName, rawMsg.ID)
-			gErr.Add(err)
+			if tx != nil {
+				if err := t.paloma.SetPublicAccessData(ctx, queueTypeName, rawMsg.ID, tx.Hash().Bytes()); err != nil {
+					gErr.Add(err)
+					return gErr
+				}
+			}
 		case goerrors.Is(processingErr, ErrNoConsensus):
 			// does nothing
 		default:
@@ -365,6 +360,22 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	}
 
 	return nil
+}
+
+// provideTxProof provides a very simple proof which is a transaction object
+func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
+	txHash := common.BytesToHash(rawMsg.PublicAccessData)
+	tx, _, err := t.evm.TransactionByHash(ctx, txHash)
+	if err != nil {
+		return err
+	}
+
+	proof, err := tx.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, proof)
 }
 
 func typesValsetToValset(val *types.Valset) valset {

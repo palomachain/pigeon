@@ -4,24 +4,32 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEvmSigning(t *testing.T) {
-	c := Client{
-		keystore: OpenKeystore(t.TempDir()),
+	ks := OpenKeystore(t.TempDir())
+	acc, err := ks.NewAccount("abcd")
+	require.NoError(t, err)
+	ks.Unlock(acc, "abcd")
+
+	c := &Client{
+		keystore: ks,
+		addr:     acc.Address,
+		config: config.EVM{
+			ChainClientConfig: config.ChainClientConfig{
+				SigningKey: acc.Address.Hex(),
+			},
+		},
 	}
 
-	acc, err := c.keystore.NewAccount("abcd")
+	p := Processor{
+		evmClient: c,
+	}
 	require.NoError(t, err)
-	c.keystore.Unlock(acc, "abcd")
-	c.addr = acc.Address
-	c.config.SmartContractAddress = common.BytesToAddress([]byte("abc")).Hex()
-
-	p := NewProcessor(c, "test")
 
 	msgsToSign := []chain.QueuedMessage{
 		{
