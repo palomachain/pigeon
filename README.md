@@ -62,7 +62,13 @@ pigeon evm keys import ~/.pigeon/keys/evm/eth-main
 
 ### Config setup
 
-`VALIDATOR="$(palomad keys list --list-names | head -n1)"`
+Make sure your Paloma Cosmos-SDK keys are stored and available on your environment.
+
+`palomad keys add "$VALIDATOR" --recover`
+
+Set the VALIDATOR env variable
+
+`export VALIDATOR="$(palomad keys list --list-names | head -n1)"`
 
 Create configuration file here `~/.pigeon/config.yaml`
 
