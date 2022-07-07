@@ -119,6 +119,10 @@ Description=Pigeon daemon
 After=network-online.target
 
 [Service]
+Environment="PALOMA_KEYRING_PASS=<your Paloma key password>"
+Environment="ETH_RPC_URL=<Your Ethereum mainnet RPC URL>"
+Environment="ETH_PASSWORD=<Your ETH Key Password>"
+Environment="ETH_SIGNING_KEY=<Your ETH SIGNING KEY>"
 User=$USER
 ExecStart=/usr/local/bin/pigeon start
 Restart=on-failure
