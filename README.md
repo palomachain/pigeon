@@ -137,11 +137,11 @@ EOF
 cat /etc/systemd/system/pigeond.service
 
 # enable
-sudo systemctl enable pigeond
+systemctl enable pigeond
 # reload daemon
-sudo systemctl daemon-reload
+systemctl daemon-reload
 # start your pigeond service
-sudo systemctl restart pigeond
+systemctl restart pigeond
 # check logs
 journalctl -u pigeond.service -f -n 100
 ```
