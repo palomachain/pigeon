@@ -26,8 +26,12 @@ func (r *Relayer) Start(ctx context.Context) error {
 		}).Error("couldn't initialize relayer")
 		return err
 	}
+	processors, err := r.buildProcessors(ctx)
+	if err != nil {
+		return err
+	}
 
-	if err := r.updateExternalChainInfos(ctx); err != nil {
+	if err := r.updateExternalChainInfos(ctx, processors); err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
 		}).Error("couldn't update external chain info")
@@ -43,7 +47,12 @@ func (r *Relayer) Start(ctx context.Context) error {
 			return ctx.Err()
 		case <-time.After(defaultLoopTimeout):
 			log.Info("relayer loop")
-			err := r.Process(ctx)
+
+			processors, err := r.buildProcessors(ctx)
+			if err != nil {
+				return err
+			}
+			err = r.Process(ctx, processors)
 			if err == nil {
 				// resetting the failures
 				if len(consecutiveFailures) > 0 {

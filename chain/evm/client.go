@@ -89,58 +89,36 @@ func StoredContracts() map[string]StoredContract {
 	return _contracts
 }
 
-//go:generate mockery --name=palomaClienter --inpackage --testonly
-type palomaClienter interface {
-	DeleteJob(ctx context.Context, queueTypeName string, id uint64) error
+//go:generate mockery --name=PalomaClienter
+type PalomaClienter interface {
+	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
+	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
 
 type Client struct {
 	config config.EVM
 
-	smartContractAbi abi.ABI
-
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
 	conn *ethclient.Client
 
-	paloma palomaClienter
-
-	internalChainID string
-}
-
-func NewClient(
-	cfg config.EVM,
-	palomaClient palomaClienter,
-	internalChainID string,
-) Client {
-	client := &Client{
-		config:          cfg,
-		paloma:          palomaClient,
-		internalChainID: internalChainID,
-	}
-
-	whoops.Assert(client.init())
-
-	return *client
+	paloma PalomaClienter
 }
 
 func (c *Client) init() error {
 	return whoops.Try(func() {
-		contracts := StoredContracts()
-		scabi, ok := contracts[smartContractFilename]
-		if !ok {
-			whoops.Assert(errors.Unrecoverable(ErrSmartContractNotFound.Format(smartContractFilename)))
-		}
-		c.smartContractAbi = scabi.ABI
 
 		if !ethcommon.IsHexAddress(c.config.SigningKey) {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))
 		}
 		c.addr = ethcommon.HexToAddress(c.config.SigningKey)
 
-		c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
+		if c.keystore == nil {
+			c.keystore = keystore.NewKeyStore(c.config.KeyringDirectory.Path(), keystore.StandardScryptN, keystore.StandardScryptP)
+		}
+
 		if !c.keystore.HasAddress(c.addr) {
 			whoops.Assert(errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path())))
 		}
@@ -270,6 +248,10 @@ func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBloc
 	return filterLogs(ctx, c.conn, fq, currBlockHeight, fn)
 }
 
+func (c Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
+	return c.conn.TransactionByHash(ctx, txHash)
+}
+
 //go:generate mockery --name=ethClientToFilterLogs --inpackage --testonly
 type ethClientToFilterLogs interface {
 	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]etherumtypes.Log, error)
@@ -361,12 +343,19 @@ func filterLogs(
 	return false, err
 }
 
-func (c Client) ExecuteSmartContract(ctx context.Context, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error) {
+func (c Client) ExecuteSmartContract(
+	ctx context.Context,
+	chainID *big.Int,
+	contractAbi abi.ABI,
+	addr common.Address,
+	method string,
+	arguments []any,
+) (*etherumtypes.Transaction, error) {
 	return callSmartContract(
 		ctx,
 		executeSmartContractIn{
 			ethClient:     c.conn,
-			chainID:       c.config.GetChainID(),
+			chainID:       chainID,
 			gasAdjustment: c.config.GasAdjustment,
 			abi:           contractAbi,
 			contract:      addr,

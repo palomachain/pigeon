@@ -12,7 +12,7 @@ const (
 
 	ErrNotFound = whoops.String("not found")
 
-	EnrichedChainID  whoops.Field[string] = "chainID"
-	EnrichedID       whoops.Field[uint64] = "id"
-	EnrichedItemType whoops.Field[string] = "type"
+	EnrichedChainReferenceID whoops.Field[string] = "chainReferenceID"
+	EnrichedID               whoops.Field[uint64] = "id"
+	EnrichedItemType         whoops.Field[string] = "type"
 )

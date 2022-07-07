@@ -9,13 +9,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) Process(ctx context.Context) error {
-	for chainID, p := range r.processors {
+func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
+	for chainID, p := range processors {
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{
 				"processor-chain-id": chainID,
 				"queue-name":         queueName,
 			})
+
 			// TODO: remove comments once signing is done on the paloma side.
 			queuedMessages, err := r.palomaClient.QueryMessagesForSigning(ctx, queueName)
 			loggerQueuedMessages := logger.WithFields(log.Fields{
@@ -85,28 +86,10 @@ func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, 
 	broadcastMessageSignatures, err := slice.MapErr(
 		sigs,
 		func(sig chain.SignedQueuedMessage) (paloma.BroadcastMessageSignatureIn, error) {
-			var zero paloma.BroadcastMessageSignatureIn
-			var extraData []byte
-
-			// check if this is something that requires attestation
-			evidence, err := r.attestExecutor.Execute(ctx, queueTypeName, sig.Msg)
-			if err != nil {
-				return zero, err
-			}
-
-			if evidence != nil {
-				// TODO: include evidence.Bytes() into the signature
-				extraData, err = evidence.Bytes()
-				if err != nil {
-					return zero, err
-				}
-			}
-
 			return paloma.BroadcastMessageSignatureIn{
 				ID:              sig.ID,
 				QueueTypeName:   queueTypeName,
 				Signature:       sig.Signature,
-				ExtraData:       extraData,
 				SignedByAddress: sig.SignedByAddress,
 			}, nil
 		},

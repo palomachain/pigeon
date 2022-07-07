@@ -2,13 +2,11 @@ package config
 
 import (
 	"io"
-	"math/big"
 	"os"
 	"os/user"
 	"path"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 
 	"gopkg.in/yaml.v2"
@@ -25,13 +23,7 @@ type CosmosSpecificClientConfig struct {
 	GasPrices     string `yaml:"gas-prices"`
 }
 
-type EVMSpecificClientConfig struct {
-	SmartContractAddress string `yaml:"smart-contract-address"`
-	CompassID            string `yaml:"compass-id"`
-}
-
 type ChainClientConfig struct {
-	ChainID            string   `yaml:"chain-id"`
 	BaseRPCURL         string   `yaml:"base-rpc-url"`
 	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
 	SigningKey         string   `yaml:"signing-key"`
@@ -60,26 +52,16 @@ func (r *Root) init() {
 }
 
 type EVM struct {
-	EVMSpecificClientConfig `yaml:",inline"`
-	ChainClientConfig       `yaml:",inline"`
+	ChainClientConfig `yaml:",inline"`
 }
 
 type Paloma struct {
 	CosmosSpecificClientConfig `yaml:",inline"`
 	ChainClientConfig          `yaml:",inline"`
+	ChainID                    string `yaml:"chain-id"`
 }
 
 func (p *Paloma) init() {
-}
-
-func (e EVM) GetChainID() *big.Int {
-	id, ok := big.NewInt(0).SetString(e.ChainID, 10)
-	if !ok {
-		log.WithFields(log.Fields{
-			"evm-config": e,
-		}).Panic("evm config chain's id is not valid")
-	}
-	return id
 }
 
 func KeyringPassword(envKey string) string {

@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
-	"github.com/palomachain/pigeon/attest"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -28,10 +27,7 @@ var (
 
 	_palomaClient *paloma.Client
 
-	_evmClients    map[string]evm.Client
-	_evmProcessors map[string]chain.Processor
-
-	_attestRegistry *attest.Registry
+	_evmFactory *evm.Factory
 )
 
 func Relayer() *relayer.Relayer {
@@ -40,8 +36,7 @@ func Relayer() *relayer.Relayer {
 		_relayer = relayer.New(
 			*Config(),
 			*PalomaClient(),
-			AttestRegistry(),
-			GetEvmProcessors(),
+			EvmFactory(),
 		)
 	}
 	return _relayer
@@ -63,35 +58,12 @@ func SetConfigPath(path string) {
 	_configPath = path
 }
 
-func GetEvmProcessors() map[string]chain.Processor {
-	if _evmProcessors == nil {
-		_evmProcessors = make(map[string]chain.Processor)
+func EvmFactory() *evm.Factory {
+	if _evmFactory == nil {
+		_evmFactory = evm.NewFactory(PalomaClient())
 	}
 
-	for chainID, client := range GetEvmClients() {
-		_evmProcessors[chainID] = evm.NewProcessor(client, chainID)
-	}
-
-	return _evmProcessors
-}
-
-func GetEvmClients() map[string]evm.Client {
-	if _evmClients == nil {
-		_evmClients = make(map[string]evm.Client)
-	}
-
-	config := Config()
-	for chainName, evmConfig := range config.EVM {
-		if _, ok := _evmClients[chainName]; ok {
-			log.WithFields(log.Fields{
-				"chainName": chainName,
-			}).Fatal("chain with chainName already registered")
-		}
-
-		_evmClients[chainName] = evm.NewClient(evmConfig, PalomaClient(), chainName)
-	}
-
-	return _evmClients
+	return _evmFactory
 }
 
 func Config() *config.Root {
@@ -145,13 +117,6 @@ func PalomaClient() *paloma.Client {
 	return _palomaClient
 }
 
-func AttestRegistry() *attest.Registry {
-	if _attestRegistry == nil {
-		_attestRegistry = attest.NewRegistry()
-	}
-	return _attestRegistry
-}
-
 func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 	var zero T
 	if proposedVal == zero {
@@ -173,6 +138,8 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgAddMessagesSignatures{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
 					&consensustypes.MsgDeleteJob{},
+					&consensustypes.MsgAddEvidence{},
+					&consensustypes.MsgSetPublicAccessData{},
 				},
 			},
 		},

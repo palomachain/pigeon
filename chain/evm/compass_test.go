@@ -10,6 +10,7 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
+	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -65,11 +66,23 @@ func TestMessageProcessing(t *testing.T) {
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
 	}
+	chainID := big.NewInt(5)
+	tx := etherumtypes.NewTransaction(
+		5,
+		common.HexToAddress("0x12"),
+		big.NewInt(5),
+		55,
+		big.NewInt(5),
+		[]byte("data"),
+	)
+
+	// txbz, err := tx.MarshalBinary()
+	// require.NoError(t, err)
 
 	for _, tt := range []struct {
 		name   string
 		msgs   []chain.MessageWithSignatures
-		setup  func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter)
+		setup  func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
 		expErr error
 	}{
 		{
@@ -86,8 +99,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				isArbitraryCallExecutedLogs := []etherumtypes.Log{
 					{
@@ -99,7 +112,6 @@ func TestMessageProcessing(t *testing.T) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
 					fn(isArbitraryCallExecutedLogs)
 				})
-				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(666)).Return(nil)
 
 				return evm, paloma
 			},
@@ -127,8 +139,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
@@ -153,9 +165,12 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, mock.Anything, smartContractAddr, "submit_logic_call", mock.Anything).Return(nil, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, "submit_logic_call", mock.Anything).Return(
+					tx,
+					nil,
+				)
 
-				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(555)).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -182,8 +197,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
@@ -247,8 +262,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(55)
 
@@ -274,9 +289,9 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, mock.Anything, smartContractAddr, "update_valset", mock.Anything).Return(nil, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, "update_valset", mock.Anything).Return(tx, nil)
 
-				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(555)).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -316,8 +331,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(55)
 
@@ -357,7 +372,7 @@ func TestMessageProcessing(t *testing.T) {
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
-									Abi:              StoredContracts()["simple"].Source,
+									Abi:              string(StoredContracts()["simple"].Source),
 									ConstructorInput: []byte("constructor input"),
 								},
 							},
@@ -368,8 +383,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(0)
 
@@ -382,9 +397,9 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("DeployContract", mock.Anything, StoredContracts()["simple"].ABI, []byte("bytecode"), []byte("constructor input")).Return(nil, nil, nil)
+				evm.On("DeployContract", mock.Anything, chainID, StoredContracts()["simple"].ABI, []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
-				paloma.On("DeleteJob", mock.Anything, "queue-name", uint64(555)).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -399,7 +414,7 @@ func TestMessageProcessing(t *testing.T) {
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
-									Abi:              StoredContracts()["simple"].Source,
+									Abi:              string(StoredContracts()["simple"].Source),
 									ConstructorInput: []byte("constructor input"),
 								},
 							},
@@ -410,8 +425,8 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				},
 			},
-			setup: func(t *testing.T) (*mockEvmClienter, *mockPalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), newMockPalomaClienter(t)
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(0)
 
@@ -435,7 +450,8 @@ func TestMessageProcessing(t *testing.T) {
 				smartContractAddr.Hex(),
 				"id-123",
 				"internal-chain-id",
-				compassAbi.ABI,
+				chainID,
+				&compassAbi.ABI,
 				palomaClienter,
 				ethClienter,
 			)

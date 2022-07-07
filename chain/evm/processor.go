@@ -13,34 +13,16 @@ import (
 )
 
 const (
-	queueArbitraryLogic   = "evm-arbitrary-smart-contract-call"
 	queueTurnstoneMessage = "evm-turnstone-message"
 )
 
 type Processor struct {
-	compass   compass
-	evmClient Client
-	chainType string
-	chainID   string
+	compass          compass
+	evmClient        *Client
+	chainType        string
+	chainReferenceID string
 
 	turnstoneEVMContract common.Address
-}
-
-func NewProcessor(c Client, chainID string) Processor {
-	comp := newCompassClient(
-		c.config.SmartContractAddress,
-		c.config.CompassID,
-		c.internalChainID,
-		c.smartContractAbi,
-		c.paloma,
-		c,
-	)
-	return Processor{
-		compass:   comp,
-		evmClient: c,
-		chainType: "EVM",
-		chainID:   chainID,
-	}
 }
 
 var _ chain.Processor = Processor{}
@@ -48,11 +30,10 @@ var _ chain.Processor = Processor{}
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
 		[]string{
-			// queueArbitraryLogic,
 			queueTurnstoneMessage,
 		},
 		func(q string) string {
-			return fmt.Sprintf("%s:%s:%s", p.chainType, p.chainID, q)
+			return fmt.Sprintf("%s/%s/%s", p.chainType, p.chainReferenceID, q)
 		},
 	)
 }
@@ -101,9 +82,9 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 
 func (p Processor) ExternalAccount() chain.ExternalAccount {
 	return chain.ExternalAccount{
-		ChainType: p.chainType,
-		ChainID:   p.chainID,
-		Address:   p.evmClient.addr.Hex(),
-		PubKey:    p.evmClient.addr.Bytes(),
+		ChainType:        p.chainType,
+		ChainReferenceID: p.chainReferenceID,
+		Address:          p.evmClient.addr.Hex(),
+		PubKey:           p.evmClient.addr.Bytes(),
 	}
 }

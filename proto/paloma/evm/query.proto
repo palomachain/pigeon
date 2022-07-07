@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "evm/turnstone.proto";
+import "evm/chain_info.proto";
 // this line is used by starport scaffolding # 1
 
 option go_package = "github.com/palomachain/paloma/x/evm/types";
@@ -13,7 +14,12 @@ option go_package = "github.com/palomachain/paloma/x/evm/types";
 service Query {
   // Queries a list of GetValsetByID items.
 	rpc GetValsetByID(QueryGetValsetByIDRequest) returns (QueryGetValsetByIDResponse) {
-		option (google.api.http).get = "/palomachain/paloma/evm/get_valset_by_id/{valsettID}";
+		option (google.api.http).get = "/palomachain/paloma/evm/get_valset_by_id/{valsetID}";
+	}
+
+// Queries a list of ChainsInfos items.
+	rpc ChainsInfos(QueryChainsInfosRequest) returns (QueryChainsInfosResponse) {
+		option (google.api.http).get = "/palomachain/paloma/evm/chains_infos";
 	}
 
 // this line is used by starport scaffolding # 2
@@ -22,11 +28,18 @@ service Query {
 
 message QueryGetValsetByIDRequest {
   uint64 valsetID = 1;
-  string chainID = 2;
+  string chainReferenceID = 2;
 }
 
 message QueryGetValsetByIDResponse {
   Valset valset = 1;
+}
+
+message QueryChainsInfosRequest {
+}
+
+message QueryChainsInfosResponse {
+  repeated ChainInfo chainsInfos = 1;
 }
 
 // this line is used by starport scaffolding # 3

@@ -16,6 +16,29 @@ type MsgServer struct {
 	mock.Mock
 }
 
+// AddEvidence provides a mock function with given fields: _a0, _a1
+func (_m *MsgServer) AddEvidence(_a0 context.Context, _a1 *types.MsgAddEvidence) (*types.MsgAddEvidenceResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.MsgAddEvidenceResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MsgAddEvidence) *types.MsgAddEvidenceResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.MsgAddEvidenceResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.MsgAddEvidence) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AddMessagesSignatures provides a mock function with given fields: _a0, _a1
 func (_m *MsgServer) AddMessagesSignatures(_a0 context.Context, _a1 *types.MsgAddMessagesSignatures) (*types.MsgAddMessagesSignaturesResponse, error) {
 	ret := _m.Called(_a0, _a1)
@@ -54,6 +77,29 @@ func (_m *MsgServer) DeleteJob(_a0 context.Context, _a1 *types.MsgDeleteJob) (*t
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *types.MsgDeleteJob) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SetPublicAccessData provides a mock function with given fields: _a0, _a1
+func (_m *MsgServer) SetPublicAccessData(_a0 context.Context, _a1 *types.MsgSetPublicAccessData) (*types.MsgSetPublicAccessDataResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.MsgSetPublicAccessDataResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MsgSetPublicAccessData) *types.MsgSetPublicAccessDataResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.MsgSetPublicAccessDataResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.MsgSetPublicAccessData) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
