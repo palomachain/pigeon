@@ -110,9 +110,9 @@ pigeon start
 ```
 
 #### Using systemd service
+Create service file
 
 ```shell script
-# create service file
 tee <<EOF >/dev/null /etc/systemd/system/pigeond.service
 [Unit]
 Description=Pigeon daemon
