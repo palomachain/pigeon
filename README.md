@@ -109,8 +109,34 @@ export ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
 pigeon start
 ```
 
-- Remember to run pigeon as a systemd Service! If you have a good systemd service implementation for Ubuntu, please make a PR on this README and we will add it.
+#### Using systemd service
+Create service file
 
+```shell script
+tee <<EOF >/dev/null /etc/systemd/system/pigeond.service
+[Unit]
+Description=Pigeon daemon
+After=network-online.target
+
+[Service]
+Environment="PALOMA_KEYRING_PASS=$PALOMA_KEYRING_PASS"
+Environment="ETH_RPC_URL=$ETH_RPC_URL"
+Environment="ETH_PASSWORD=$ETH_PASSWORD"
+Environment="ETH_SIGNING_KEY=$ETH_SIGNING_KEY"
+User=$USER
+ExecStart=/usr/local/bin/pigeon start
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl restart pigeond
+# check logs
+journalctl -u pigeond.service -f -n 100
+```
 
 ### Definitions and Descriptions of Pigeons Variables
   - for paloma key:
