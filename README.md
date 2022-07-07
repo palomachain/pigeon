@@ -133,7 +133,7 @@ LimitNOFILE=4096
 WantedBy=multi-user.target
 EOF
 
-# verify
+# verify the contents
 cat /etc/systemd/system/pigeond.service
 
 # enable
