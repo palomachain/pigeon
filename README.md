@@ -111,18 +111,18 @@ pigeon start
 
 #### Using systemd service
 
-```bash
+```shell script
 # create service file
-sudo tee <<EOF >/dev/null /etc/systemd/system/pigeond.service
+tee <<EOF >/dev/null /etc/systemd/system/pigeond.service
 [Unit]
 Description=Pigeon daemon
 After=network-online.target
 
 [Service]
-Environment="PALOMA_KEYRING_PASS=<your Paloma key password>"
-Environment="ETH_RPC_URL=<Your Ethereum mainnet RPC URL>"
-Environment="ETH_PASSWORD=<Your ETH Key Password>"
-Environment="ETH_SIGNING_KEY=<Your ETH SIGNING KEY>"
+Environment="PALOMA_KEYRING_PASS=$PALOMA_KEYRING_PASS"
+Environment="ETH_RPC_URL=$ETH_RPC_URL"
+Environment="ETH_PASSWORD=$ETH_PASSWORD"
+Environment="ETH_SIGNING_KEY=$ETH_SIGNING_KEY"
 User=$USER
 ExecStart=/usr/local/bin/pigeon start
 Restart=on-failure
@@ -133,14 +133,6 @@ LimitNOFILE=4096
 WantedBy=multi-user.target
 EOF
 
-# verify the contents
-cat /etc/systemd/system/pigeond.service
-
-# enable
-systemctl enable pigeond
-# reload daemon
-systemctl daemon-reload
-# start your pigeond service
 systemctl restart pigeond
 # check logs
 journalctl -u pigeond.service -f -n 100
