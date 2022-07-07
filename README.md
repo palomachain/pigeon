@@ -74,7 +74,7 @@ Make sure your Paloma Cosmos-SDK keys are stored and available on your environme
 
 Set the VALIDATOR env variable
 
-`export VALIDATOR="$(palomad keys list --list-names | head -n1)"`
+`export VALIDATOR="$(palomad keys list --output json | jq -r '.[0].address')"`
 
 Create configuration file here `~/.pigeon/config.yaml`
 
