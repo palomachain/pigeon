@@ -59,12 +59,12 @@ func TestProcessing(t *testing.T) {
 				pal := mocks.NewPalomaClienter(t)
 				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
 					{
-						ChainReferenceID:     "main",
-						ChainID:              5,
-						SmartContractID:      "5",
-						SmartContractAddr:    common.BytesToAddress([]byte("abcd")).Hex(),
-						ReferenceBlockHeight: 5,
-						ReferenceBlockHash:   "0x12",
+						ChainReferenceID:      "main",
+						ChainID:               5,
+						SmartContractUniqueID: []byte("5"),
+						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
+						ReferenceBlockHeight:  5,
+						ReferenceBlockHash:    "0x12",
 					},
 				}, nil)
 				pal.On("QueryMessagesInQueue", ctx, mock.Anything).Return(

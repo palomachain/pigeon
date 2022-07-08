@@ -293,7 +293,7 @@ func TestGetMessagesInQueue(t *testing.T) {
 			conn, err := grpc.DialContext(ctx, "", grpc.WithInsecure(), grpc.WithContextDialer(consensusQueryServerDialer(t, mocksrv)))
 			require.NoError(t, err)
 
-			msgs, err := queryMessagesInQueue(ctx, "bob", conn, codec.Marshaler)
+			msgs, err := queryMessagesInQueue(ctx, "bob", nil, conn, codec.Marshaler)
 
 			require.Equal(t, tt.expMsgs, msgs)
 

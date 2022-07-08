@@ -49,7 +49,7 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 	processor, err := r.evmFactory.Build(
 		cfg,
 		chainInfo.GetChainReferenceID(),
-		chainInfo.GetSmartContractID(),
+		string(chainInfo.GetSmartContractUniqueID()),
 		chainInfo.GetAbi(),
 		chainInfo.GetSmartContractAddr(),
 		chainID,

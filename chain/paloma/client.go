@@ -96,6 +96,7 @@ func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) 
 	return queryMessagesInQueue(
 		ctx,
 		queueTypeName,
+		c.valAddr,
 		c.GRPCClient,
 		c.L.Codec.Marshaler,
 	)
@@ -104,12 +105,14 @@ func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) 
 func queryMessagesInQueue(
 	ctx context.Context,
 	queueTypeName string,
+	skipEvidence sdk.ValAddress,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 ) ([]chain.MessageWithSignatures, error) {
 	qc := consensus.NewQueryClient(c)
 	msgs, err := qc.MessagesInQueue(ctx, &consensus.QueryMessagesInQueueRequest{
-		QueueTypeName: queueTypeName,
+		QueueTypeName:                    queueTypeName,
+		SkipEvidenceProvidedByValAddress: skipEvidence,
 	})
 	if err != nil {
 		return nil, err

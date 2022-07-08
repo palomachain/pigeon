@@ -24,7 +24,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 					return msg.ID
 				}),
 			})
-			loggerQueuedMessages.Info("messages to sign")
 
 			if err != nil {
 				logger.Warn("failed getting messages to sign")
@@ -32,6 +31,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			}
 
 			if len(queuedMessages) > 0 {
+				loggerQueuedMessages.Info("messages to sign")
 				signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
 				if err != nil {
 					loggerQueuedMessages.WithFields(log.Fields{
@@ -71,11 +71,14 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				}),
 			})
 
-			logger.Info("relaying messages")
-			if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
-				logger.WithField("err", err).Error("error relaying messages")
-				return err
+			if len(relayCandidateMsgs) > 0 {
+				logger.Info("relaying messages")
+				if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
+					logger.WithField("err", err).Error("error relaying messages")
+					return err
+				}
 			}
+
 		}
 	}
 

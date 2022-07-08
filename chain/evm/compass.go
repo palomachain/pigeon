@@ -297,9 +297,11 @@ func buildConsensus(
 
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
+	logger := log.WithField("queue-type-name", queueTypeName)
 	for _, rawMsg := range msgs {
-
+		logger = logger.WithField("message-id", rawMsg.ID)
 		if len(rawMsg.PublicAccessData) > 0 {
+			logger.Trace("message has public access data")
 			gErr.Add(
 				t.provideTxProof(ctx, queueTypeName, rawMsg),
 			)
