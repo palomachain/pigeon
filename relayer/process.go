@@ -89,6 +89,12 @@ func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, 
 	broadcastMessageSignatures, err := slice.MapErr(
 		sigs,
 		func(sig chain.SignedQueuedMessage) (paloma.BroadcastMessageSignatureIn, error) {
+			log.WithFields(
+				log.Fields{
+					"id":              sig.ID,
+					"queue-type-name": queueTypeName,
+				},
+			).Debug("broadcasting signed message")
 			return paloma.BroadcastMessageSignatureIn{
 				ID:              sig.ID,
 				QueueTypeName:   queueTypeName,

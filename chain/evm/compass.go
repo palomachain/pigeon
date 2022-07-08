@@ -301,7 +301,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	for _, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 		if len(rawMsg.PublicAccessData) > 0 {
-			logger.Trace("message has public access data")
+			logger.Debug("providing proof for message")
 			gErr.Add(
 				t.provideTxProof(ctx, queueTypeName, rawMsg),
 			)
@@ -316,7 +316,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			"queue-name":         queueTypeName,
 			"msg-id":             rawMsg.ID,
 		})
-		logger.Info("processing")
+		logger.Debug("processing")
 		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
@@ -345,6 +345,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		switch {
 		case processingErr == nil:
 			if tx != nil {
+				logger.Debug("setting public access data")
 				if err := t.paloma.SetPublicAccessData(ctx, queueTypeName, rawMsg.ID, tx.Hash().Bytes()); err != nil {
 					gErr.Add(err)
 					return gErr
@@ -366,6 +367,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 // provideTxProof provides a very simple proof which is a transaction object
 func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
+	log.WithFields(log.Fields{
+		"queue-type-name":    queueTypeName,
+		"msg-id":             rawMsg.ID,
+		"public-access-data": rawMsg.PublicAccessData,
+	}).Debug("providing proof")
 	txHash := common.BytesToHash(rawMsg.PublicAccessData)
 	tx, _, err := t.evm.TransactionByHash(ctx, txHash)
 	if err != nil {

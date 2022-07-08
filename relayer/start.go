@@ -52,6 +52,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+
 			err = r.Process(ctx, processors)
 			if err == nil {
 				// resetting the failures

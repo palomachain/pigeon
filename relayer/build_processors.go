@@ -20,7 +20,7 @@ func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error
 	if err != nil {
 		return nil, err
 	}
-	log.WithField("chains-infos", chainsInfos).Info("got chain infos")
+	log.WithField("chains-infos", chainsInfos).Trace("got chain infos")
 
 	processors := []chain.Processor{}
 	for _, chainInfo := range chainsInfos {

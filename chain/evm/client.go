@@ -179,7 +179,7 @@ func callSmartContract(
 		gasPrice, err := args.ethClient.SuggestGasPrice(ctx)
 		whoops.Assert(err)
 
-		logger.WithField("suggested-gas-price", gasPrice).Info("suggested gas price")
+		logger.WithField("suggested-gas-price", gasPrice).Debug("suggested gas price")
 
 		// adjusting the gas price
 		if args.gasAdjustment > 0.0 {
@@ -188,7 +188,7 @@ func callSmartContract(
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
 			logger.WithFields(log.Fields{
 				"gas-price": gasPrice,
-			}).Info("adusted gas price")
+			}).Debug("adusted gas price")
 		}
 
 		boundContract := bind.NewBoundContract(
@@ -218,7 +218,7 @@ func callSmartContract(
 			"signer":    txOpts.Signer,
 		})
 
-		logger.Info("executing tx")
+		logger.Debug("executing tx")
 
 		tx, err := boundContract.RawTransact(txOpts, packedBytes)
 		whoops.Assert(err)
@@ -228,7 +228,7 @@ func callSmartContract(
 			"tx-gas-limit": tx.Gas(),
 			"tx-gas-price": tx.GasPrice(),
 			"tx-cost":      tx.Cost(),
-		}).Info("tx executed")
+		}).Debug("tx executed")
 		return tx
 	})
 }
