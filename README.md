@@ -109,32 +109,51 @@ export ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
 pigeon start
 ```
 
-#### Using systemd service
-Create service file
+#### Using systemd
 
-```shell script
-tee <<EOF >/dev/null /etc/systemd/system/pigeond.service
+Create the service configuration:
+
+```shell
+cat <<EOT >~/.pigeon/env.sh
+PALOMA_KEYRING_PASS="<your Paloma key password>"
+ETH_RPC_URL="<Your Ethereum mainnet RPC URL>"
+ETH_PASSWORD="<Your ETH Key Password>"
+ETH_SIGNING_KEY="<Your ETH SIGNING KEY>"
+EOT
+```
+
+And create a systemctl configuration:
+
+```shell
+cat <<EOT >/etc/systemd/system/pigeond.service
 [Unit]
 Description=Pigeon daemon
 After=network-online.target
+ConditionPathExists=/usr/local/bin/pigeon
 
 [Service]
-Environment="PALOMA_KEYRING_PASS=$PALOMA_KEYRING_PASS"
-Environment="ETH_RPC_URL=$ETH_RPC_URL"
-Environment="ETH_PASSWORD=$ETH_PASSWORD"
-Environment="ETH_SIGNING_KEY=$ETH_SIGNING_KEY"
-User=$USER
+Type=simple
+Restart=always
+RestartSec=5
+USER=${USER}
+WorkingDirectory=~
+EnvironmentFile=.pigeon/env.sh
 ExecStart=/usr/local/bin/pigeon start
-Restart=on-failure
-RestartSec=3
-LimitNOFILE=4096
+ExecReload=
 
 [Install]
 WantedBy=multi-user.target
-EOF
+EOT
+```
 
-systemctl restart pigeond
-# check logs
+Then start our pigeon!
+
+```shell
+service pigeond start
+
+# Check that it's running successfully:
+service pigeond status
+# Or watch the logs:
 journalctl -u pigeond.service -f -n 100
 ```
 
