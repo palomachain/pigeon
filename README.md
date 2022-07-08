@@ -135,7 +135,7 @@ Restart=always
 RestartSec=5
 User=${USER}
 WorkingDirectory=~
-EnvironmentFile=$(HOME)/.pigeon/env.sh
+EnvironmentFile=${HOME}/.pigeon/env.sh
 ExecStart=/usr/local/bin/pigeon start
 ExecReload=
 
