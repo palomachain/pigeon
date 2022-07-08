@@ -103,10 +103,11 @@ First pigeon will need some keys:
 
 ```shell
 cat <<EOT >~/.pigeon/env.sh
-PALOMA_KEYRING_PASS="<your Paloma key password>"
-ETH_RPC_URL="<Your Ethereum mainnet RPC URL>"
-ETH_PASSWORD="<Your ETH Key Password>"
-ETH_SIGNING_KEY="<Your ETH SIGNING KEY>"
+PALOMA_KEYRING_PASS=<your Paloma key password>
+ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
+ETH_PASSWORD=<Your ETH Key Password>
+ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
+VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
 
