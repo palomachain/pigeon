@@ -2,7 +2,7 @@
 
 # Pigeon
 
-> A Golang cross-chain message relayer system 
+> A Golang cross-chain message relayer system
 > for Paloma validators to deliver messages to any blockchain.
 
 For Crosschain software engineers that want simultaneous control of mulitiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scaleable, crosschain, smart contract execution with any data source.
@@ -54,7 +54,7 @@ mkdir ~/.pigeon
 pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
 ```
 
-or import existing you existing Ethereum evm private keys 
+or import existing you existing Ethereum evm private keys
 
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/eth-main
@@ -99,30 +99,28 @@ evm:
 
 ### Start pigeon
 
-Open a new terminal window and run:
+First pigeon will need some keys:
 
 ```shell
-export PALOMA_KEYRING_PASS=<your Paloma key password>
-export ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
-export ETH_PASSWORD=<Your ETH Key Password>
-export ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
+cat <<EOT >~/.pigeon/env.sh
+PALOMA_KEYRING_PASS=<your Paloma key password>
+ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
+ETH_PASSWORD=<Your ETH Key Password>
+ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
+VALIDATOR=<VALIDATOR NAME>
+EOT
+```
+
+Then we can run pigeon with:
+
+```shell
+source ~/.pigeon/env.sh
 pigeon start
 ```
 
 #### Using systemd
 
-Create the service configuration:
-
-```shell
-cat <<EOT >~/.pigeon/env.sh
-PALOMA_KEYRING_PASS="<your Paloma key password>"
-ETH_RPC_URL="<Your Ethereum mainnet RPC URL>"
-ETH_PASSWORD="<Your ETH Key Password>"
-ETH_SIGNING_KEY="<Your ETH SIGNING KEY>"
-EOT
-```
-
-And create a systemctl configuration:
+Make sure you have configured `.pigeon/env.sh` as above. Then create a systemctl configuration:
 
 ```shell
 cat <<EOT >/etc/systemd/system/pigeond.service
@@ -135,9 +133,9 @@ ConditionPathExists=/usr/local/bin/pigeon
 Type=simple
 Restart=always
 RestartSec=5
-USER=${USER}
+User=${USER}
 WorkingDirectory=~
-EnvironmentFile=.pigeon/env.sh
+EnvironmentFile=$(HOME)/.pigeon/env.sh
 ExecStart=/usr/local/bin/pigeon start
 ExecReload=
 
