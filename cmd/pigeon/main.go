@@ -16,6 +16,7 @@ func main() {
 	if err == nil {
 		logrus.SetLevel(level)
 	}
+	logrus.SetReportCaller(true)
 
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
