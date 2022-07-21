@@ -64,6 +64,9 @@ type Processor interface {
 	// ProcessMessages will receive messages from the current queues and it's on the implementation
 	// to ensure that there are enough signatures for consensus.
 	ProcessMessages(context.Context, string, []MessageWithSignatures) error
+
+	// it verifies if it's being connected to the right chain
+	IsRightChain(ctx context.Context) error
 }
 
 type ProcessorBuilder interface {

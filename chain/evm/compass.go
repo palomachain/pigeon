@@ -45,6 +45,8 @@ type compass struct {
 	paloma            PalomaClienter
 	evm               evmClienter
 
+	startingBlockHeight int64
+
 	chainID *big.Int
 }
 
@@ -201,7 +203,7 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	latestMessageID := big.NewInt(0)
 
 	var retErr error
-	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.evm.FilterLogs(ctx, filter, big.NewInt(t.startingBlockHeight), func(logs []etherumtypes.Log) bool {
 		for _, log := range logs {
 			if log.BlockNumber > highestBlock {
 				highestBlock = log.BlockNumber
@@ -251,7 +253,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	}
 
 	var found bool
-	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err := t.evm.FilterLogs(ctx, filter, big.NewInt(t.startingBlockHeight), func(logs []etherumtypes.Log) bool {
 		found = len(logs) > 0
 		return !found
 	})

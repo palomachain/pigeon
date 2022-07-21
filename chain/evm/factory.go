@@ -28,6 +28,8 @@ func (f *Factory) Build(
 	smartContractABIJson,
 	smartContractAddress string,
 	chainID *big.Int,
+	blockHeight int64,
+	blockHeightHash common.Hash,
 ) (chain.Processor, error) {
 
 	var smartContractABI *abi.ABI
@@ -54,16 +56,19 @@ func (f *Factory) Build(
 
 	return Processor{
 		compass: compass{
-			CompassID:         smartContractID,
-			ChainReferenceID:  chainReferenceID,
-			smartContractAddr: common.HexToAddress(smartContractAddress),
-			chainID:           chainID,
-			compassAbi:        smartContractABI,
-			paloma:            f.palomaClienter,
-			evm:               client,
+			CompassID:           smartContractID,
+			ChainReferenceID:    chainReferenceID,
+			smartContractAddr:   common.HexToAddress(smartContractAddress),
+			chainID:             chainID,
+			compassAbi:          smartContractABI,
+			paloma:              f.palomaClienter,
+			evm:                 client,
+			startingBlockHeight: blockHeight,
 		},
 		evmClient:        client,
 		chainType:        "EVM",
 		chainReferenceID: chainReferenceID,
+		blockHeight:      blockHeight,
+		blockHeightHash:  blockHeightHash,
 	}, nil
 }

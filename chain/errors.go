@@ -12,6 +12,8 @@ const (
 
 	ErrNotFound = whoops.String("not found")
 
+	ErrNotConnectedToRightChain = whoops.String("not connected to the right chain")
+
 	EnrichedChainReferenceID whoops.Field[string] = "chainReferenceID"
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"

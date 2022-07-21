@@ -12,7 +12,7 @@ import (
 const (
 	defaultErrorCountToExit = 5
 
-	defaultLoopTimeout = 10 * time.Second
+	defaultLoopTimeout = 1 * time.Minute
 )
 
 // Start starts the relayer. It's responsible for handling the communication

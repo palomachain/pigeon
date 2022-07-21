@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
@@ -33,6 +34,8 @@ type EvmFactorier interface {
 		smartContractABIJson,
 		smartContractAddress string,
 		chainID *big.Int,
+		blockHeight int64,
+		blockHeightHash common.Hash,
 	) (chain.Processor, error)
 }
 
