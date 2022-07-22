@@ -12,7 +12,7 @@ require (
 	github.com/strangelove-ventures/lens v0.3.1-0.20220329150126-16b15e90cf34
 	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/tendermint v0.34.15
-	github.com/vizualni/whoops v0.4.0
+	github.com/vizualni/whoops v0.6.0
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac
 	google.golang.org/grpc v1.45.0

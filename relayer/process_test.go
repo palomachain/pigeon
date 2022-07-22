@@ -46,6 +46,7 @@ func TestProcessing(t *testing.T) {
 				require.NoError(t, err)
 
 				p := chainmocks.NewProcessor(t)
+				p.On("IsRightChain", mock.Anything).Return(nil)
 				p.On("SupportedQueues").Return([]string{"a"})
 				p.On(
 					"ProcessMessages",

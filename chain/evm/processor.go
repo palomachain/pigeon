@@ -11,7 +11,6 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (
@@ -31,7 +30,6 @@ type Processor struct {
 }
 
 var _ chain.Processor = Processor{}
-var _ chain.RightChainUsedVerifierer = Processor{}
 
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
@@ -102,8 +100,9 @@ func (p Processor) IsRightChain(ctx context.Context) error {
 
 	if block.Hash() == p.blockHeightHash {
 		return errors.Unrecoverable(chain.ErrNotConnectedToRightChain.WrapS(
-			"chain %s hash at block height %d should be %s, while it is %s. Check the rpc-url of the chain in the config."
+			"chain %s hash at block height %d should be %s, while it is %s. Check the rpc-url of the chain in the config.",
 			p.chainReferenceID,
+			p.blockHeight,
 			p.blockHeightHash,
 			block.Hash(),
 		))
