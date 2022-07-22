@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
@@ -23,6 +24,9 @@ type Processor struct {
 	chainReferenceID string
 
 	turnstoneEVMContract common.Address
+
+	blockHeight     int64
+	blockHeightHash common.Hash
 }
 
 var _ chain.Processor = Processor{}
@@ -86,4 +90,27 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 		Address:          p.evmClient.addr.Hex(),
 		PubKey:           p.evmClient.addr.Bytes(),
 	}
+}
+
+func (p Processor) IsRightChain(ctx context.Context) error {
+	block, err := p.evmClient.BlockByHash(ctx, p.blockHeightHash)
+	if err != nil {
+		return err
+	}
+
+	return p.isRightChain(block.Hash())
+}
+
+func (p Processor) isRightChain(blockHash common.Hash) error {
+	if blockHash != p.blockHeightHash {
+		return errors.Unrecoverable(chain.ErrNotConnectedToRightChain.WrapS(
+			"chain %s hash at block height %d should be %s, while it is %s. Check the rpc-url of the chain in the config.",
+			p.chainReferenceID,
+			p.blockHeight,
+			p.blockHeightHash,
+			blockHash,
+		))
+	}
+
+	return nil
 }

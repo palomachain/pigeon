@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -26,6 +27,10 @@ func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error
 	for _, chainInfo := range chainsInfos {
 		processor, err := r.processorFactory(chainInfo)
 		if errors.IsUnrecoverable(err) {
+			return nil, err
+		}
+
+		if err := processor.IsRightChain(ctx); err != nil {
 			return nil, err
 		}
 
@@ -53,6 +58,8 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 		chainInfo.GetAbi(),
 		chainInfo.GetSmartContractAddr(),
 		chainID,
+		int64(chainInfo.GetReferenceBlockHeight()),
+		common.HexToHash(chainInfo.GetReferenceBlockHash()),
 	)
 	if err != nil {
 		return nil, whoops.Wrap(err, retErr)

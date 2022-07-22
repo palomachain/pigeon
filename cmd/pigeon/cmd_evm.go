@@ -1,9 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/spf13/cobra"
 )
@@ -53,8 +58,25 @@ var (
 	evmDeploySmartContractCmd = &cobra.Command{
 		Use:   "deploy-smart-contract [chainID] [abi] [bytecode] [packed-input]",
 		Short: "deploys a smart contract",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := ethclient.Dial(app.Config().EVM["ropsten"].BaseRPCURL)
+			if err != nil {
+				return err
+			}
+			tx, _, _ := c.TransactionByHash(cmd.Context(), common.HexToHash("0xa5b948628c719cd8771d36d52c22ae6d41ce94ad0951f7b382e04d5b0028d246"))
+			fmt.Println(tx)
+
+			b, err := tx.MarshalBinary()
+			if err != nil {
+				return err
+			}
+
+			ioutil.WriteFile("/tmp/ooo.hex", []byte(common.Bytes2Hex(b)), 0o666)
+
+			fmt.Println(b)
+			fmt.Println(common.Bytes2Hex(b))
+			fmt.Println(sha256.Sum256(b))
 			return nil
 			// chainID, contractABIbz, bytecode, packedInput := args[0], args[1], args[2], args[3]
 			// c := app.GetEvmClients()[chainID]
