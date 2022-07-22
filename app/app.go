@@ -30,6 +30,15 @@ var (
 	_evmFactory *evm.Factory
 )
 
+var (
+	version = ""
+	commit  = ""
+)
+
+func Version() string { return version }
+
+func Commit() string { return commit }
+
 func Relayer() *relayer.Relayer {
 	if _relayer == nil {
 		// do something

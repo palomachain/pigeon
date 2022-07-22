@@ -9,13 +9,14 @@ builds:
       - ledger
     ldflags:
       - -s -w
+      - -X github.com/palomachain/pigeon/app.version={{ .Tag }}
+      - -X github.com/palomachain/pigeon/app.commit={{ .FullCommit }}
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
     goamd64:
-      - v1
-      - v2
       - v3
 
 
