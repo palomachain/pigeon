@@ -98,13 +98,17 @@ func (p Processor) IsRightChain(ctx context.Context) error {
 		return err
 	}
 
-	if block.Hash() == p.blockHeightHash {
+	return p.isRightChain(block.Hash())
+}
+
+func (p Processor) isRightChain(blockHash common.Hash) error {
+	if blockHash != p.blockHeightHash {
 		return errors.Unrecoverable(chain.ErrNotConnectedToRightChain.WrapS(
 			"chain %s hash at block height %d should be %s, while it is %s. Check the rpc-url of the chain in the config.",
 			p.chainReferenceID,
 			p.blockHeight,
 			p.blockHeightHash,
-			block.Hash(),
+			blockHash,
 		))
 	}
 

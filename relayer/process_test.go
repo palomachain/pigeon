@@ -19,9 +19,10 @@ import (
 func TestProcessing(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range []struct {
-		name   string
-		setup  func(t *testing.T) *Relayer
-		expErr error
+		name              string
+		setup             func(t *testing.T) *Relayer
+		expErr            error
+		buildProcessorErr error
 	}{
 		{
 			name: "without any processor it does nothing",
@@ -104,13 +105,60 @@ func TestProcessing(t *testing.T) {
 				)
 			},
 		},
+		{
+			name: "if the processor is connected to the wrong chain it returns the error",
+			setup: func(t *testing.T) *Relayer {
+				keyringPass := "abcd"
+
+				dir := t.TempDir()
+				keyring := evm.OpenKeystore(dir)
+				acc, err := keyring.NewAccount(keyringPass)
+				require.NoError(t, err)
+
+				p := chainmocks.NewProcessor(t)
+				p.On("IsRightChain", mock.Anything).Return(chain.ErrNotConnectedToRightChain)
+
+				pal := mocks.NewPalomaClienter(t)
+				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
+					{
+						ChainReferenceID:      "main",
+						ChainID:               5,
+						SmartContractUniqueID: []byte("5"),
+						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
+						ReferenceBlockHeight:  5,
+						ReferenceBlockHash:    "0x12",
+					},
+				}, nil)
+
+				factory := mocks.NewEvmFactorier(t)
+
+				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
+
+				return New(
+					config.Root{
+						EVM: map[string]config.EVM{
+							"main": {
+								ChainClientConfig: config.ChainClientConfig{
+									KeyringPassEnvName: "TEST_PASS",
+									SigningKey:         acc.Address.Hex(),
+									KeyringDirectory:   config.Filepath(dir),
+								},
+							},
+						},
+					},
+					pal,
+					factory,
+				)
+			},
+			buildProcessorErr: chain.ErrNotConnectedToRightChain,
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			relayer := tt.setup(t)
 			require.NoError(t, relayer.init())
 
 			processors, err := relayer.buildProcessors(ctx)
-			require.NoError(t, err)
+			require.ErrorIs(t, err, tt.buildProcessorErr)
 
 			err = relayer.Process(ctx, processors)
 			require.ErrorIs(t, err, tt.expErr)

@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,6 +82,51 @@ func TestProcessingMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			processor := tt.setup(t)
 			err := processor.ProcessMessages(ctx, tt.queueName, tt.msgs)
+
+			require.ErrorIs(t, err, tt.expErr)
+		})
+	}
+}
+
+func TestIsRightChainLogic(t *testing.T) {
+	for _, tt := range []struct {
+		name         string
+		blockHeight  int64
+		blockHash    common.Hash
+		gotBlockHash common.Hash
+
+		expErr error
+	}{
+		{
+			name:         "with correct block hash it doesn return an error",
+			blockHeight:  5,
+			blockHash:    common.HexToHash("0xabc"),
+			gotBlockHash: common.HexToHash("0xabc"),
+			expErr:       nil,
+		},
+		{
+			name:         "with incorrect block hash it returns an error (Unrecoverable)",
+			blockHeight:  5,
+			blockHash:    common.HexToHash("0xabc"),
+			gotBlockHash: common.HexToHash("0x123"),
+			expErr:       errors.ErrUnrecoverable,
+		},
+		{
+			name:         "with incorrect block hash it returns an error (ErrNotConnectedToRightChain)",
+			blockHeight:  5,
+			blockHash:    common.HexToHash("0xabc"),
+			gotBlockHash: common.HexToHash("0x123"),
+			expErr:       chain.ErrNotConnectedToRightChain,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			processor := Processor{
+				chainReferenceID: "test",
+				blockHeight:      tt.blockHeight,
+				blockHeightHash:  tt.blockHash,
+			}
+
+			err := processor.isRightChain(tt.gotBlockHash)
 
 			require.ErrorIs(t, err, tt.expErr)
 		})

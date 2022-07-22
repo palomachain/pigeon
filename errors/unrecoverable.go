@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	errUnrecoverable = whoops.String("unrecoverable error")
+	ErrUnrecoverable = whoops.String("unrecoverable error")
 )
 
 func IsUnrecoverable(err error) bool {
-	return errors.Is(err, errUnrecoverable)
+	return errors.Is(err, ErrUnrecoverable)
 }
 
 func Unrecoverable(err error) error {
-	return whoops.Wrap(err, errUnrecoverable)
+	return whoops.Wrap(err, ErrUnrecoverable)
 }
