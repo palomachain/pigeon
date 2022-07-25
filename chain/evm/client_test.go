@@ -242,11 +242,11 @@ func TestFilterLogs(t *testing.T) {
 					}).Times(1).Return(results[index], nil)
 				}
 
-				callResults(5, 8, 1)
-				callResults(0, 4, 0)
+				callResults(5, 8, 0)
+				callResults(0, 4, 1)
 				return srv
 			},
-			expRes: []types.Log{log4, log5, log1, log2, log3},
+			expRes: []types.Log{log5, log4, log3, log2, log1},
 		},
 		{
 			name:        "any other error is returned",
@@ -270,7 +270,7 @@ func TestFilterLogs(t *testing.T) {
 			var res []types.Log
 			defaultCallback := func(logs []types.Log) bool {
 				res = append(res, logs...)
-				return true
+				return false
 			}
 
 			var fnc func([]types.Log) bool
