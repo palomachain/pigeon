@@ -312,7 +312,6 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				t.provideTxProof(ctx, queueTypeName, rawMsg),
 			)
 			continue
-
 		}
 
 		var processingErr error
