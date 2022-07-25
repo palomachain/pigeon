@@ -26,6 +26,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
@@ -215,7 +216,6 @@ func callSmartContract(
 			"gas-price": txOpts.GasPrice,
 			"nonce":     txOpts.Nonce,
 			"from":      txOpts.From,
-			"signer":    txOpts.Signer,
 		})
 
 		logger.Debug("executing tx")
@@ -245,7 +245,13 @@ func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 // then it's going to try to do this using a "binary search" approach while
 // splitting the  possible set in two, recursively.
 func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
-	return filterLogs(ctx, c.conn, fq, currBlockHeight, fn)
+	found, err := filterLogs(ctx, c.conn, fq, currBlockHeight, true, fn)
+
+	if err != nil {
+		log.WithError(err).Error("error filtering logs")
+	}
+
+	return found, err
 }
 
 func (c Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
@@ -269,18 +275,30 @@ func shouldDoBinarySearchFromError(err error) bool {
 		return true
 	case strings.Contains(err.Error(), "eth_getLogs and eth_newFilter are limited to a 10,000 blocks range"):
 		return true
+	case strings.Contains(err.Error(), "block range is too wide"):
+		return true
 	}
 
 	return false
 }
 
+// filterLogs filters for logs in a recursive manner. If the server returns
+// that the block range is too high, then it does a binary search for left and
+// right sectin.
 func filterLogs(
 	ctx context.Context,
 	ethClient ethClientToFilterLogs,
 	fq etherum.FilterQuery,
 	currBlockHeight *big.Int,
+	// reverseOrder if set to true then it searches latest logs first
+	reverseOrder bool,
 	fn func(logs []ethtypes.Log) bool,
 ) (bool, error) {
+	log.
+		WithField("current-block-height", currBlockHeight).
+		WithField("filter-query", fq).
+		Trace("filtering logs")
+
 	if currBlockHeight == nil {
 		header, err := ethClient.HeaderByNumber(ctx, nil)
 		if err != nil {
@@ -304,8 +322,9 @@ func filterLogs(
 	case err == nil:
 		// awesome!
 		if len(logs) == 0 {
-			return true, nil
+			return false, nil
 		}
+		slice.ReverseInplace(logs)
 		return fn(logs), nil
 	case shouldDoBinarySearchFromError(err):
 		// this appears to be ropsten specifict, but keepeing the logic here just in case
@@ -316,32 +335,51 @@ func filterLogs(
 		mid.Div(mid, big.NewInt(2))
 		mid.Add(fq.FromBlock, mid)
 
-		fqLeft := fq
-		fqLeft.ToBlock = mid
-		shouldContinue, err := filterLogs(
-			ctx,
-			ethClient,
-			fqLeft,
-			currBlockHeight,
-			fn,
-		)
+		left := func() (bool, error) {
+			fqLeft := fq
+			fqLeft.ToBlock = mid
+			return filterLogs(
+				ctx,
+				ethClient,
+				fqLeft,
+				currBlockHeight,
+				reverseOrder,
+				fn,
+			)
+		}
+
+		right := func() (bool, error) {
+			fqRight := fq
+			fqRight.FromBlock = big.NewInt(0).Add(mid, big.NewInt(1))
+			return filterLogs(
+				ctx,
+				ethClient,
+				fqRight,
+				currBlockHeight,
+				reverseOrder,
+				fn,
+			)
+		}
+
+		var first, second func() (bool, error)
+
+		if reverseOrder {
+			first, second = right, left
+		} else {
+			first, second = left, right
+		}
+
+		foundFirst, err := first()
 		if err != nil {
 			return false, err
 		}
-		if !shouldContinue {
-			return false, nil
+
+		if foundFirst {
+			return true, nil
 		}
 
-		fqRight := fq
-		fqRight.FromBlock = big.NewInt(0).Add(mid, big.NewInt(1))
+		return second()
 
-		return filterLogs(
-			ctx,
-			ethClient,
-			fqRight,
-			currBlockHeight,
-			fn,
-		)
 	}
 
 	return false, err

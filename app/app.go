@@ -20,6 +20,11 @@ import (
 	"github.com/vizualni/whoops"
 )
 
+const (
+	AppName     = "pigeon"
+	AppNameCaps = "PIGEON"
+)
+
 var (
 	_relayer    *relayer.Relayer
 	_config     *config.Root

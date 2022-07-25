@@ -11,5 +11,12 @@ const (
 	ErrUnsupportedMessageType    = whoops.Errorf("unsupported message type: %T")
 	ErrABINotInitialized         = whoops.String("ABI is not initialized")
 
+	ErrEvm = whoops.String("EVM related error")
+
 	ErrNoConsensus = whoops.String("no consensus reached")
+)
+
+const (
+	FieldMessageID   whoops.Field[uint64] = "message id"
+	FieldMessageType whoops.Field[any]    = "message type"
 )

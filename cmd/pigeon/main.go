@@ -4,11 +4,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/palomachain/pigeon/app"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	logLevelEnvName = "LOG_LEVEL"
+	logLevelEnvName = app.AppNameCaps + "_LOG_LEVEL"
 )
 
 func main() {
@@ -16,7 +17,10 @@ func main() {
 	if err == nil {
 		logrus.SetLevel(level)
 	}
-	logrus.SetReportCaller(true)
+
+	if level == logrus.DebugLevel || level == logrus.TraceLevel {
+		logrus.SetReportCaller(true)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
