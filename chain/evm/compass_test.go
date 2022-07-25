@@ -3,11 +3,13 @@ package evm
 import (
 	"context"
 	"crypto/ecdsa"
+	"io/ioutil"
 	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
@@ -17,6 +19,10 @@ import (
 	"github.com/vizualni/whoops"
 )
 
+const (
+	errSample = whoops.String("oh no")
+)
+
 var (
 	smartContractAddr        = common.HexToAddress("0xDEF")
 	ethCompatibleBytesToSign = crypto.Keccak256([]byte("sign me"))
@@ -24,6 +30,13 @@ var (
 	bobPK, _   = crypto.GenerateKey()
 	alicePK, _ = crypto.GenerateKey()
 	frankPK, _ = crypto.GenerateKey()
+
+	sampleTx1 = func() *ethtypes.Transaction {
+		sampleTx1RawBytes := common.FromHex(string(whoops.Must(ioutil.ReadFile("testdata/sample-tx-raw.hex"))))
+		tx := new(ethtypes.Transaction)
+		whoops.Assert(tx.UnmarshalBinary(sampleTx1RawBytes))
+		return tx
+	}()
 )
 
 func signMessage(bz []byte, pk *ecdsa.PrivateKey) chain.ValidatorSignature {
@@ -225,6 +238,61 @@ func TestMessageProcessing(t *testing.T) {
 
 				return evm, paloma
 			},
+		},
+		{
+			name: "with a public access data it tries to get the transaction and send it",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:               555,
+						BytesToSign:      ethCompatibleBytesToSign,
+						PublicAccessData: []byte("tx hash"),
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
+
+				bz, err := sampleTx1.MarshalBinary()
+				require.NoError(t, err)
+
+				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), bz).Return(
+					nil,
+				)
+
+				return evm, paloma
+			},
+		},
+		{
+			name: "with a public access data it tries to get the transaction, but it returns an error, and the error is returned back",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:               555,
+						BytesToSign:      ethCompatibleBytesToSign,
+						PublicAccessData: []byte("tx hash"),
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(nil, false, errSample)
+				return evm, paloma
+			},
+			expErr: errSample,
 		},
 		{
 			name: "update_valset/happy path",
@@ -580,7 +648,7 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 				},
 				Signatures: []chain.ValidatorSignature{
 					// this one is invalid
-					chain.ValidatorSignature{
+					{
 						SignedByAddress: crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
 						Signature:       []byte("this is invalid"),
 						PublicKey:       crypto.FromECDSAPub(&bobPK.PublicKey),
