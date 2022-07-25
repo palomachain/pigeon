@@ -326,6 +326,10 @@ func (c Client) Keyring() keyring.Keyring {
 	return c.L.Keybase
 }
 
+func (c Client) GetValidatorAddress() sdk.ValAddress {
+	return c.valAddr
+}
+
 func getMainAddress(c Client) sdk.Address {
 	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
 	if err != nil {

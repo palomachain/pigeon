@@ -2,15 +2,23 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
+	"github.com/palomachain/pigeon/chain/paloma/collision"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 
 func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
+	ctx, cleanup := r.zeroCollisionStrategy.GoStartLane(ctx)
+	defer cleanup()
+
+	// todo randomise
 	for _, p := range processors {
+
+		// todo randomise
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{
 				"queue-name": queueName,
@@ -48,7 +56,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				})
 				loggerQueuedMessages.Info("signed messages")
 
-				if err = r.broadcastSignaturesAndProcessAttestation(ctx, queueName, signedMessages); err != nil {
+				if err = r.broadcastSignatures(ctx, queueName, signedMessages); err != nil {
 					loggerQueuedMessages.WithFields(log.Fields{
 						"err": err,
 					}).Info("couldn't broadcast signatures and process attestation")
@@ -57,6 +65,17 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			}
 
 			relayCandidateMsgs, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+
+			logger.Debug("got 246")
+
+			relayCandidateMsgs = slice.Filter(relayCandidateMsgs, func(msg chain.MessageWithSignatures) bool {
+				return collision.AllowedToExecute(
+					ctx,
+					fmt.Sprintf("%s-%d", queueName, msg.ID),
+					r.palomaClient.GetValidatorAddress(),
+				)
+			})
+
 			if err != nil {
 				logger.WithFields(log.Fields{
 					"err": err,
@@ -84,7 +103,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 	return nil
 }
 
-func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, queueTypeName string, sigs []chain.SignedQueuedMessage) error {
+func (r *Relayer) broadcastSignatures(ctx context.Context, queueTypeName string, sigs []chain.SignedQueuedMessage) error {
 	broadcastMessageSignatures, err := slice.MapErr(
 		sigs,
 		func(sig chain.SignedQueuedMessage) (paloma.BroadcastMessageSignatureIn, error) {
@@ -94,6 +113,7 @@ func (r *Relayer) broadcastSignaturesAndProcessAttestation(ctx context.Context, 
 					"queue-type-name": queueTypeName,
 				},
 			).Debug("broadcasting signed message")
+
 			return paloma.BroadcastMessageSignatureIn{
 				ID:              sig.ID,
 				QueueTypeName:   queueTypeName,

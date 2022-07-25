@@ -311,6 +311,12 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	var gErr whoops.Group
 	logger := log.WithField("queue-type-name", queueTypeName)
 	for _, rawMsg := range msgs {
+
+		if ctx.Err() != nil {
+			logger.Debug("existing processing message context")
+			break
+		}
+
 		logger = logger.WithField("message-id", rawMsg.ID)
 		if len(rawMsg.PublicAccessData) > 0 {
 			logger.Debug("providing proof for message")
