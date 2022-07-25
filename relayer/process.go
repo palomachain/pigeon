@@ -10,11 +10,10 @@ import (
 )
 
 func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
-	for chainID, p := range processors {
+	for _, p := range processors {
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{
-				"processor-chain-id": chainID,
-				"queue-name":         queueName,
+				"queue-name": queueName,
 			})
 
 			// TODO: remove comments once signing is done on the paloma side.

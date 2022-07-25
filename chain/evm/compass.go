@@ -94,10 +94,10 @@ func (t compass) updateValset(
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
-		valsetID, err := t.findLastValsetMessageID(ctx)
+		currentValsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
 
-		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, currentValsetID, t.ChainReferenceID)
 		whoops.Assert(err)
 
 		if currentValset == nil {
@@ -188,6 +188,7 @@ func (t compass) uploadSmartContract(
 }
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
+	log.Debug("fetching last valset message id")
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
 			t.smartContractAddr,
@@ -197,42 +198,45 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 				crypto.Keccak256Hash([]byte(valsetUpdatedABISignature)),
 			},
 		},
+		FromBlock: big.NewInt(t.startingBlockHeight),
 	}
 
-	var highestBlock uint64
 	latestMessageID := big.NewInt(0)
 
 	var retErr error
-	_, err := t.evm.FilterLogs(ctx, filter, big.NewInt(t.startingBlockHeight), func(logs []etherumtypes.Log) bool {
+	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		for _, log := range logs {
-			if log.BlockNumber > highestBlock {
-				highestBlock = log.BlockNumber
-				mm := make(map[string]any)
-				err := t.compassAbi.Events["ValsetUpdated"].Inputs.UnpackIntoMap(mm, log.Data)
-				if err != nil {
-					retErr = err
-					return false
-				}
-				id, ok := mm["valset_id"].(*big.Int)
-				if !ok {
-					panic("valset_id should be big.Int, but it's not")
-				}
-
-				if id.Cmp(latestMessageID) == 1 {
-					latestMessageID = id
-				}
+			mm := make(map[string]any)
+			err := t.compassAbi.Events["ValsetUpdated"].Inputs.UnpackIntoMap(mm, log.Data)
+			if err != nil {
+				retErr = err
+				return false
 			}
+			id, ok := mm["valset_id"].(*big.Int)
+			if !ok {
+				retErr = ErrEvm.WrapS("valset_id should be big.Int, but it's not")
+				return true
+			}
+
+			latestMessageID = id
+			return true
 		}
-		return true
+		return false
 	})
 
 	var g whoops.Group
+
+	if latestMessageID.Uint64() == 0 {
+		g.Add(ErrEvm.WrapS("valset_id that was returned is zero"))
+	}
+
 	g.Add(retErr)
 	g.Add(err)
 
 	if g.Err() {
 		return 0, g
 	}
+	log.WithField("valset_id", latestMessageID.Int64()).Debug("got valset_id")
 
 	return uint64(latestMessageID.Int64()), nil
 }
@@ -344,6 +348,12 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			return ErrUnsupportedMessageType.Format(action)
 		}
 
+		processingErr = whoops.Enrich(
+			processingErr,
+			FieldMessageID.Val(rawMsg.ID),
+			FieldMessageType.Val(msg.GetAction()),
+		)
+
 		switch {
 		case processingErr == nil:
 			if tx != nil {
@@ -356,15 +366,12 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		case goerrors.Is(processingErr, ErrNoConsensus):
 			// does nothing
 		default:
+			logger.WithError(processingErr).Error("processing error")
 			gErr.Add(processingErr)
 		}
 	}
 
-	if gErr.Err() {
-		return gErr
-	}
-
-	return nil
+	return gErr.Return()
 }
 
 // provideTxProof provides a very simple proof which is a transaction object
