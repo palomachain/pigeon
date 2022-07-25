@@ -8,6 +8,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,13 +30,13 @@ var ctxKey ctxKeyType = 1
 
 type ctxdata struct {
 	me          sdk.ValAddress
-	valset      []sdk.ValAddress // ordered!
+	validators  []sdk.ValAddress // ordered!
 	blockHeight int64
 }
 
 type palomer interface {
 	BlockHeight(context.Context) (int64, error)
-	GetLatestValset(context.Context)
+	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 }
 
 func AllowedToExecute(ctx context.Context, dump []byte) bool {
@@ -49,7 +50,7 @@ func AllowedToExecute(ctx context.Context, dump []byte) bool {
 	winner := pickWinner(
 		[]byte(fmt.Sprintf("%d", data.blockHeight)),
 		dump,
-		data.valset,
+		data.validators,
 	)
 
 	if winner.Equals(data.me) {
@@ -59,8 +60,8 @@ func AllowedToExecute(ctx context.Context, dump []byte) bool {
 	return false
 }
 
-func GoStartLane(ctx context.Context, p palomaer, me sdk.ValAddress) (context.Context, func(), error) {
-	valset, err := p.GetLatestValset(ctx)
+func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Context, func(), error) {
+	snapshot, err := p.QueryGetSnapshotByID(ctx, 0)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,22 +71,15 @@ func GoStartLane(ctx context.Context, p palomaer, me sdk.ValAddress) (context.Co
 		return nil, nil, err
 	}
 
-	// rounds down the block height to the nearest 10
-	// 52 -> 50
-	// 119 -> 110
 	blockHeight = roundBlockHeight(blockHeight)
 
 	ctx = context.WithValue(ctx, ctxKey, ctxdata{
 		me:          me,
-		valset:      valset,
+		validators:  slice.Map(snapshot.Validators, func(v valset.Validator) sdk.ValAddress { return v.Address }),
 		blockHeight: blockHeight,
 	})
 
 	ctx, cancelCtx := context.WithCancel(ctx)
-
-	cancel := func() {
-		cancelCtx()
-	}
 
 	go func() {
 		defer cancelCtx()
@@ -93,23 +87,27 @@ func GoStartLane(ctx context.Context, p palomaer, me sdk.ValAddress) (context.Co
 		ticker := time.NewTicker(tickerTimeout)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			if ctx.Err() != nil {
-				return
-			}
-			newBlockHeight, err := p.BlockHeight(ctx)
-			if err != nil {
-				log.WithError(err).Error("error getting block height")
-				return
-			}
-			newBlockHeight = roundBlockHeight(newBlockHeight)
-			if newBlockHeight != blockHeight {
+		for {
+			select {
+			case <-ticker.C:
+				newBlockHeight, err := p.BlockHeight(ctx)
+				if err != nil {
+					log.WithError(err).Error("error getting block height")
+					return
+				}
+				newBlockHeight = roundBlockHeight(newBlockHeight)
+				if newBlockHeight != blockHeight {
+					return
+				}
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	return ctx, cancel, nil
+	// calling the cancelCtx will close the goroutine from above as it's
+	// checking on the context.Done channel
+	return ctx, cancelCtx, nil
 }
 
 func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress {
@@ -138,6 +136,9 @@ func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress 
 	return vals[0]
 }
 
+// rounds down the block height to the nearest 10
+// 52 -> 50
+// 119 -> 110
 func roundBlockHeight(bh int64) int64 {
 	return bh - (bh % round)
 }

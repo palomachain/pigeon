@@ -12,7 +12,10 @@ import (
 )
 
 func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
-	ctx, cleanup := r.zeroCollisionStrategy.GoStartLane(ctx)
+	ctx, cleanup, err := collision.GoStartLane(ctx, r.palomaClient, r.palomaClient.GetValidatorAddress())
+	if err != nil {
+		return err
+	}
 	defer cleanup()
 
 	// todo randomise
@@ -71,8 +74,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			relayCandidateMsgs = slice.Filter(relayCandidateMsgs, func(msg chain.MessageWithSignatures) bool {
 				return collision.AllowedToExecute(
 					ctx,
-					fmt.Sprintf("%s-%d", queueName, msg.ID),
-					r.palomaClient.GetValidatorAddress(),
+					[]byte(fmt.Sprintf("%s-%d", queueName, msg.ID)),
 				)
 			})
 

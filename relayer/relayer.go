@@ -25,6 +25,9 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
+
+	BlockHeight(context.Context) (int64, error)
+	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 }
 
 //go:generate mockery --name=EvmFactorier
