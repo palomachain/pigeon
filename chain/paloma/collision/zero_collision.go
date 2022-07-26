@@ -33,6 +33,7 @@ type ctxdata struct {
 	blockHeight int64
 }
 
+//go:generate mockery --name=palomer --inpackage --testonly
 type palomer interface {
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
@@ -51,12 +52,17 @@ func AllowedToExecute(ctx context.Context, dump []byte) bool {
 		dump,
 		data.validators,
 	)
+	fmt.Println("EVO ME")
 
 	if winner.Equals(data.me) {
 		return true
 	}
 
 	return false
+}
+
+func writeToContext(ctx context.Context, data ctxdata) context.Context {
+	return context.WithValue(ctx, ctxKey, data)
 }
 
 func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Context, func(), error) {
@@ -72,7 +78,7 @@ func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Con
 
 	blockHeight = roundBlockHeight(blockHeight)
 
-	ctx = context.WithValue(ctx, ctxKey, ctxdata{
+	ctx = writeToContext(ctx, ctxdata{
 		me:          me,
 		validators:  slice.Map(snapshot.Validators, func(v valset.Validator) sdk.ValAddress { return v.Address }),
 		blockHeight: blockHeight,
@@ -110,29 +116,31 @@ func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Con
 }
 
 func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress {
-	h := fnv.New64()
-	h.Write(append(seed[:], dump...))
-	hash := h.Sum64() % uint64(len(vals))
-
-	vals = slice.Filter(vals, func(val sdk.ValAddress) bool {
-		h := fnv.New64()
-		h.Write(val)
-		valhash := h.Sum64() % uint64(len(vals))
-		return valhash == hash
-	})
-
-	if len(vals) <= 0 {
+	if len(vals) == 0 {
 		return nil
 	}
+	fmt.Println("new winner")
+	datahash := fnv.New64()
+	datahash.Write(append(seed[:], dump...))
 
-	if len(vals) > 1 {
-		b := make([]byte, 8)
-		binary.BigEndian.PutUint64(b, uint64(h.Sum64()))
-		dump = append(dump, b...)
-		return pickWinner(seed, dump, vals)
+	for {
+		possibleWinners := slice.Filter(vals, func(val sdk.ValAddress) bool {
+			h := fnv.New64()
+			h.Write(val)
+			valhash := (datahash.Sum64() + h.Sum64()) % uint64(len(vals))
+			fmt.Println("RARA", valhash)
+			return valhash == 0
+		})
+		fmt.Println("DUZINA", len(possibleWinners))
+		if len(possibleWinners) != 1 {
+			b := make([]byte, 8)
+			binary.BigEndian.PutUint64(b, uint64(datahash.Sum64()))
+			datahash.Write(b)
+			continue
+		}
+		return possibleWinners[0]
 	}
 
-	return vals[0]
 }
 
 // rounds down the block height to the nearest 10
