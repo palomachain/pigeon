@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
@@ -12,6 +13,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -51,14 +53,34 @@ func TestProcessing(t *testing.T) {
 				p.On("SupportedQueues").Return([]string{"a"})
 				p.On(
 					"ProcessMessages",
-					ctx,
+					mock.Anything,
 					"a",
 					[]chain.MessageWithSignatures{
-						{}, {},
+						{QueuedMessage: chain.QueuedMessage{ID: 123}},
+						{QueuedMessage: chain.QueuedMessage{ID: 456}},
 					},
-				).Return(nil).Maybe() // todo: remove maybe later
+				).Return(nil)
+
+				p.On(
+					"ProvideEvidence",
+					mock.Anything,
+					"a",
+					[]chain.MessageWithSignatures{
+						{QueuedMessage: chain.QueuedMessage{ID: 789, PublicAccessData: []byte("tx hash")}},
+					},
+				).Return(nil)
 
 				pal := mocks.NewPalomaClienter(t)
+				pal.On("GetValidatorAddress").Return(sdk.ValAddress("abc"))
+				pal.On("BlockHeight", mock.Anything).Return(int64(555), nil)
+				pal.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{Address: sdk.ValAddress("abc")},
+						},
+					},
+					nil,
+				)
 				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
 					{
 						ChainReferenceID:      "main",
@@ -69,13 +91,15 @@ func TestProcessing(t *testing.T) {
 						ReferenceBlockHash:    "0x12",
 					},
 				}, nil)
-				pal.On("QueryMessagesInQueue", ctx, mock.Anything).Return(
+				pal.On("QueryMessagesInQueue", mock.Anything, mock.Anything).Return(
 					[]chain.MessageWithSignatures{
-						{}, {},
+						{QueuedMessage: chain.QueuedMessage{ID: 123}},
+						{QueuedMessage: chain.QueuedMessage{ID: 456}},
+						{QueuedMessage: chain.QueuedMessage{ID: 789, PublicAccessData: []byte("tx hash")}},
 					},
 					nil,
 				)
-				pal.On("QueryMessagesForSigning", ctx, "a").Return(
+				pal.On("QueryMessagesForSigning", mock.Anything, "a").Return(
 					[]chain.QueuedMessage{},
 					nil,
 				)

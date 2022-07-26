@@ -1,3 +1,8 @@
+// Zero collision strategy ensures that all pigeons are using the same way of determinig if they can execute a message or not.
+// That way we can distribute the jobs without having to write data to paloma so that paloma could do it, as it could be slow.
+// Of course, paloma does not care about the strategy pigeons are using. Somebody could rewrite pigeon to do send all the messages,
+// but then they would be "fighting" with paloma and they (and other pigeons) would spend gas unceccecary.
+// A "bad" actor would only be doing a job for us :).
 package collision
 
 import (
@@ -12,12 +17,6 @@ import (
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
-
-// Zero collision strategy ensures that all pigeons are using the same way of determinig if they can execute a message or not.
-// That way we can distribute the jobs without having to write data to paloma so that paloma could do it, as it could be slow.
-// Of course, paloma does not care about the strategy pigeons are using. Somebody could rewrite pigeon to do send all the messages,
-// but then they would be "fighting" with paloma and they (and other pigeons) would spend gas unceccecary.
-// A "bad" actor would only be doing a job for us :).
 
 const (
 	round         = 10

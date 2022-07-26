@@ -240,61 +240,6 @@ func TestMessageProcessing(t *testing.T) {
 			},
 		},
 		{
-			name: "with a public access data it tries to get the transaction and send it",
-			msgs: []chain.MessageWithSignatures{
-				{
-					QueuedMessage: chain.QueuedMessage{
-						ID:               555,
-						BytesToSign:      ethCompatibleBytesToSign,
-						PublicAccessData: []byte("tx hash"),
-						Msg: &types.Message{
-							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
-						},
-					},
-					Signatures: []chain.ValidatorSignature{
-						addValidSignature(bobPK),
-					},
-				},
-			},
-			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
-				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
-
-				bz, err := sampleTx1.MarshalBinary()
-				require.NoError(t, err)
-
-				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), bz).Return(
-					nil,
-				)
-
-				return evm, paloma
-			},
-		},
-		{
-			name: "with a public access data it tries to get the transaction, but it returns an error, and the error is returned back",
-			msgs: []chain.MessageWithSignatures{
-				{
-					QueuedMessage: chain.QueuedMessage{
-						ID:               555,
-						BytesToSign:      ethCompatibleBytesToSign,
-						PublicAccessData: []byte("tx hash"),
-						Msg: &types.Message{
-							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
-						},
-					},
-					Signatures: []chain.ValidatorSignature{
-						addValidSignature(bobPK),
-					},
-				},
-			},
-			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
-				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
-				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(nil, false, errSample)
-				return evm, paloma
-			},
-			expErr: errSample,
-		},
-		{
 			name: "update_valset/happy path",
 			msgs: []chain.MessageWithSignatures{
 				{
@@ -530,6 +475,97 @@ func TestMessageProcessing(t *testing.T) {
 	}
 }
 
+func TestProvidingEvidenceForAMessage(t *testing.T) {
+
+	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
+		return signMessage(ethCompatibleBytesToSign, pk)
+	}
+	chainID := big.NewInt(5)
+
+	for _, tt := range []struct {
+		name   string
+		msgs   []chain.MessageWithSignatures
+		setup  func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
+		expErr error
+	}{
+		{
+			name: "with a public access data it tries to get the transaction and send it",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:               555,
+						BytesToSign:      ethCompatibleBytesToSign,
+						PublicAccessData: []byte("tx hash"),
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
+
+				bz, err := sampleTx1.MarshalBinary()
+				require.NoError(t, err)
+
+				paloma.On("AddMessageEvidence", mock.Anything, queueTurnstoneMessage, uint64(555), bz).Return(
+					nil,
+				)
+
+				return evm, paloma
+			},
+		},
+		{
+			name: "with a public access data it tries to get the transaction, but it returns an error, and the error is returned back",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:               555,
+						BytesToSign:      ethCompatibleBytesToSign,
+						PublicAccessData: []byte("tx hash"),
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{SubmitLogicCall: &types.SubmitLogicCall{}},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(nil, false, errSample)
+				return evm, paloma
+			},
+			expErr: errSample,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			compassAbi := StoredContracts()["compass-evm"]
+			ethClienter, palomaClienter := tt.setup(t)
+			comp := newCompassClient(
+				smartContractAddr.Hex(),
+				"id-123",
+				"internal-chain-id",
+				chainID,
+				&compassAbi.ABI,
+				palomaClienter,
+				ethClienter,
+			)
+			p := Processor{
+				compass: comp,
+			}
+
+			err := p.ProvideEvidence(ctx, queueTurnstoneMessage, tt.msgs)
+			require.ErrorIs(t, err, tt.expErr)
+		})
+	}
+}
 func TestIfTheConsensusHasBeenReached(t *testing.T) {
 
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {

@@ -12,6 +12,10 @@ import (
 )
 
 func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) error {
+	if len(processors) == 0 {
+		return nil
+	}
+
 	ctx, cleanup, err := collision.GoStartLane(ctx, r.palomaClient, r.palomaClient.GetValidatorAddress())
 	if err != nil {
 		return err
@@ -67,15 +71,25 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				}
 			}
 
-			relayCandidateMsgs, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+			msgsInQueue, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
 
-			logger.Debug("got 246")
+			logger.Debug("got", len(msgsInQueue), "messages from", queueName)
 
-			relayCandidateMsgs = slice.Filter(relayCandidateMsgs, func(msg chain.MessageWithSignatures) bool {
-				return collision.AllowedToExecute(
-					ctx,
-					[]byte(fmt.Sprintf("%s-%d", queueName, msg.ID)),
-				)
+			relayCandidateMsgs := slice.Filter(
+				msgsInQueue,
+				func(msg chain.MessageWithSignatures) bool {
+					return len(msg.PublicAccessData) == 0
+				},
+				func(msg chain.MessageWithSignatures) bool {
+					return collision.AllowedToExecute(
+						ctx,
+						[]byte(fmt.Sprintf("%s-%d", queueName, msg.ID)),
+					)
+				},
+			)
+
+			msgsToProvideEvidenceFor := slice.Filter(msgsInQueue, func(msg chain.MessageWithSignatures) bool {
+				return len(msg.PublicAccessData) > 0
 			})
 
 			if err != nil {
@@ -85,16 +99,28 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				return err
 			}
 
-			logger = logger.WithFields(log.Fields{
-				"messages-to-relay": slice.Map(relayCandidateMsgs, func(msg chain.MessageWithSignatures) uint64 {
-					return msg.ID
-				}),
-			})
-
 			if len(relayCandidateMsgs) > 0 {
+				logger := logger.WithFields(log.Fields{
+					"messages-to-relay": slice.Map(relayCandidateMsgs, func(msg chain.MessageWithSignatures) uint64 {
+						return msg.ID
+					}),
+				})
 				logger.Info("relaying messages")
 				if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
 					logger.WithField("err", err).Error("error relaying messages")
+					return err
+				}
+			}
+
+			if len(msgsToProvideEvidenceFor) > 0 {
+				logger := logger.WithFields(log.Fields{
+					"messages-to-provide-evidence-for": slice.Map(msgsToProvideEvidenceFor, func(msg chain.MessageWithSignatures) uint64 {
+						return msg.ID
+					}),
+				})
+				logger.Info("providing evidence for messages")
+				if err = p.ProvideEvidence(ctx, queueName, msgsToProvideEvidenceFor); err != nil {
+					logger.WithError(err).Error("error providing evidence for messages")
 					return err
 				}
 			}
