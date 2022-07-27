@@ -18,11 +18,11 @@ func main() {
 		logrus.SetLevel(level)
 	}
 
-	if level == logrus.DebugLevel || level == logrus.TraceLevel {
+	if level == logrus.TraceLevel {
 		logrus.SetReportCaller(true)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+		os.Exit(1)
 	}
 }

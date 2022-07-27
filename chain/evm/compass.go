@@ -78,14 +78,20 @@ type signature struct {
 	R *big.Int
 	S *big.Int
 }
-type valset struct {
+type CompassValset struct {
 	Validators []common.Address
 	Powers     []*big.Int
 	ValsetId   *big.Int
 }
-type consensus struct {
-	Valset     valset
+type CompassConsensus struct {
+	Valset     CompassValset
 	Signatures []*big.Int
+
+	originalSignatures [][]byte
+}
+
+func (c CompassConsensus) OriginalSignatures() [][]byte {
+	return c.originalSignatures
 }
 
 func (t compass) updateValset(
@@ -110,8 +116,8 @@ func (t compass) updateValset(
 		}
 
 		tx, err := t.callCompass(ctx, "update_valset", []any{
-			buildConsensus(ctx, currentValset, origMessage.Signatures),
-			typesValsetToValset(newValset),
+			BuildCompassConsensus(ctx, currentValset, origMessage.Signatures),
+			TransformValsetToCompassValset(newValset),
 		})
 		whoops.Assert(err)
 
@@ -143,7 +149,7 @@ func (t compass) submitLogicCall(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		con := buildConsensus(ctx, valset, origMessage.Signatures)
+		con := BuildCompassConsensus(ctx, valset, origMessage.Signatures)
 
 		tx, err := t.callCompass(ctx, "submit_logic_call", []any{
 			con,
@@ -269,20 +275,19 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	return found, nil
 }
 
-func buildConsensus(
+func BuildCompassConsensus(
 	ctx context.Context,
 	v *types.Valset,
 	signatures []chain.ValidatorSignature,
-) consensus {
-
+) CompassConsensus {
 	signatureMap := slice.MakeMapKeys(
 		signatures,
 		func(sig chain.ValidatorSignature) string {
 			return sig.SignedByAddress
 		},
 	)
-	con := consensus{
-		Valset: typesValsetToValset(v),
+	con := CompassConsensus{
+		Valset: TransformValsetToCompassValset(v),
 	}
 
 	for i := range v.GetValidators() {
@@ -296,6 +301,7 @@ func buildConsensus(
 				new(big.Int).SetBytes(sig.Signature[32:64]),
 			)
 		}
+		con.originalSignatures = append(con.originalSignatures, sig.Signature)
 	}
 
 	return con
@@ -394,15 +400,15 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, proof)
 }
 
-func typesValsetToValset(val *types.Valset) valset {
-	return valset{
-		slice.Map(val.GetValidators(), func(s string) common.Address {
+func TransformValsetToCompassValset(val *types.Valset) CompassValset {
+	return CompassValset{
+		Validators: slice.Map(val.GetValidators(), func(s string) common.Address {
 			return common.HexToAddress(s)
 		}),
-		slice.Map(val.GetPowers(), func(p uint64) *big.Int {
+		Powers: slice.Map(val.GetPowers(), func(p uint64) *big.Int {
 			return big.NewInt(int64(p))
 		}),
-		big.NewInt(int64(val.GetValsetID())),
+		ValsetId: big.NewInt(int64(val.GetValsetID())),
 	}
 }
 
