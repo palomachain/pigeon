@@ -96,9 +96,3 @@ func TestCollisions(t *testing.T) {
 		})
 	}
 }
-
-func TestPickingWinner(t *testing.T) {
-	ctx := writeToContext(context.Background(), ctxdata{
-		me: sdk.ValAddress("me"),
-	})
-}

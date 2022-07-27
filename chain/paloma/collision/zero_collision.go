@@ -52,7 +52,6 @@ func AllowedToExecute(ctx context.Context, dump []byte) bool {
 		dump,
 		data.validators,
 	)
-	fmt.Println("EVO ME")
 
 	if winner.Equals(data.me) {
 		return true
@@ -119,7 +118,6 @@ func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress 
 	if len(vals) == 0 {
 		return nil
 	}
-	fmt.Println("new winner")
 	datahash := fnv.New64()
 	datahash.Write(append(seed[:], dump...))
 
@@ -128,10 +126,8 @@ func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress 
 			h := fnv.New64()
 			h.Write(val)
 			valhash := (datahash.Sum64() + h.Sum64()) % uint64(len(vals))
-			fmt.Println("RARA", valhash)
 			return valhash == 0
 		})
-		fmt.Println("DUZINA", len(possibleWinners))
 		if len(possibleWinners) != 1 {
 			b := make([]byte, 8)
 			binary.BigEndian.PutUint64(b, uint64(datahash.Sum64()))
