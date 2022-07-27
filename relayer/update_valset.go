@@ -6,48 +6,31 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/util/slice"
+	log "github.com/sirupsen/logrus"
 )
 
 func (r *Relayer) updateExternalChainInfos(ctx context.Context, processors []chain.Processor) error {
-	// this returns info about the current validator's keys.
-	// if this pigeon is trying to register with a key that the other validator
-	// has registered, then it's going to fail as well!
-	existingAccInfo, err := r.palomaClient.QueryValidatorInfo(ctx)
-	if err != nil {
-		return err
-	}
-
+	log.Info("updating external chain infos")
 	externalAccounts := slice.Map(
 		processors,
 		func(p chain.Processor) chain.ExternalAccount {
 			return p.ExternalAccount()
 		},
 	)
-
-	chainInfos := []paloma.ChainInfoIn{}
-
-	// TODO: implement accounts removal
-	for _, accAddr := range externalAccounts {
-
-		// check if this acc is already registered
-		found := false
-		for _, currentChainInfo := range existingAccInfo {
-			if accAddr.ChainType == currentChainInfo.ChainType &&
-				accAddr.ChainReferenceID == currentChainInfo.ChainReferenceID &&
-				accAddr.Address == currentChainInfo.Address {
-				found = true
-				break
-			}
+	chainInfos := slice.Map(externalAccounts, func(acc chain.ExternalAccount) paloma.ChainInfoIn {
+		info := paloma.ChainInfoIn{
+			ChainReferenceID: acc.ChainReferenceID,
+			AccAddress:       acc.Address,
+			ChainType:        acc.ChainType,
+			PubKey:           acc.PubKey,
 		}
-		if !found {
-			chainInfos = append(chainInfos, paloma.ChainInfoIn{
-				ChainReferenceID: accAddr.ChainReferenceID,
-				AccAddress:       accAddr.Address,
-				ChainType:        accAddr.ChainType,
-				PubKey:           accAddr.PubKey,
-			})
-		}
-	}
+		log.WithFields(log.Fields{
+			"ChainReferenceID": acc.ChainReferenceID,
+			"AccAddress":       acc.Address,
+			"ChainType":        acc.ChainType,
+		}).Info("sending account info to paloma")
+		return info
+	})
 
 	if len(chainInfos) == 0 {
 		return nil
