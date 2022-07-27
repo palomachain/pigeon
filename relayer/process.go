@@ -51,6 +51,9 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			if len(queuedMessages) > 0 {
 				loggerQueuedMessages.Info("messages to sign")
 				signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
+				if errors.Is(err, context.DeadlineExceeded) {
+					return nil
+				}
 				if err != nil {
 					loggerQueuedMessages.WithError(err).Error("unable to sign messages")
 					return err
