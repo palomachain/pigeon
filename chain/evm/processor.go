@@ -11,6 +11,7 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
+	"github.com/vizualni/whoops"
 )
 
 const (
@@ -81,6 +82,33 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
+}
+
+func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+	if !strings.HasSuffix(queueTypeName, queueTurnstoneMessage) {
+		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
+	}
+
+	var gErr whoops.Group
+	logger := log.WithField("queue-type-name", queueTypeName)
+	for _, rawMsg := range msgs {
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing message context")
+			break
+		}
+
+		logger = logger.WithField("message-id", rawMsg.ID)
+		if len(rawMsg.PublicAccessData) == 0 {
+			logger.Debug("skipping message as there is no proof")
+			continue
+		}
+
+		logger.Debug("providing proof for message")
+		gErr.Add(
+			p.compass.provideTxProof(ctx, queueTypeName, rawMsg),
+		)
+	}
+	return gErr.Return()
 }
 
 func (p Processor) ExternalAccount() chain.ExternalAccount {

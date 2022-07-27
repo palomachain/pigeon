@@ -6,4 +6,5 @@ import (
 
 const (
 	ErrUnableToDecodeAddress = whoops.Errorf("unable to decode address: %s")
+	ErrNodeIsNotInSync       = whoops.String("paloma node is not in sync")
 )

@@ -7,11 +7,13 @@ import (
 
 	chain "github.com/palomachain/pigeon/chain"
 
+	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
+
 	mock "github.com/stretchr/testify/mock"
 
 	paloma "github.com/palomachain/pigeon/chain/paloma"
 
-	types "github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	types "github.com/cosmos/cosmos-sdk/types"
 
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 )
@@ -56,6 +58,27 @@ func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName 
 	return r0
 }
 
+// BlockHeight provides a mock function with given fields: _a0
+func (_m *PalomaClienter) BlockHeight(_a0 context.Context) (int64, error) {
+	ret := _m.Called(_a0)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BroadcastMessageSignatures provides a mock function with given fields: ctx, signatures
 func (_m *PalomaClienter) BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error {
 	_va := make([]interface{}, len(signatures))
@@ -77,16 +100,32 @@ func (_m *PalomaClienter) BroadcastMessageSignatures(ctx context.Context, signat
 	return r0
 }
 
+// GetValidatorAddress provides a mock function with given fields:
+func (_m *PalomaClienter) GetValidatorAddress() types.ValAddress {
+	ret := _m.Called()
+
+	var r0 types.ValAddress
+	if rf, ok := ret.Get(0).(func() types.ValAddress); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ValAddress)
+		}
+	}
+
+	return r0
+}
+
 // QueryGetEVMChainInfos provides a mock function with given fields: ctx
-func (_m *PalomaClienter) QueryGetEVMChainInfos(ctx context.Context) ([]*types.ChainInfo, error) {
+func (_m *PalomaClienter) QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error) {
 	ret := _m.Called(ctx)
 
-	var r0 []*types.ChainInfo
-	if rf, ok := ret.Get(0).(func(context.Context) []*types.ChainInfo); ok {
+	var r0 []*evmtypes.ChainInfo
+	if rf, ok := ret.Get(0).(func(context.Context) []*evmtypes.ChainInfo); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*types.ChainInfo)
+			r0 = ret.Get(0).([]*evmtypes.ChainInfo)
 		}
 	}
 
@@ -101,21 +140,44 @@ func (_m *PalomaClienter) QueryGetEVMChainInfos(ctx context.Context) ([]*types.C
 }
 
 // QueryGetEVMValsetByID provides a mock function with given fields: ctx, id, chainID
-func (_m *PalomaClienter) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error) {
+func (_m *PalomaClienter) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error) {
 	ret := _m.Called(ctx, id, chainID)
 
-	var r0 *types.Valset
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, string) *types.Valset); ok {
+	var r0 *evmtypes.Valset
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, string) *evmtypes.Valset); ok {
 		r0 = rf(ctx, id, chainID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.Valset)
+			r0 = ret.Get(0).(*evmtypes.Valset)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uint64, string) error); ok {
 		r1 = rf(ctx, id, chainID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// QueryGetSnapshotByID provides a mock function with given fields: ctx, id
+func (_m *PalomaClienter) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valsettypes.Snapshot, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *valsettypes.Snapshot
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) *valsettypes.Snapshot); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*valsettypes.Snapshot)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

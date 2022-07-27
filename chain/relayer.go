@@ -65,6 +65,10 @@ type Processor interface {
 	// to ensure that there are enough signatures for consensus.
 	ProcessMessages(context.Context, string, []MessageWithSignatures) error
 
+	// ProvideEvidence takes a queue name and a list of messages that have already been executed. This
+	// takes the "public evidence" from the message and gets the information back to the Paloma.
+	ProvideEvidence(context.Context, string, []MessageWithSignatures) error
+
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -23,6 +24,10 @@ type PalomaClienter interface {
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
+	GetValidatorAddress() sdk.ValAddress
+
+	BlockHeight(context.Context) (int64, error)
+	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 }
 
 //go:generate mockery --name=EvmFactorier

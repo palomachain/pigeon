@@ -177,6 +177,7 @@ func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChain
 	return valInfoRes.ChainInfos, nil
 }
 
+// QueryGetSnapshotByID returns the snapshot by id. If the ID is zero, then it returns the last snapshot.
 func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	snapshotRes, err := qc.GetSnapshotByID(ctx, &valset.QueryGetSnapshotByIDRequest{
@@ -194,6 +195,19 @@ func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Sn
 	}
 
 	return snapshotRes.Snapshot, nil
+}
+
+func (c Client) BlockHeight(ctx context.Context) (int64, error) {
+	res, err := c.L.RPCClient.Status(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if res.SyncInfo.CatchingUp {
+		return 0, ErrNodeIsNotInSync
+	}
+
+	return res.SyncInfo.LatestBlockHeight, nil
 }
 
 func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainReferenceID string) (*types.Valset, error) {
@@ -324,6 +338,10 @@ func broadcastMessageSignatures(
 
 func (c Client) Keyring() keyring.Keyring {
 	return c.L.Keybase
+}
+
+func (c Client) GetValidatorAddress() sdk.ValAddress {
+	return c.valAddr
 }
 
 func getMainAddress(c Client) sdk.Address {

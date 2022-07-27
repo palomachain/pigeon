@@ -312,11 +312,14 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	logger := log.WithField("queue-type-name", queueTypeName)
 	for _, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
+
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing message context")
+			break
+		}
+
 		if len(rawMsg.PublicAccessData) > 0 {
-			logger.Debug("providing proof for message")
-			gErr.Add(
-				t.provideTxProof(ctx, queueTypeName, rawMsg),
-			)
+			logger.Warn("skipping the message as it already has public access data")
 			continue
 		}
 
