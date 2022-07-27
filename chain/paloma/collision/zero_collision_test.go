@@ -2,10 +2,12 @@ package collision
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	"github.com/palomachain/pigeon/util/slice"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/vizualni/whoops"
@@ -95,4 +97,25 @@ func TestCollisions(t *testing.T) {
 			require.Equal(t, tt.allowedToExecute, AllowedToExecute(ctx, []byte("random data")))
 		})
 	}
+}
+
+func TestEnsureThatSingleValidatorWillBePickedAtLeastOnce(t *testing.T) {
+	validatorNum := 10
+	randomJobsNum := 100
+
+	validators := slice.IterN(validatorNum, func(index int) sdk.ValAddress {
+		return sdk.ValAddress(fmt.Sprintf("%d", index))
+	})
+
+	// just ensure that the number of created validators was correct
+	require.Equal(t, validatorNum, len(validators))
+
+	winnerMapCount := make(map[string]int)
+	for job := 0; job < randomJobsNum; job++ {
+		winner := pickWinner([]byte("doesnt matter"), []byte(fmt.Sprintf("%d", job)), validators)
+		winnerMapCount[winner.String()]++
+	}
+
+	// test that all validators were assigned a job at least once
+	require.Equal(t, len(validators), len(winnerMapCount))
 }
