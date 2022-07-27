@@ -4,12 +4,14 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/chain/evm"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -144,15 +146,152 @@ var (
 			return nil
 		},
 	}
+
+	evmVerifySignaturesInQueueCmd = &cobra.Command{
+		Use:   "verify-signatures [queue-name]",
+		Short: "Verifies signatures in the queue",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+
+			msgs, err := app.PalomaClient().QueryMessagesInQueue(ctx, args[0])
+			if err != nil {
+				return err
+			}
+
+			logger := logrus.WithField("queue-type-name", args[0])
+
+			countOK, countNotOK := 0, 0
+			for _, msg := range msgs {
+				logger = logger.WithField("msg-id", msg.ID)
+				for _, signature := range msg.Signatures {
+					logger = logger.WithFields(
+						logrus.Fields{
+							"pub-key":   signature.PublicKey,
+							"validator": signature.ValAddress.String(),
+						},
+					)
+					foundPK, err := crypto.Ecrecover(
+						crypto.Keccak256(
+							append(
+								[]byte(evm.SignedMessagePrefix),
+								msg.BytesToSign...,
+							),
+						),
+						signature.Signature,
+					)
+					if err != nil {
+						logger.WithError(err).Error("processing")
+						countNotOK++
+						continue
+					}
+					pk, err := crypto.UnmarshalPubkey(foundPK)
+					if err != nil {
+						countNotOK++
+						continue
+					}
+
+					recoveredAddr := crypto.PubkeyToAddress(*pk)
+
+					if recoveredAddr.Hex() != signature.SignedByAddress {
+						countNotOK++
+						logger.Info("signature not ok")
+					} else {
+						countOK++
+					}
+
+				}
+			}
+			logger.Info("OK signatures: ", countOK, " not OK signatures: ", countNotOK)
+			return nil
+		},
+	}
+	evmVerifySignaturesAgainstValsetCmd = &cobra.Command{
+		Use:   "verify-signatures-against-valset [queue-name] [chain-reference-id] [valset-id]",
+		Short: "Verifies signatures in the queue",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+
+			msgs, err := app.PalomaClient().QueryMessagesInQueue(ctx, args[0])
+			if err != nil {
+				return err
+			}
+			valsetID, err := strconv.ParseInt(args[2], 10, 64)
+			if err != nil {
+				return err
+			}
+			valset, err := app.PalomaClient().QueryGetEVMValsetByID(ctx, uint64(valsetID), args[1])
+			if err != nil {
+				return err
+			}
+
+			logger := logrus.WithField("queue-type-name", args[0])
+
+			logger.Info("there are ", len(valset.Validators), " validators in the valset")
+
+			countOK, total := 0, 0
+			for _, msg := range msgs {
+				logger = logger.WithField("msg-id", msg.ID)
+				xconsensus := evm.BuildCompassConsensus(ctx, valset, msg.Signatures)
+				logger.Info("message has ", len(msg.Signatures), " signatures")
+				logger.Info("there are ", len(xconsensus.Valset.Validators), " validators in the valset validator consensus")
+				for i := range xconsensus.Valset.Validators {
+					valaddr := xconsensus.Valset.Validators[i]
+					signature := xconsensus.OriginalSignatures()[i]
+					if len(signature) == 0 {
+						continue
+					}
+
+					total++
+					logger = logger.WithField("validator-evm-addr", valaddr.Hex())
+
+					foundPK, err := crypto.Ecrecover(
+						crypto.Keccak256(
+							append(
+								[]byte(evm.SignedMessagePrefix),
+								msg.BytesToSign...,
+							),
+						),
+						signature,
+					)
+					if err != nil {
+						logger.WithError(err).Error("processing")
+						continue
+					}
+					pk, err := crypto.UnmarshalPubkey(foundPK)
+					if err != nil {
+						continue
+					}
+
+					recoveredAddr := crypto.PubkeyToAddress(*pk)
+
+					if recoveredAddr.Hex() != valaddr.Hex() {
+						logger.Info("signature not ok")
+					} else {
+						countOK++
+					}
+
+				}
+			}
+			logger.Info("total val: ", total, " OK signatures: ", countOK)
+			return nil
+		},
+	}
 )
 
 func init() {
 	configRequired(evmDeploySmartContractCmd)
+	configRequired(evmVerifySignaturesInQueueCmd)
+	configRequired(evmVerifySignaturesAgainstValsetCmd)
+
 	rootCmd.AddCommand(evmCmd)
 
 	evmDebugCmd.AddCommand(
 		debugContractsCmd,
 		evmDeploySmartContractCmd,
+		evmVerifySignaturesInQueueCmd,
+		evmVerifySignaturesAgainstValsetCmd,
 	)
 
 	evmCmd.AddCommand(

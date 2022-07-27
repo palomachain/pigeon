@@ -79,7 +79,10 @@ func deployContract(
 			"tx-opts": txOpts,
 		})
 
-		// hack begins here
+		// hack begins here:
+		// constructor input arguments are already properly encoded, but
+		// we need to unpack them here because bind.DeployContract function
+		// expects arguments to come in "go" form
 		constructorArgs, err := contractAbi.Constructor.Inputs.Unpack(constructorInput)
 		whoops.Assert(err)
 		// hack ends here
