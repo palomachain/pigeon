@@ -21,7 +21,7 @@ func IterMapN[K comparable, V any](num int, fn func(index int) (K, V)) (res map[
 	for i := 0; i < num; i++ {
 		k, v := fn(i)
 		if _, ok := res[k]; ok {
-			panic(fmt.Sprintf("key %s was already calculated", k))
+			panic(fmt.Sprintf("key %s was already calculated", (any)(k)))
 		}
 		res[k] = v
 	}
