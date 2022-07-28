@@ -79,7 +79,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 
 			msgsInQueue, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
 
-			logger.Debug("got", len(msgsInQueue), "messages from", queueName)
+			logger.Debug("got ", len(msgsInQueue), " messages from ", queueName)
 
 			relayCandidateMsgs := slice.Filter(
 				msgsInQueue,

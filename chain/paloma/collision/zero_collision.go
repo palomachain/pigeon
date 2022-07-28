@@ -13,6 +13,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/palomachain/pigeon/chain"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
@@ -66,6 +67,9 @@ func writeToContext(ctx context.Context, data ctxdata) context.Context {
 
 func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Context, func(), error) {
 	snapshot, err := p.QueryGetSnapshotByID(ctx, 0)
+	if snapshot == nil {
+		return nil, nil, chain.ErrNotFound.WrapS("snapshot does not exist")
+	}
 	if err != nil {
 		return nil, nil, err
 	}
