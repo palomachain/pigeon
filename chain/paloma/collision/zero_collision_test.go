@@ -38,7 +38,7 @@ func TestCollisions(t *testing.T) {
 			ctxdata: ctxdata{},
 			setupPalomer: func(t *testing.T) *mockPalomer {
 				p := newMockPalomer(t)
-				p.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(nil, nil)
+				p.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(&valsettypes.Snapshot{}, nil)
 				p.On("BlockHeight", mock.Anything).Return(int64(0), fakeErr)
 				return p
 			},

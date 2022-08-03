@@ -509,10 +509,9 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
 
-				bz, err := sampleTx1.MarshalBinary()
-				require.NoError(t, err)
-
-				paloma.On("AddMessageEvidence", mock.Anything, queueTurnstoneMessage, uint64(555), bz).Return(
+				paloma.On("AddMessageEvidence", mock.Anything, queueTurnstoneMessage, uint64(555),
+					&types.TxExecutedProof{SerializedTX: whoops.Must(sampleTx1.MarshalBinary())},
+				).Return(
 					nil,
 				)
 

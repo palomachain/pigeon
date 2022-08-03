@@ -2,6 +2,7 @@ package evm
 
 import (
 	"context"
+	"errors"
 	goerrors "errors"
 	"fmt"
 	"math/big"
@@ -13,6 +14,7 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
@@ -96,6 +98,7 @@ func (c CompassConsensus) OriginalSignatures() [][]byte {
 
 func (t compass) updateValset(
 	ctx context.Context,
+	queueTypeName string,
 	newValset *types.Valset,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
@@ -119,7 +122,13 @@ func (t compass) updateValset(
 			BuildCompassConsensus(ctx, currentValset, origMessage.Signatures),
 			TransformValsetToCompassValset(newValset),
 		})
-		whoops.Assert(err)
+		if err != nil {
+			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			if isSmartContractError {
+				return nil
+			}
+			whoops.Assert(err)
+		}
 
 		return tx
 	})
@@ -127,6 +136,7 @@ func (t compass) updateValset(
 
 func (t compass) submitLogicCall(
 	ctx context.Context,
+	queueTypeName string,
 	msg *types.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
@@ -157,7 +167,13 @@ func (t compass) submitLogicCall(
 			msg.GetPayload(),
 			msg.GetDeadline(),
 		})
-		whoops.Assert(err)
+		if err != nil {
+			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			if isSmartContractError {
+				return nil
+			}
+			whoops.Assert(err)
+		}
 
 		return tx
 	})
@@ -165,6 +181,7 @@ func (t compass) submitLogicCall(
 
 func (t compass) uploadSmartContract(
 	ctx context.Context,
+	queueTypeName string,
 	msg *types.UploadSmartContract,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
@@ -188,9 +205,41 @@ func (t compass) uploadSmartContract(
 			msg.GetBytecode(),
 			msg.GetConstructorInput(),
 		)
-		whoops.Assert(err)
+		if err != nil {
+			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			if isSmartContractError {
+				return nil
+			}
+			whoops.Assert(err)
+		}
+
 		return tx
 	})
+}
+
+func (t compass) tryProvidingEvidenceIfSmartContractErr(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
+	var jsonRpcErr rpc.DataError
+	if !errors.As(errToProcess, &jsonRpcErr) {
+		return false, nil
+	}
+
+	log.WithFields(
+		log.Fields{
+			"queue-type-name": queueTypeName,
+			"message-id":      msgID,
+			"error-message":   jsonRpcErr.Error(),
+		},
+	).Warn("smart contract returned an error")
+
+	err := t.paloma.AddMessageEvidence(ctx, queueTypeName, msgID, &types.SmartContractExecutionErrorProof{
+		ErrorMessage: jsonRpcErr.Error(),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
@@ -337,18 +386,21 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		case *types.Message_SubmitLogicCall:
 			tx, processingErr = t.submitLogicCall(
 				ctx,
+				queueTypeName,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
 		case *types.Message_UpdateValset:
 			tx, processingErr = t.updateValset(
 				ctx,
+				queueTypeName,
 				action.UpdateValset.Valset,
 				rawMsg,
 			)
 		case *types.Message_UploadSmartContract:
 			tx, processingErr = t.uploadSmartContract(
 				ctx,
+				queueTypeName,
 				action.UploadSmartContract,
 				rawMsg,
 			)
@@ -395,12 +447,14 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 		return err
 	}
 
-	proof, err := tx.MarshalBinary()
+	txProof, err := tx.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
-	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, proof)
+	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &types.TxExecutedProof{
+		SerializedTX: txProof,
+	})
 }
 
 func TransformValsetToCompassValset(val *types.Valset) CompassValset {

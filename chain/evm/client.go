@@ -23,6 +23,7 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	proto "github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -92,7 +93,7 @@ func StoredContracts() map[string]StoredContract {
 
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
-	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
+	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }

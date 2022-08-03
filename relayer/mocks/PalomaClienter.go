@@ -13,6 +13,8 @@ import (
 
 	paloma "github.com/palomachain/pigeon/chain/paloma"
 
+	proto "github.com/gogo/protobuf/proto"
+
 	types "github.com/cosmos/cosmos-sdk/types"
 
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
@@ -45,11 +47,11 @@ func (_m *PalomaClienter) AddExternalChainInfo(ctx context.Context, chainInfos .
 }
 
 // AddMessageEvidence provides a mock function with given fields: ctx, queueTypeName, messageID, proof
-func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error {
+func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error {
 	ret := _m.Called(ctx, queueTypeName, messageID, proof)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, proto.Message) error); ok {
 		r0 = rf(ctx, queueTypeName, messageID, proof)
 	} else {
 		r0 = ret.Error(0)

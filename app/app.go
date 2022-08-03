@@ -156,6 +156,14 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgSetPublicAccessData{},
 				},
 			},
+			{
+				Name:  "any-messages",
+				Iface: (*proto.Message)(nil),
+				Msgs: []proto.Message{
+					&evmtypes.TxExecutedProof{},
+					&evmtypes.SmartContractExecutionErrorProof{},
+				},
+			},
 		},
 		MsgsImplementations: []byop.RegisterImplementation{
 			{

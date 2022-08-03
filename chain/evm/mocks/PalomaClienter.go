@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	proto "github.com/gogo/protobuf/proto"
+
 	types "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 )
 
@@ -16,11 +18,11 @@ type PalomaClienter struct {
 }
 
 // AddMessageEvidence provides a mock function with given fields: ctx, queueTypeName, messageID, proof
-func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error {
+func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error {
 	ret := _m.Called(ctx, queueTypeName, messageID, proof)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, proto.Message) error); ok {
 		r0 = rf(ctx, queueTypeName, messageID, proof)
 	} else {
 		r0 = ret.Error(0)
