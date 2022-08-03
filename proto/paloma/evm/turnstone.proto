@@ -28,6 +28,8 @@ message UploadSmartContract {
   bytes bytecode = 1;
   string abi = 2;
   bytes constructorInput = 3;
+
+  uint64 id = 4;
 }
 
 message Message {
@@ -42,3 +44,13 @@ message Message {
 
   string compassAddr = 6;
 }
+
+message TxExecutedProof {
+  bytes serializedTX = 1;
+}
+
+message SmartContractExecutionErrorProof {
+  string errorMessage = 1;
+}
+
+

@@ -67,6 +67,9 @@ func writeToContext(ctx context.Context, data ctxdata) context.Context {
 
 func GoStartLane(ctx context.Context, p palomer, me sdk.ValAddress) (context.Context, func(), error) {
 	snapshot, err := p.QueryGetSnapshotByID(ctx, 0)
+	if err != nil {
+		return nil, nil, err
+	}
 	if snapshot == nil {
 		return nil, nil, chain.ErrNotFound.WrapS("snapshot does not exist")
 	}

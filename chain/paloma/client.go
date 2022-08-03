@@ -7,6 +7,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
+	proto "github.com/gogo/protobuf/proto"
 	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -286,15 +287,19 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 	return err
 }
 
-func (c Client) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error {
+func (c Client) AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error {
+	anyProof, err := codectypes.NewAnyWithValue(proof)
+	if err != nil {
+		return err
+	}
 	msg := &consensus.MsgAddEvidence{
 		Creator:       c.creator,
-		Proof:         proof,
+		Proof:         anyProof,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg)
+	_, err = c.MessageSender.SendMsg(ctx, msg)
 	return err
 }
 

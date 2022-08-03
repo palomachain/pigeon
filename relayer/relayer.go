@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	proto "github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
@@ -21,7 +22,7 @@ type PalomaClienter interface {
 	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
 	QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error)
-	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof []byte) error
+	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
