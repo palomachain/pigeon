@@ -11,6 +11,7 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -22,6 +23,13 @@ import (
 const (
 	errSample = whoops.String("oh no")
 )
+
+type fakeJsonRpcError string
+
+var _ rpc.DataError = fakeJsonRpcError("bla")
+
+func (f fakeJsonRpcError) Error() string  { return string(f) }
+func (f fakeJsonRpcError) ErrorData() any { return string(f) }
 
 var (
 	smartContractAddr        = common.HexToAddress("0xDEF")
@@ -75,6 +83,7 @@ func valsetUpdatedEvent(blockNumber uint64, checkpoint string, valsetID int64) e
 }
 
 func TestMessageProcessing(t *testing.T) {
+	dummyErr := whoops.String("dummy")
 
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
@@ -453,6 +462,89 @@ func TestMessageProcessing(t *testing.T) {
 				)
 				return evm, paloma
 			},
+		},
+		{
+			name: "upload_smart_contract/when smart contract returns an error it sends it to paloma as evidence",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UploadSmartContract{
+								UploadSmartContract: &types.UploadSmartContract{
+									Bytecode:         []byte("bytecode"),
+									Abi:              string(StoredContracts()["simple"].Source),
+									ConstructorInput: []byte("constructor input"),
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				fakeErr := fakeJsonRpcError("bla")
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{powerThreshold + 1},
+						ValsetID:   uint64(55),
+					},
+					nil,
+				)
+				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
+				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), &types.SmartContractExecutionErrorProof{
+					ErrorMessage: fakeErr.Error(),
+				}).Return(nil)
+				return evm, paloma
+			},
+			expErr: nil,
+		}, {
+			name: "upload_smart_contract/when smart contract returns an error and sending it to paloma fails, it returns it back",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UploadSmartContract{
+								UploadSmartContract: &types.UploadSmartContract{
+									Bytecode:         []byte("bytecode"),
+									Abi:              string(StoredContracts()["simple"].Source),
+									ConstructorInput: []byte("constructor input"),
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+				fakeErr := fakeJsonRpcError("bla")
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{powerThreshold + 1},
+						ValsetID:   uint64(55),
+					},
+					nil,
+				)
+				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
+				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), &types.SmartContractExecutionErrorProof{
+					ErrorMessage: fakeErr.Error(),
+				}).Return(dummyErr)
+				return evm, paloma
+			},
+			expErr: dummyErr,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
