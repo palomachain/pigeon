@@ -14,6 +14,7 @@ import (
 	"github.com/palomachain/pigeon/relayer/mocks"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	timemocks "github.com/palomachain/pigeon/util/time/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +36,8 @@ func TestProcessing(t *testing.T) {
 					config.Root{},
 					pc,
 					evm.NewFactory(pc),
+					timemocks.NewTime(t),
+					Config{},
 				)
 			},
 		},
@@ -126,6 +129,8 @@ func TestProcessing(t *testing.T) {
 					},
 					pal,
 					factory,
+					timemocks.NewTime(t),
+					Config{},
 				)
 			},
 		},
@@ -172,6 +177,8 @@ func TestProcessing(t *testing.T) {
 					},
 					pal,
 					factory,
+					timemocks.NewTime(t),
+					Config{},
 				)
 			},
 			buildProcessorErr: chain.ErrNotConnectedToRightChain,

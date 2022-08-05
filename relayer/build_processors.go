@@ -12,10 +12,6 @@ import (
 	"github.com/vizualni/whoops"
 )
 
-var (
-	ErrMissingChainConfig = errors.Unrecoverable(whoops.String("missing chain config"))
-)
-
 func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error) {
 	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {

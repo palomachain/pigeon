@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
@@ -15,3 +16,15 @@ var (
 	// defined at the application level.
 	ModuleCdc = codec.NewAminoCodec(amino)
 )
+
+func (msg *MsgKeepAlive) GetSigners() []sdk.AccAddress {
+	creator, err := sdk.AccAddressFromBech32(msg.Creator)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{creator}
+}
+
+func (msg *MsgKeepAlive) ValidateBasic() error {
+	return nil
+}

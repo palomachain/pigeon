@@ -37,6 +37,29 @@ func (_m *QueryServer) GetSnapshotByID(_a0 context.Context, _a1 *types.QueryGetS
 	return r0, r1
 }
 
+// GetValidatorAliveUntil provides a mock function with given fields: _a0, _a1
+func (_m *QueryServer) GetValidatorAliveUntil(_a0 context.Context, _a1 *types.QueryGetValidatorAliveUntilRequest) (*types.QueryGetValidatorAliveUntilResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.QueryGetValidatorAliveUntilResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.QueryGetValidatorAliveUntilRequest) *types.QueryGetValidatorAliveUntilResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.QueryGetValidatorAliveUntilResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.QueryGetValidatorAliveUntilRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Params provides a mock function with given fields: _a0, _a1
 func (_m *QueryServer) Params(_a0 context.Context, _a1 *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	ret := _m.Called(_a0, _a1)

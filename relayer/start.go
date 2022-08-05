@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/util/channels"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 )
@@ -40,14 +41,19 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 	consecutiveFailures := whoops.Group{}
 
-	timer := time.NewTicker(defaultLoopTimeout)
+	ticker := time.NewTicker(defaultLoopTimeout)
+	defer ticker.Stop()
 
 	// only used to enter into the loop below emmidiaetly after the first "tick"
-	firstLoopEnter := make(chan struct{}, 1)
-	firstLoopEnter <- struct{}{}
+	firstLoopEnter := make(chan time.Time, 1)
+	firstLoopEnter <- time.Time{}
 
 	process := func() error {
 		log.Info("relayer loop")
+		if ctx.Err() != nil {
+			log.Info("exiting relayer loop as context has ended")
+			return ctx.Err()
+		}
 
 		processors, err := r.buildProcessors(ctx)
 		if err != nil {
@@ -56,7 +62,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 		err = r.Process(ctx, processors)
 		if err == nil {
-			// resetting the failures
+			// eesetting the failures
 			if len(consecutiveFailures) > 0 {
 				consecutiveFailures = whoops.Group{}
 			}
@@ -89,18 +95,23 @@ func (r *Relayer) Start(ctx context.Context) error {
 		return nil
 	}
 
+	go func() {
+		r.startKeepAlive(ctx)
+	}()
+	tickerCh := channels.FanIn(ticker.C, firstLoopEnter)
 	for {
 		log.Debug("waiting on the loop for a new tick")
 		select {
 		case <-ctx.Done():
 			log.Warn("exiting due to context being done")
 			return ctx.Err()
-		case <-firstLoopEnter:
-			// don't put anything into the firstLoopEnter channel anymore
-			if err := process(); err != nil {
-				return err
+		case _, chOpen := <-tickerCh:
+			if !chOpen {
+				if ctx.Err() != nil {
+					return nil
+				}
+				return whoops.WrapS(ErrUnknown, "ticker channel for message processing was closed unexpectedly")
 			}
-		case <-timer.C:
 			if err := process(); err != nil {
 				return err
 			}
