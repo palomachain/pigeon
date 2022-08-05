@@ -3,6 +3,7 @@ package paloma
 import (
 	"context"
 	"strings"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -309,6 +310,27 @@ func (c Client) SetPublicAccessData(ctx context.Context, queueTypeName string, m
 		Data:          data,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
+	}
+
+	_, err := c.MessageSender.SendMsg(ctx, msg)
+	return err
+}
+
+func (c Client) QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error) {
+	qc := valset.NewQueryClient(c.GRPCClient)
+	aliveUntilRes, err := qc.GetValidatorAliveUntil(ctx, &valset.QueryGetValidatorAliveUntilRequest{
+		ValAddress: c.valAddr,
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return aliveUntilRes.AliveUntil.UTC(), nil
+}
+
+func (c Client) KeepValidatorAlive(ctx context.Context) error {
+	msg := &valset.MsgKeepAlive{
+		Creator: c.creator,
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg)

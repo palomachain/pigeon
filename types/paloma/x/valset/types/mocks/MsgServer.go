@@ -37,6 +37,29 @@ func (_m *MsgServer) AddExternalChainInfoForValidator(_a0 context.Context, _a1 *
 	return r0, r1
 }
 
+// KeepAlive provides a mock function with given fields: _a0, _a1
+func (_m *MsgServer) KeepAlive(_a0 context.Context, _a1 *types.MsgKeepAlive) (*types.MsgKeepAliveResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *types.MsgKeepAliveResponse
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MsgKeepAlive) *types.MsgKeepAliveResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.MsgKeepAliveResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *types.MsgKeepAlive) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewMsgServer interface {
 	mock.TestingT
 	Cleanup(func())

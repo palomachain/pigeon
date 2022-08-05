@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"math/big"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	utiltime "github.com/palomachain/pigeon/util/time"
 )
 
 //go:generate mockery --name=PalomaClienter
@@ -29,6 +31,9 @@ type PalomaClienter interface {
 
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
+
+	QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error)
+	KeepValidatorAlive(ctx context.Context) error
 }
 
 //go:generate mockery --name=EvmFactorier
@@ -51,13 +56,24 @@ type Relayer struct {
 	palomaClient PalomaClienter
 
 	evmFactory EvmFactorier
+
+	relayerConfig Config
+
+	time utiltime.Time
 }
 
-func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorier) *Relayer {
+type Config struct {
+	KeepAliveLoopTimeout time.Duration
+	KeepAliveThreshold   time.Duration
+}
+
+func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorier, customTime utiltime.Time, cfg Config) *Relayer {
 	return &Relayer{
-		config:       config,
-		palomaClient: palomaClient,
-		evmFactory:   evmFactory,
+		config:        config,
+		palomaClient:  palomaClient,
+		evmFactory:    evmFactory,
+		time:          customTime,
+		relayerConfig: cfg,
 	}
 }
 

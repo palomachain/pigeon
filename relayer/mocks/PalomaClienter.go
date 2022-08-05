@@ -15,6 +15,8 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 
+	time "time"
+
 	types "github.com/cosmos/cosmos-sdk/types"
 
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
@@ -118,6 +120,20 @@ func (_m *PalomaClienter) GetValidatorAddress() types.ValAddress {
 	return r0
 }
 
+// KeepValidatorAlive provides a mock function with given fields: ctx
+func (_m *PalomaClienter) KeepValidatorAlive(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // QueryGetEVMChainInfos provides a mock function with given fields: ctx
 func (_m *PalomaClienter) QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error) {
 	ret := _m.Called(ctx)
@@ -180,6 +196,27 @@ func (_m *PalomaClienter) QueryGetSnapshotByID(ctx context.Context, id uint64) (
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// QueryGetValidatorAliveUntil provides a mock function with given fields: ctx
+func (_m *PalomaClienter) QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error) {
+	ret := _m.Called(ctx)
+
+	var r0 time.Time
+	if rf, ok := ret.Get(0).(func(context.Context) time.Time); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(time.Time)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

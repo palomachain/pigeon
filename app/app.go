@@ -14,6 +14,7 @@ import (
 	consensustypes "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	"github.com/palomachain/pigeon/util/time"
 	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
@@ -33,6 +34,8 @@ var (
 	_palomaClient *paloma.Client
 
 	_evmFactory *evm.Factory
+
+	_timeAdapter time.Time
 )
 
 var (
@@ -51,6 +54,11 @@ func Relayer() *relayer.Relayer {
 			*Config(),
 			*PalomaClient(),
 			EvmFactory(),
+			Time(),
+			relayer.Config{
+				KeepAliveLoopTimeout: 30 * time.Second,
+				KeepAliveThreshold: 1 * time.Minute,
+			}
 		)
 	}
 	return _relayer
@@ -151,6 +159,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Msgs: []proto.Message{
 					&consensustypes.MsgAddMessagesSignatures{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
+					&valsettypes.MsgKeepAlive{},
 					&consensustypes.MsgDeleteJob{},
 					&consensustypes.MsgAddEvidence{},
 					&consensustypes.MsgSetPublicAccessData{},
@@ -191,4 +200,11 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 		SignModeStr:    "direct",
 		Modules:        modules,
 	}
+}
+
+func Time() time.Time {
+	if _timeAdapter == nil {
+		_timeAdapter = time.New()
+	}
+	return _timeAdapter
 }
