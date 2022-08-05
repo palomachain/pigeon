@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"strings"
+	gotime "time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
@@ -56,9 +57,9 @@ func Relayer() *relayer.Relayer {
 			EvmFactory(),
 			Time(),
 			relayer.Config{
-				KeepAliveLoopTimeout: 30 * time.Second,
-				KeepAliveThreshold: 1 * time.Minute,
-			}
+				KeepAliveLoopTimeout: 30 * gotime.Second,
+				KeepAliveThreshold:   1 * gotime.Minute,
+			},
 		)
 	}
 	return _relayer
