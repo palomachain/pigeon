@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"io/fs"
 	"io/ioutil"
@@ -409,4 +410,34 @@ func (c Client) ExecuteSmartContract(
 			arguments: arguments,
 		},
 	)
+}
+
+func (c Client) BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error) {
+	return c.conn.BalanceAt(ctx, address, new(big.Int).SetUint64(blockHeight))
+}
+
+func (c Client) FindBlockNearestTo(ctx context.Context, startFromHeight uint64, when time.Time) (*etherumtypes.Block, error) {
+	blockHeight, err := c.conn.BlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	from, to := new(big.Int).SetUint64(startFromHeight), new(big.Int).SetUint64(blockHeight)
+	var block *etherumtypes.Block
+	var err error
+	for from.{
+		block, err = c.conn.BlockByNumber(ctx, from)
+		if err != nil {
+			return nil, err
+		}
+
+		blockTime := time.Unix(int64(block.Time()), 0)
+		if blockTime.Before(when) {
+			from = block.Number()
+		} else {
+			to = block.Number()
+		}
+	}
+
+	return block, nil
 }
