@@ -374,13 +374,14 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		var processingErr error
 		var tx *ethtypes.Transaction
+		msg := rawMsg.Msg.(*types.Message)
 		logger := log.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
 			"msg-id":             rawMsg.ID,
+			"message-type":       fmt.Sprintf("%T", msg.GetAction()),
 		})
 		logger.Debug("processing")
-		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
