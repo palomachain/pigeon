@@ -25,9 +25,9 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context, processors []cha
 			PubKey:           acc.PubKey,
 		}
 		log.WithFields(log.Fields{
-			"ChainReferenceID": acc.ChainReferenceID,
-			"AccAddress":       acc.Address,
-			"ChainType":        acc.ChainType,
+			"chain-reference-id": acc.ChainReferenceID,
+			"acc-address":        acc.Address,
+			"chain-type":         acc.ChainType,
 		}).Info("sending account info to paloma")
 		return info
 	})

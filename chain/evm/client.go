@@ -190,7 +190,7 @@ func callSmartContract(
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
 			logger.WithFields(log.Fields{
 				"gas-price": gasPrice,
-			}).Debug("adusted gas price")
+			}).Debug("adjusted gas price")
 		}
 
 		boundContract := bind.NewBoundContract(

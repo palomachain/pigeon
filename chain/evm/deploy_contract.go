@@ -70,13 +70,16 @@ func deployContract(
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
 			logger.WithFields(log.Fields{
 				"gas-price": gasPrice,
-			}).Info("adusted gas price")
+			}).Info("adjusted gas price")
 		}
 
 		txOpts.GasPrice = gasPrice
 
 		logger = logger.WithFields(log.Fields{
-			"tx-opts": txOpts,
+			"gas-limit": txOpts.GasLimit,
+			"gas-price": txOpts.GasPrice,
+			"nonce":     txOpts.Nonce,
+			"from":      txOpts.From,
 		})
 
 		// hack begins here:

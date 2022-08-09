@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	logLevelEnvName = app.AppNameCaps + "_LOG_LEVEL"
+	logLevelEnvName  = app.AppNameCaps + "_LOG_LEVEL"
+	logFormatEnvName = app.AppNameCaps + "_LOG_FORMAT"
 )
 
 func main() {
@@ -20,6 +21,12 @@ func main() {
 
 	if level == logrus.TraceLevel {
 		logrus.SetReportCaller(true)
+	}
+
+	formatter := strings.ToLower(strings.TrimSpace(os.Getenv(logFormatEnvName)))
+
+	if formatter == "json" {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
 	}
 
 	if err := rootCmd.Execute(); err != nil {
