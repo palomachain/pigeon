@@ -4,10 +4,12 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	types "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/mock"
@@ -288,6 +290,281 @@ func TestFilterLogs(t *testing.T) {
 
 			require.ErrorIs(t, err, tt.expErr)
 			require.Equal(t, tt.expRes, res)
+		})
+	}
+}
+
+func TestFindingTheBlockNearestToTime(t *testing.T) {
+
+	type ethHeader struct {
+		height uint64
+		time   uint64
+	}
+
+	testdata := []struct {
+		name string
+
+		start uint64
+		when  time.Time
+
+		currentBlockNumber uint64
+		headers            []ethHeader
+
+		expErr    error
+		expHeight uint64
+	}{
+		{
+			name:               "one block fails because the same block is the current one",
+			start:              1,
+			when:               time.Unix(100, 0),
+			currentBlockNumber: 1,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   1,
+				},
+			},
+			expErr: ErrBlockNotYetGenerated,
+		},
+		{
+			name:               "one block but the time is in the future",
+			start:              1,
+			when:               time.Unix(100, 0),
+			currentBlockNumber: 1,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+			},
+			expErr:    ErrStartingBlockIsInTheFuture,
+			expHeight: 0,
+		},
+		{
+			name:               "blocks all in future",
+			start:              1,
+			when:               time.Unix(100, 0),
+			currentBlockNumber: 3,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+			},
+			expErr:    ErrStartingBlockIsInTheFuture,
+			expHeight: 0,
+		},
+		{
+			name:               "block not yet generated",
+			start:              1,
+			when:               time.Unix(401, 0),
+			currentBlockNumber: 3,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+			},
+			expErr:    ErrBlockNotYetGenerated,
+			expHeight: 0,
+		},
+		{
+			name:               "block has been generated (even number of blocks)",
+			start:              1,
+			when:               time.Unix(401, 0),
+			currentBlockNumber: 4,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+			},
+			expHeight: 3,
+		},
+		{
+			name:               "block has been generated (odd number of blocks)",
+			start:              1,
+			when:               time.Unix(401, 0),
+			currentBlockNumber: 5,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+				{
+					height: 5,
+					time:   600,
+				},
+			},
+			expHeight: 3,
+		},
+		{
+			name:               "result is the first (odd)",
+			start:              1,
+			when:               time.Unix(202, 0),
+			currentBlockNumber: 5,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+				{
+					height: 5,
+					time:   600,
+				},
+			},
+			expHeight: 1,
+		},
+		{
+			name:               "result is the first (even)",
+			start:              1,
+			when:               time.Unix(202, 0),
+			currentBlockNumber: 4,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+			},
+			expHeight: 1,
+		},
+		{
+			name:               "result is the next to last (even)",
+			start:              1,
+			when:               time.Unix(402, 0),
+			currentBlockNumber: 4,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+			},
+			expHeight: 3,
+		},
+		{
+			name:               "result is the next to last (odd)",
+			start:              1,
+			when:               time.Unix(502, 0),
+			currentBlockNumber: 5,
+			headers: []ethHeader{
+				{
+					height: 1,
+					time:   200,
+				},
+				{
+					height: 2,
+					time:   300,
+				},
+				{
+					height: 3,
+					time:   400,
+				},
+				{
+					height: 4,
+					time:   500,
+				},
+				{
+					height: 5,
+					time:   600,
+				},
+			},
+			expHeight: 4,
+		},
+	}
+
+	for _, tt := range testdata {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Client{}
+			m := newMockEthClientConn(t)
+			c.conn = m
+
+			m.On("BlockNumber", mock.Anything).Return(tt.currentBlockNumber, nil).Maybe()
+			for _, h := range tt.headers {
+				m.On("HeaderByNumber", mock.Anything, big.NewInt(int64(h.height))).Return(&ethtypes.Header{
+					Time: h.time,
+				}, nil).Maybe()
+			}
+
+			ctx := context.Background()
+			height, err := c.FindBlockNearestToTime(ctx, tt.start, tt.when)
+			require.ErrorIs(t, err, tt.expErr)
+			require.Equal(t, tt.expHeight, height)
 		})
 	}
 }

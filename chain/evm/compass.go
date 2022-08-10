@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -36,6 +37,9 @@ type evmClienter interface {
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
+
+	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
+	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 }
 
 type compass struct {
@@ -433,6 +437,33 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	}
 
 	return gErr.Return()
+}
+
+func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+	var g whoops.Group
+	for _, msg := range msgs {
+		g.Add(
+			whoops.Try(func() {
+				vb := msg.Msg.(*types.ValidatorBalancesAttestation)
+				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
+
+				res := &types.ValidatorBalancesAttestationRes{
+					BlockHeight: height,
+					Balances:    make([]string, 0, len(vb.HexAddresses)),
+				}
+
+				for _, addrHex := range vb.HexAddresses {
+					addr := common.HexToAddress(addrHex)
+					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
+					res.Balances = append(res.Balances, balance.Text(10))
+				}
+
+				whoops.Assert(t.paloma.AddMessageEvidence(ctx, queueTypeName, msg.ID, res))
+			}),
+		)
+	}
+
+	return g.Return()
 }
 
 // provideTxProof provides a very simple proof which is a transaction object
