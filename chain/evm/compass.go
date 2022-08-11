@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -36,6 +37,9 @@ type evmClienter interface {
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
+
+	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
+	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 }
 
 type compass struct {
@@ -374,13 +378,14 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		var processingErr error
 		var tx *ethtypes.Transaction
+		msg := rawMsg.Msg.(*types.Message)
 		logger := log.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
 			"msg-id":             rawMsg.ID,
+			"message-type":       fmt.Sprintf("%T", msg.GetAction()),
 		})
 		logger.Debug("processing")
-		msg := rawMsg.Msg.(*types.Message)
 
 		switch action := msg.GetAction().(type) {
 		case *types.Message_SubmitLogicCall:
@@ -432,6 +437,47 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	}
 
 	return gErr.Return()
+}
+
+func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+	var g whoops.Group
+	logger := log.WithField("queue-type-name", queueTypeName)
+	logger.Debug("start processing validator balance request")
+	for _, msg := range msgs {
+		g.Add(
+			whoops.Try(func() {
+				vb := msg.Msg.(*types.ValidatorBalancesAttestation)
+				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
+
+				logger1 := logger.WithFields(
+					log.Fields{
+						"height":          height,
+						"nearest-to-time": vb.FromBlockTime,
+					},
+				)
+				logger1.Debug("got height for time")
+
+				res := &types.ValidatorBalancesAttestationRes{
+					BlockHeight: height,
+					Balances:    make([]string, 0, len(vb.HexAddresses)),
+				}
+
+				for _, addrHex := range vb.HexAddresses {
+					addr := common.HexToAddress(addrHex)
+					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
+					logger1.WithFields(log.Fields{
+						"evm-address": addr,
+						"balance":     balance,
+					}).Info("got balance")
+					res.Balances = append(res.Balances, balance.Text(10))
+				}
+
+				whoops.Assert(t.paloma.AddMessageEvidence(ctx, queueTypeName, msg.ID, res))
+			}),
+		)
+	}
+
+	return g.Return()
 }
 
 // provideTxProof provides a very simple proof which is a transaction object

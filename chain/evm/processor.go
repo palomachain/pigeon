@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	queueTurnstoneMessage = "evm-turnstone-message"
+	queueTurnstoneMessage   = "evm-turnstone-message"
+	queueValidatorsBalances = "validators-balances"
 )
 
 type Processor struct {
@@ -36,6 +37,7 @@ func (p Processor) SupportedQueues() []string {
 	return slice.Map(
 		[]string{
 			queueTurnstoneMessage,
+			queueValidatorsBalances,
 		},
 		func(q string) string {
 			return fmt.Sprintf("%s/%s/%s", p.chainType, p.chainReferenceID, q)
@@ -75,6 +77,12 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 	switch {
 	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
 		return p.compass.processMessages(
+			ctx,
+			queueTypeName,
+			msgs,
+		)
+	case strings.HasSuffix(queueTypeName, queueValidatorsBalances):
+		return p.compass.processValidatorsBalancesRequest(
 			ctx,
 			queueTypeName,
 			msgs,

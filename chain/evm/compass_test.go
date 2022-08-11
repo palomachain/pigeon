@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
@@ -565,6 +566,44 @@ func TestMessageProcessing(t *testing.T) {
 			require.ErrorIs(t, err, tt.expErr)
 		})
 	}
+}
+
+func TestProcessingvalidatorBalancesRequest(t *testing.T) {
+	ctx := context.Background()
+	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+	comp := newCompassClient(
+		smartContractAddr.Hex(),
+		"id-123",
+		"internal-chain-id",
+		big.NewInt(5),
+		nil,
+		paloma,
+		evm,
+	)
+	comp.startingBlockHeight = 1233
+
+	paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(1), &types.ValidatorBalancesAttestationRes{
+		BlockHeight: 1212,
+		Balances:    []string{"555", "666", "777"},
+	}).Return(nil)
+
+	evm.On("FindBlockNearestToTime", mock.Anything, uint64(comp.startingBlockHeight), time.Unix(123, 0)).Return(uint64(1212), nil)
+
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("1"), uint64(1212)).Return(big.NewInt(555), nil)
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("2"), uint64(1212)).Return(big.NewInt(666), nil)
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("3"), uint64(1212)).Return(big.NewInt(777), nil)
+	err := comp.processValidatorsBalancesRequest(ctx, "queue-name", []chain.MessageWithSignatures{
+		{
+			QueuedMessage: chain.QueuedMessage{
+				ID: 1,
+				Msg: &types.ValidatorBalancesAttestation{
+					FromBlockTime: time.Unix(123, 0),
+					HexAddresses:  []string{"1", "2", "3"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
 }
 
 func TestProvidingEvidenceForAMessage(t *testing.T) {

@@ -14,6 +14,13 @@ const (
 	ErrEvm = whoops.String("EVM related error")
 
 	ErrNoConsensus = whoops.String("no consensus reached")
+
+	ErrCouldntFindBlockWithTime = whoops.String("couldn't find block")
+)
+
+var (
+	ErrStartingBlockIsInTheFuture = ErrCouldntFindBlockWithTime.WrapS("starting height's block time is set in future")
+	ErrBlockNotYetGenerated       = ErrCouldntFindBlockWithTime.WrapS("block has not yet been generated")
 )
 
 const (

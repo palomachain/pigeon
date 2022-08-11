@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"math"
 	"math/big"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"io/fs"
 	"io/ioutil"
@@ -104,9 +106,23 @@ type Client struct {
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
-	conn *ethclient.Client
+	conn ethClientConn
 
 	paloma PalomaClienter
+}
+
+var _ ethClientConn = &ethclient.Client{}
+
+//go:generate mockery --name=ethClientConn --inpackage --testonly
+type ethClientConn interface {
+	bind.ContractBackend
+	TransactionByHash(ctx context.Context, hash common.Hash) (tx *etherumtypes.Transaction, isPending bool, err error)
+	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
+	BlockByHash(ctx context.Context, hash common.Hash) (*etherumtypes.Block, error)
+	BlockNumber(ctx context.Context) (uint64, error)
+	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
+	SuggestGasPrice(ctx context.Context) (*big.Int, error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
 func (c *Client) init() error {
@@ -409,4 +425,56 @@ func (c Client) ExecuteSmartContract(
 			arguments: arguments,
 		},
 	)
+}
+
+func (c Client) BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error) {
+	return c.conn.BalanceAt(ctx, address, new(big.Int).SetUint64(blockHeight))
+}
+
+func (c Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error) {
+	isTimeSetBeforeBlock := func(height uint64) (bool, error) {
+		h, err := c.conn.HeaderByNumber(ctx, new(big.Int).SetUint64(height))
+		if err != nil {
+			return false, err
+		}
+		return h.Time < uint64(when.UTC().Unix()), nil
+	}
+
+	before, err := isTimeSetBeforeBlock(startingHeight)
+	if err != nil {
+		return 0, err
+	}
+	if !before {
+		return 0, ErrStartingBlockIsInTheFuture
+	}
+
+	currBlockHeight, err := c.conn.BlockNumber(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	from, to := startingHeight, currBlockHeight
+	var res uint64
+	for from <= to {
+		err := whoops.Try(func() {
+			mid := uint64(math.Round(float64(from+to) / 2))
+			before := whoops.Must(isTimeSetBeforeBlock(mid))
+			if before {
+				res = mid
+				from = mid + 1
+			} else {
+				to = mid - 1
+			}
+		})
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	if res == currBlockHeight {
+		// there needs to be at least one block standing in between
+		return 0, ErrBlockNotYetGenerated
+	}
+
+	return res, nil
 }

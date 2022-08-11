@@ -172,6 +172,8 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Msgs: []proto.Message{
 					&evmtypes.TxExecutedProof{},
 					&evmtypes.SmartContractExecutionErrorProof{},
+					&evmtypes.ValidatorBalancesAttestation{},
+					&evmtypes.ValidatorBalancesAttestationRes{},
 				},
 			},
 		},
@@ -181,6 +183,8 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 				Msgs: []proto.Message{
 					&evmtypes.ArbitrarySmartContractCall{},
 					&evmtypes.Message{},
+					&evmtypes.ValidatorBalancesAttestation{},
+					&evmtypes.ValidatorBalancesAttestationRes{},
 				},
 			},
 		},
