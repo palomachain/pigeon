@@ -51,19 +51,20 @@ func (ChainInfo_Status) EnumDescriptor() ([]byte, []int) {
 }
 
 type ChainInfo struct {
+	Id                    uint64 `protobuf:"varint,9999,opt,name=id,proto3" json:"id,omitempty"`
 	ChainReferenceID      string `protobuf:"bytes,1,opt,name=chainReferenceID,proto3" json:"chainReferenceID,omitempty"`
 	ChainID               uint64 `protobuf:"varint,2,opt,name=chainID,proto3" json:"chainID,omitempty"`
 	SmartContractUniqueID []byte `protobuf:"bytes,3,opt,name=smartContractUniqueID,proto3" json:"smartContractUniqueID,omitempty"`
 	SmartContractAddr     string `protobuf:"bytes,4,opt,name=smartContractAddr,proto3" json:"smartContractAddr,omitempty"`
 	// used to verify by pigeons if they are at the correct chain
-	ReferenceBlockHeight          uint64           `protobuf:"varint,5,opt,name=referenceBlockHeight,proto3" json:"referenceBlockHeight,omitempty"`
-	ReferenceBlockHash            string           `protobuf:"bytes,6,opt,name=referenceBlockHash,proto3" json:"referenceBlockHash,omitempty"`
-	Abi                           string           `protobuf:"bytes,7,opt,name=abi,proto3" json:"abi,omitempty"`
-	Bytecode                      []byte           `protobuf:"bytes,8,opt,name=bytecode,proto3" json:"bytecode,omitempty"`
-	ConstructorInput              []byte           `protobuf:"bytes,9,opt,name=constructorInput,proto3" json:"constructorInput,omitempty"`
-	Status                        ChainInfo_Status `protobuf:"varint,10,opt,name=status,proto3,enum=palomachain.paloma.evm.ChainInfo_Status" json:"status,omitempty"`
-	SmartContractVersion          uint64           `protobuf:"varint,11,opt,name=smartContractVersion,proto3" json:"smartContractVersion,omitempty"`
-	SmartContractDeployingVersion uint64           `protobuf:"varint,12,opt,name=smartContractDeployingVersion,proto3" json:"smartContractDeployingVersion,omitempty"`
+	ReferenceBlockHeight  uint64           `protobuf:"varint,5,opt,name=referenceBlockHeight,proto3" json:"referenceBlockHeight,omitempty"`
+	ReferenceBlockHash    string           `protobuf:"bytes,6,opt,name=referenceBlockHash,proto3" json:"referenceBlockHash,omitempty"`
+	Abi                   string           `protobuf:"bytes,7,opt,name=abi,proto3" json:"abi,omitempty"`
+	Bytecode              []byte           `protobuf:"bytes,8,opt,name=bytecode,proto3" json:"bytecode,omitempty"`
+	ConstructorInput      []byte           `protobuf:"bytes,9,opt,name=constructorInput,proto3" json:"constructorInput,omitempty"`
+	Status                ChainInfo_Status `protobuf:"varint,10,opt,name=status,proto3,enum=palomachain.paloma.evm.ChainInfo_Status" json:"status,omitempty"`
+	ActiveSmartContractID uint64           `protobuf:"varint,11,opt,name=activeSmartContractID,proto3" json:"activeSmartContractID,omitempty"`
+	MinOnChainBalance     string           `protobuf:"bytes,12,opt,name=minOnChainBalance,proto3" json:"minOnChainBalance,omitempty"`
 }
 
 func (m *ChainInfo) Reset()         { *m = ChainInfo{} }
@@ -98,6 +99,13 @@ func (m *ChainInfo) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_ChainInfo proto.InternalMessageInfo
+
+func (m *ChainInfo) GetId() uint64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
 
 func (m *ChainInfo) GetChainReferenceID() string {
 	if m != nil {
@@ -169,26 +177,24 @@ func (m *ChainInfo) GetStatus() ChainInfo_Status {
 	return ChainInfo_IN_PROPOSAL
 }
 
-func (m *ChainInfo) GetSmartContractVersion() uint64 {
+func (m *ChainInfo) GetActiveSmartContractID() uint64 {
 	if m != nil {
-		return m.SmartContractVersion
+		return m.ActiveSmartContractID
 	}
 	return 0
 }
 
-func (m *ChainInfo) GetSmartContractDeployingVersion() uint64 {
+func (m *ChainInfo) GetMinOnChainBalance() string {
 	if m != nil {
-		return m.SmartContractDeployingVersion
+		return m.MinOnChainBalance
 	}
-	return 0
+	return ""
 }
 
 type SmartContract struct {
 	Id       uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	AbiJSON  string `protobuf:"bytes,2,opt,name=abiJSON,proto3" json:"abiJSON,omitempty"`
 	Bytecode []byte `protobuf:"bytes,3,opt,name=bytecode,proto3" json:"bytecode,omitempty"`
-	UniqueID []byte `protobuf:"bytes,4,opt,name=uniqueID,proto3" json:"uniqueID,omitempty"`
-	Address  string `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
 }
 
 func (m *SmartContract) Reset()         { *m = SmartContract{} }
@@ -245,62 +251,117 @@ func (m *SmartContract) GetBytecode() []byte {
 	return nil
 }
 
-func (m *SmartContract) GetUniqueID() []byte {
+type SmartContractDeployment struct {
+	// which smart contract is getting deployed
+	SmartContractID uint64 `protobuf:"varint,1,opt,name=smartContractID,proto3" json:"smartContractID,omitempty"`
+	// to which chain info the smart contract is getting deployed to
+	ChainReferenceID string `protobuf:"bytes,2,opt,name=chainReferenceID,proto3" json:"chainReferenceID,omitempty"`
+	// application level ID which uniquely identifies a deployed smart contract.
+	// It's used if we have multiple smart contracts deployed on a same EVM so that
+	// the contract can figure out if the message was actually sent for them.
+	// (message includes the unique id and smart contract has simple logic to
+	// disallow those that to not match)
+	UniqueID []byte `protobuf:"bytes,3,opt,name=uniqueID,proto3" json:"uniqueID,omitempty"`
+}
+
+func (m *SmartContractDeployment) Reset()         { *m = SmartContractDeployment{} }
+func (m *SmartContractDeployment) String() string { return proto.CompactTextString(m) }
+func (*SmartContractDeployment) ProtoMessage()    {}
+func (*SmartContractDeployment) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a7f8ed12fd8dc81e, []int{2}
+}
+func (m *SmartContractDeployment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SmartContractDeployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SmartContractDeployment.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SmartContractDeployment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SmartContractDeployment.Merge(m, src)
+}
+func (m *SmartContractDeployment) XXX_Size() int {
+	return m.Size()
+}
+func (m *SmartContractDeployment) XXX_DiscardUnknown() {
+	xxx_messageInfo_SmartContractDeployment.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SmartContractDeployment proto.InternalMessageInfo
+
+func (m *SmartContractDeployment) GetSmartContractID() uint64 {
+	if m != nil {
+		return m.SmartContractID
+	}
+	return 0
+}
+
+func (m *SmartContractDeployment) GetChainReferenceID() string {
+	if m != nil {
+		return m.ChainReferenceID
+	}
+	return ""
+}
+
+func (m *SmartContractDeployment) GetUniqueID() []byte {
 	if m != nil {
 		return m.UniqueID
 	}
 	return nil
 }
 
-func (m *SmartContract) GetAddress() string {
-	if m != nil {
-		return m.Address
-	}
-	return ""
-}
-
 func init() {
 	proto.RegisterEnum("palomachain.paloma.evm.ChainInfo_Status", ChainInfo_Status_name, ChainInfo_Status_value)
 	proto.RegisterType((*ChainInfo)(nil), "palomachain.paloma.evm.ChainInfo")
 	proto.RegisterType((*SmartContract)(nil), "palomachain.paloma.evm.SmartContract")
+	proto.RegisterType((*SmartContractDeployment)(nil), "palomachain.paloma.evm.SmartContractDeployment")
 }
 
 func init() { proto.RegisterFile("paloma/evm/chain_info.proto", fileDescriptor_a7f8ed12fd8dc81e) }
 
 var fileDescriptor_a7f8ed12fd8dc81e = []byte{
-	// 497 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xce, 0xa6, 0x21, 0x4d, 0xa6, 0xa5, 0x84, 0x55, 0x41, 0xab, 0x22, 0xac, 0x28, 0xa7, 0x80,
-	0x90, 0x23, 0x15, 0xee, 0x90, 0xda, 0x01, 0x8c, 0x50, 0x52, 0x39, 0x25, 0x48, 0x5c, 0x22, 0xff,
-	0x6c, 0x92, 0x15, 0xf1, 0xae, 0x59, 0xaf, 0x2b, 0xf2, 0x0c, 0x5c, 0x78, 0x2c, 0x8e, 0x3d, 0x72,
-	0x44, 0xc9, 0x0b, 0xf0, 0x08, 0xc8, 0xeb, 0xba, 0x6a, 0x1a, 0x8b, 0xdb, 0xcc, 0xf7, 0xcd, 0xef,
-	0xce, 0xb7, 0xf0, 0x24, 0xf6, 0x96, 0x22, 0xf2, 0x7a, 0xf4, 0x32, 0xea, 0x05, 0x0b, 0x8f, 0xf1,
-	0x29, 0xe3, 0x33, 0x61, 0xc6, 0x52, 0x28, 0x81, 0x1f, 0xe7, 0xa4, 0xc6, 0xcd, 0xdc, 0x36, 0xe9,
-	0x65, 0xd4, 0xf9, 0x5b, 0x83, 0xa6, 0x95, 0x81, 0x0e, 0x9f, 0x09, 0xfc, 0x1c, 0x5a, 0x3a, 0xc2,
-	0xa5, 0x33, 0x2a, 0x29, 0x0f, 0xa8, 0x63, 0x13, 0xd4, 0x46, 0xdd, 0xa6, 0xbb, 0x83, 0x63, 0x02,
-	0xfb, 0x1a, 0x73, 0x6c, 0x52, 0x6d, 0xa3, 0x6e, 0xcd, 0x2d, 0x5c, 0xfc, 0x0a, 0x1e, 0x25, 0x91,
-	0x27, 0x95, 0x25, 0xb8, 0x92, 0x5e, 0xa0, 0x3e, 0x71, 0xf6, 0x2d, 0xcd, 0x4a, 0xed, 0xb5, 0x51,
-	0xf7, 0xd0, 0x2d, 0x27, 0xf1, 0x0b, 0x78, 0xb8, 0x45, 0xf4, 0xc3, 0x50, 0x92, 0x9a, 0x6e, 0xbe,
-	0x4b, 0xe0, 0x53, 0x38, 0x96, 0xc5, 0x30, 0x67, 0x4b, 0x11, 0x7c, 0x7d, 0x4f, 0xd9, 0x7c, 0xa1,
-	0xc8, 0x3d, 0x3d, 0x4a, 0x29, 0x87, 0x4d, 0xc0, 0x77, 0x70, 0x2f, 0x59, 0x90, 0xba, 0x6e, 0x51,
-	0xc2, 0xe0, 0x16, 0xec, 0x79, 0x3e, 0x23, 0xfb, 0x3a, 0x20, 0x33, 0xf1, 0x09, 0x34, 0xfc, 0x95,
-	0xa2, 0x81, 0x08, 0x29, 0x69, 0xe8, 0x65, 0x6e, 0x7c, 0xfd, 0x76, 0x82, 0x27, 0x4a, 0xa6, 0x81,
-	0x12, 0xd2, 0xe1, 0x71, 0xaa, 0x48, 0x53, 0xc7, 0xec, 0xe0, 0xf8, 0x0d, 0xd4, 0x13, 0xe5, 0xa9,
-	0x34, 0x21, 0xd0, 0x46, 0xdd, 0xa3, 0xd3, 0xae, 0x59, 0x7e, 0x1e, 0xf3, 0xe6, 0x34, 0xe6, 0x58,
-	0xc7, 0xbb, 0xd7, 0x79, 0xd9, 0xfe, 0x5b, 0x8f, 0x32, 0xa1, 0x32, 0x61, 0x82, 0x93, 0x83, 0x7c,
-	0xff, 0x32, 0x0e, 0xdb, 0xf0, 0x74, 0x0b, 0xb7, 0x69, 0xbc, 0x14, 0x2b, 0xc6, 0xe7, 0x45, 0xf2,
-	0xa1, 0x4e, 0xfe, 0x7f, 0x50, 0xe7, 0x35, 0xd4, 0xf3, 0x59, 0xf0, 0x03, 0x38, 0x70, 0x86, 0xd3,
-	0x73, 0x77, 0x74, 0x3e, 0x1a, 0xf7, 0x3f, 0xb6, 0x2a, 0x18, 0xa0, 0xde, 0xb7, 0x2e, 0x9c, 0xc9,
-	0xa0, 0x85, 0x30, 0x81, 0xe3, 0xcf, 0x7d, 0xe7, 0xc2, 0x19, 0xbe, 0x9b, 0xbe, 0x1d, 0xb9, 0xd3,
-	0xc1, 0xc4, 0xb1, 0x07, 0x43, 0x6b, 0xd0, 0xaa, 0x76, 0x7e, 0x20, 0xb8, 0x3f, 0xbe, 0xdd, 0x02,
-	0x1f, 0x41, 0x95, 0x85, 0x5a, 0x68, 0x35, 0xb7, 0xca, 0xc2, 0x4c, 0x5a, 0x9e, 0xcf, 0x3e, 0x8c,
-	0x47, 0x43, 0x2d, 0xad, 0xa6, 0x5b, 0xb8, 0x5b, 0x07, 0xd8, 0xbb, 0x73, 0x80, 0x13, 0x68, 0xa4,
-	0x85, 0xd2, 0x6a, 0x39, 0x57, 0xf8, 0xba, 0x62, 0x18, 0x4a, 0x9a, 0x24, 0x5a, 0x21, 0x59, 0xc5,
-	0xdc, 0x3d, 0xb3, 0x7e, 0xad, 0x0d, 0x74, 0xb5, 0x36, 0xd0, 0x9f, 0xb5, 0x81, 0x7e, 0x6e, 0x8c,
-	0xca, 0xd5, 0xc6, 0xa8, 0xfc, 0xde, 0x18, 0x95, 0x2f, 0xcf, 0xe6, 0x4c, 0x2d, 0x52, 0xdf, 0x0c,
-	0x44, 0xd4, 0xbb, 0x75, 0x9e, 0x6b, 0xbb, 0xf7, 0x5d, 0x7f, 0x34, 0xb5, 0x8a, 0x69, 0xe2, 0xd7,
-	0xf5, 0x27, 0x7b, 0xf9, 0x2f, 0x00, 0x00, 0xff, 0xff, 0xfb, 0x30, 0xd9, 0x47, 0x83, 0x03, 0x00,
-	0x00,
+	// 521 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x53, 0x4f, 0x8f, 0x12, 0x4f,
+	0x10, 0xa5, 0x81, 0x1f, 0x7f, 0x6a, 0xf7, 0xb7, 0x60, 0x67, 0xd5, 0xce, 0x9a, 0x4c, 0x08, 0xa7,
+	0xd1, 0x98, 0x21, 0x59, 0xbd, 0x2b, 0xff, 0xd4, 0x36, 0x06, 0x36, 0xc3, 0xee, 0x9a, 0x78, 0x21,
+	0xcd, 0xd0, 0x2c, 0x1d, 0x99, 0x6e, 0x9c, 0xe9, 0x21, 0xf2, 0x19, 0x3c, 0xe8, 0xc7, 0xf2, 0xb8,
+	0x47, 0x8f, 0x06, 0x8e, 0x7e, 0x09, 0x43, 0xcf, 0x42, 0x76, 0x60, 0xbc, 0x55, 0xbd, 0x57, 0x53,
+	0x55, 0xf3, 0xea, 0x35, 0x3c, 0x99, 0xb3, 0x99, 0xf2, 0x59, 0x83, 0x2f, 0xfc, 0x86, 0x37, 0x65,
+	0x42, 0x0e, 0x85, 0x9c, 0x28, 0x67, 0x1e, 0x28, 0xad, 0xf0, 0xa3, 0x98, 0x34, 0xb8, 0x13, 0xc7,
+	0x0e, 0x5f, 0xf8, 0xf5, 0x3f, 0x79, 0x28, 0xb7, 0x37, 0x20, 0x95, 0x13, 0x85, 0x2b, 0x90, 0x15,
+	0x63, 0xf2, 0xbd, 0x57, 0x43, 0x76, 0xde, 0xcd, 0x8a, 0x31, 0x7e, 0x06, 0x55, 0xf3, 0x89, 0xcb,
+	0x27, 0x3c, 0xe0, 0xd2, 0xe3, 0xb4, 0x43, 0x50, 0x0d, 0xd9, 0x65, 0xf7, 0x00, 0xc7, 0x04, 0x8a,
+	0x06, 0xa3, 0x1d, 0x92, 0x35, 0x0d, 0xb6, 0x29, 0x7e, 0x09, 0x0f, 0x43, 0x9f, 0x05, 0xba, 0xad,
+	0xa4, 0x0e, 0x98, 0xa7, 0xaf, 0xa4, 0xf8, 0x12, 0x6d, 0x5a, 0xe5, 0x6a, 0xc8, 0x3e, 0x76, 0xd3,
+	0x49, 0xfc, 0x1c, 0x1e, 0x24, 0x88, 0xe6, 0x78, 0x1c, 0x90, 0xbc, 0x19, 0x7e, 0x48, 0xe0, 0x73,
+	0x38, 0x0d, 0xb6, 0xcb, 0xb4, 0x66, 0xca, 0xfb, 0xfc, 0x8e, 0x8b, 0x9b, 0xa9, 0x26, 0xff, 0x99,
+	0x55, 0x52, 0x39, 0xec, 0x00, 0xde, 0xc3, 0x59, 0x38, 0x25, 0x05, 0x33, 0x22, 0x85, 0xc1, 0x55,
+	0xc8, 0xb1, 0x91, 0x20, 0x45, 0x53, 0xb0, 0x09, 0xf1, 0x19, 0x94, 0x46, 0x4b, 0xcd, 0x3d, 0x35,
+	0xe6, 0xa4, 0x64, 0x7e, 0x66, 0x97, 0x1b, 0xed, 0x94, 0x0c, 0x75, 0x10, 0x79, 0x5a, 0x05, 0x54,
+	0xce, 0x23, 0x4d, 0xca, 0xa6, 0xe6, 0x00, 0xc7, 0xaf, 0xa1, 0x10, 0x6a, 0xa6, 0xa3, 0x90, 0x40,
+	0x0d, 0xd9, 0x27, 0xe7, 0xb6, 0x93, 0x7e, 0x2f, 0x67, 0x77, 0x2b, 0x67, 0x60, 0xea, 0xdd, 0xbb,
+	0xef, 0x36, 0x1a, 0x33, 0x4f, 0x8b, 0x05, 0x1f, 0xdc, 0x97, 0x86, 0x76, 0xc8, 0x91, 0x11, 0x20,
+	0x9d, 0xdc, 0x68, 0xec, 0x0b, 0xd9, 0x97, 0xa6, 0x6d, 0x8b, 0xcd, 0x98, 0xf4, 0x38, 0x39, 0x8e,
+	0x35, 0x3e, 0x20, 0xea, 0xaf, 0xa0, 0x10, 0x4f, 0xc5, 0x15, 0x38, 0xa2, 0xbd, 0xe1, 0x85, 0xdb,
+	0xbf, 0xe8, 0x0f, 0x9a, 0x1f, 0xaa, 0x19, 0x0c, 0x50, 0x68, 0xb6, 0x2f, 0xe9, 0x75, 0xb7, 0x8a,
+	0x30, 0x81, 0xd3, 0x8f, 0x4d, 0x7a, 0x49, 0x7b, 0x6f, 0x87, 0x6f, 0xfa, 0xee, 0xb0, 0x7b, 0x4d,
+	0x3b, 0xdd, 0x5e, 0xbb, 0x5b, 0xcd, 0xd6, 0xaf, 0xe0, 0xff, 0xc4, 0x06, 0xf8, 0xc4, 0x18, 0x0e,
+	0xed, 0xfc, 0x46, 0xa0, 0xc8, 0x46, 0xe2, 0xfd, 0xa0, 0xdf, 0x33, 0x1e, 0x2a, 0xbb, 0xdb, 0x34,
+	0xa1, 0x74, 0x2e, 0xa9, 0x74, 0xfd, 0x1b, 0x82, 0xc7, 0x89, 0xbe, 0x1d, 0x3e, 0x9f, 0xa9, 0xa5,
+	0xcf, 0xa5, 0xc6, 0x36, 0x54, 0xc2, 0x3d, 0x45, 0xe2, 0x71, 0xfb, 0x70, 0xaa, 0xd7, 0xb3, 0xff,
+	0xf0, 0xfa, 0x19, 0x94, 0xa2, 0xa4, 0x89, 0x77, 0x79, 0xab, 0xfd, 0x73, 0x65, 0xa1, 0xdb, 0x95,
+	0x85, 0x7e, 0xaf, 0x2c, 0xf4, 0x63, 0x6d, 0x65, 0x6e, 0xd7, 0x56, 0xe6, 0xd7, 0xda, 0xca, 0x7c,
+	0x7a, 0x7a, 0x23, 0xf4, 0x34, 0x1a, 0x39, 0x9e, 0xf2, 0x1b, 0xf7, 0xee, 0x7b, 0x17, 0x37, 0xbe,
+	0x9a, 0xa7, 0xab, 0x97, 0x73, 0x1e, 0x8e, 0x0a, 0xe6, 0xd9, 0xbe, 0xf8, 0x1b, 0x00, 0x00, 0xff,
+	0xff, 0x06, 0x49, 0xc2, 0xb1, 0xd5, 0x03, 0x00, 0x00,
 }
 
 func (m *ChainInfo) Marshal() (dAtA []byte, err error) {
@@ -323,13 +384,24 @@ func (m *ChainInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.SmartContractDeployingVersion != 0 {
-		i = encodeVarintChainInfo(dAtA, i, uint64(m.SmartContractDeployingVersion))
+	if m.Id != 0 {
+		i = encodeVarintChainInfo(dAtA, i, uint64(m.Id))
 		i--
-		dAtA[i] = 0x60
+		dAtA[i] = 0x4
+		i--
+		dAtA[i] = 0xf0
+		i--
+		dAtA[i] = 0xf8
 	}
-	if m.SmartContractVersion != 0 {
-		i = encodeVarintChainInfo(dAtA, i, uint64(m.SmartContractVersion))
+	if len(m.MinOnChainBalance) > 0 {
+		i -= len(m.MinOnChainBalance)
+		copy(dAtA[i:], m.MinOnChainBalance)
+		i = encodeVarintChainInfo(dAtA, i, uint64(len(m.MinOnChainBalance)))
+		i--
+		dAtA[i] = 0x62
+	}
+	if m.ActiveSmartContractID != 0 {
+		i = encodeVarintChainInfo(dAtA, i, uint64(m.ActiveSmartContractID))
 		i--
 		dAtA[i] = 0x58
 	}
@@ -420,20 +492,6 @@ func (m *SmartContract) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Address) > 0 {
-		i -= len(m.Address)
-		copy(dAtA[i:], m.Address)
-		i = encodeVarintChainInfo(dAtA, i, uint64(len(m.Address)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.UniqueID) > 0 {
-		i -= len(m.UniqueID)
-		copy(dAtA[i:], m.UniqueID)
-		i = encodeVarintChainInfo(dAtA, i, uint64(len(m.UniqueID)))
-		i--
-		dAtA[i] = 0x22
-	}
 	if len(m.Bytecode) > 0 {
 		i -= len(m.Bytecode)
 		copy(dAtA[i:], m.Bytecode)
@@ -450,6 +508,48 @@ func (m *SmartContract) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	if m.Id != 0 {
 		i = encodeVarintChainInfo(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SmartContractDeployment) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SmartContractDeployment) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SmartContractDeployment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.UniqueID) > 0 {
+		i -= len(m.UniqueID)
+		copy(dAtA[i:], m.UniqueID)
+		i = encodeVarintChainInfo(dAtA, i, uint64(len(m.UniqueID)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.ChainReferenceID) > 0 {
+		i -= len(m.ChainReferenceID)
+		copy(dAtA[i:], m.ChainReferenceID)
+		i = encodeVarintChainInfo(dAtA, i, uint64(len(m.ChainReferenceID)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.SmartContractID != 0 {
+		i = encodeVarintChainInfo(dAtA, i, uint64(m.SmartContractID))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -510,11 +610,15 @@ func (m *ChainInfo) Size() (n int) {
 	if m.Status != 0 {
 		n += 1 + sovChainInfo(uint64(m.Status))
 	}
-	if m.SmartContractVersion != 0 {
-		n += 1 + sovChainInfo(uint64(m.SmartContractVersion))
+	if m.ActiveSmartContractID != 0 {
+		n += 1 + sovChainInfo(uint64(m.ActiveSmartContractID))
 	}
-	if m.SmartContractDeployingVersion != 0 {
-		n += 1 + sovChainInfo(uint64(m.SmartContractDeployingVersion))
+	l = len(m.MinOnChainBalance)
+	if l > 0 {
+		n += 1 + l + sovChainInfo(uint64(l))
+	}
+	if m.Id != 0 {
+		n += 3 + sovChainInfo(uint64(m.Id))
 	}
 	return n
 }
@@ -536,11 +640,23 @@ func (m *SmartContract) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovChainInfo(uint64(l))
 	}
-	l = len(m.UniqueID)
+	return n
+}
+
+func (m *SmartContractDeployment) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SmartContractID != 0 {
+		n += 1 + sovChainInfo(uint64(m.SmartContractID))
+	}
+	l = len(m.ChainReferenceID)
 	if l > 0 {
 		n += 1 + l + sovChainInfo(uint64(l))
 	}
-	l = len(m.Address)
+	l = len(m.UniqueID)
 	if l > 0 {
 		n += 1 + l + sovChainInfo(uint64(l))
 	}
@@ -871,9 +987,9 @@ func (m *ChainInfo) Unmarshal(dAtA []byte) error {
 			}
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SmartContractVersion", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ActiveSmartContractID", wireType)
 			}
-			m.SmartContractVersion = 0
+			m.ActiveSmartContractID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowChainInfo
@@ -883,16 +999,16 @@ func (m *ChainInfo) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.SmartContractVersion |= uint64(b&0x7F) << shift
+				m.ActiveSmartContractID |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SmartContractDeployingVersion", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinOnChainBalance", wireType)
 			}
-			m.SmartContractDeployingVersion = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowChainInfo
@@ -902,7 +1018,39 @@ func (m *ChainInfo) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.SmartContractDeployingVersion |= uint64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthChainInfo
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthChainInfo
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MinOnChainBalance = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9999:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChainInfo
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1042,7 +1190,108 @@ func (m *SmartContract) Unmarshal(dAtA []byte) error {
 				m.Bytecode = []byte{}
 			}
 			iNdEx = postIndex
-		case 4:
+		default:
+			iNdEx = preIndex
+			skippy, err := skipChainInfo(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthChainInfo
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SmartContractDeployment) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowChainInfo
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SmartContractDeployment: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SmartContractDeployment: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SmartContractID", wireType)
+			}
+			m.SmartContractID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChainInfo
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SmartContractID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainReferenceID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChainInfo
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthChainInfo
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthChainInfo
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainReferenceID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UniqueID", wireType)
 			}
@@ -1075,38 +1324,6 @@ func (m *SmartContract) Unmarshal(dAtA []byte) error {
 			if m.UniqueID == nil {
 				m.UniqueID = []byte{}
 			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChainInfo
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChainInfo
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChainInfo
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Address = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
