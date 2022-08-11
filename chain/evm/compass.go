@@ -467,7 +467,7 @@ func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueType
 					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
 					logger1.WithFields(log.Fields{
 						"evm-address": addr,
-						"balance": balance.
+						"balance":     balance,
 					}).Info("got balance")
 					res.Balances = append(res.Balances, balance.Text(10))
 				}
