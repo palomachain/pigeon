@@ -592,7 +592,7 @@ func TestProcessingvalidatorBalancesRequest(t *testing.T) {
 	evm.On("BalanceAt", mock.Anything, common.HexToAddress("1"), uint64(1212)).Return(big.NewInt(555), nil)
 	evm.On("BalanceAt", mock.Anything, common.HexToAddress("2"), uint64(1212)).Return(big.NewInt(666), nil)
 	evm.On("BalanceAt", mock.Anything, common.HexToAddress("3"), uint64(1212)).Return(big.NewInt(777), nil)
-	err := comp.processValidatorsBalancesRequest(ctx, "queue-name", []chain.MessageWithSignatures{
+	err := comp.provideEvidenceForValidatorBalance(ctx, "queue-name", []chain.MessageWithSignatures{
 		{
 			QueuedMessage: chain.QueuedMessage{
 				ID: 1,

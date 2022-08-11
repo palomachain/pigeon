@@ -81,19 +81,22 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, ms
 			queueTypeName,
 			msgs,
 		)
-	case strings.HasSuffix(queueTypeName, queueValidatorsBalances):
-		return p.compass.processValidatorsBalancesRequest(
-			ctx,
-			queueTypeName,
-			msgs,
-		)
 	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
 }
 
 func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
-	if !strings.HasSuffix(queueTypeName, queueTurnstoneMessage) {
+	switch {
+	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
+		break
+	case strings.HasSuffix(queueTypeName, queueValidatorsBalances):
+		return p.compass.provideEvidenceForValidatorBalance(
+			ctx,
+			queueTypeName,
+			msgs,
+		)
+	default:
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
 

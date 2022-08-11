@@ -439,7 +439,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 	return gErr.Return()
 }
 
-func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var g whoops.Group
 	logger := log.WithField("queue-type-name", queueTypeName)
 	logger.Debug("start processing validator balance request")

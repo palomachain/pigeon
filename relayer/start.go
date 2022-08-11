@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	goerrors "errors"
 	"time"
 
 	"github.com/palomachain/pigeon/errors"
@@ -39,8 +40,6 @@ func (r *Relayer) Start(ctx context.Context) error {
 		return err
 	}
 
-	consecutiveFailures := whoops.Group{}
-
 	ticker := time.NewTicker(defaultLoopTimeout)
 	defer ticker.Stop()
 
@@ -61,38 +60,28 @@ func (r *Relayer) Start(ctx context.Context) error {
 		}
 
 		err = r.Process(ctx, processors)
-		if err == nil {
-			// eesetting the failures
-			if len(consecutiveFailures) > 0 {
-				consecutiveFailures = whoops.Group{}
-			}
-			return nil
-		}
 
-		if errors.IsUnrecoverable(err) {
+		switch {
+		case err == nil:
+			// success
+			return nil
+		case goerrors.Is(err, context.Canceled) || goerrors.Is(err, context.DeadlineExceeded):
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Debug("exited from the process loop due the context being cancaled")
+			return nil
+		case errors.IsUnrecoverable(err):
 			// there is no way that we can recover from this
 			log.WithFields(log.Fields{
 				"err": err,
 			}).Error("unrecoverable error returned")
 			return err
+		default:
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("error returned in process loop")
+			return nil
 		}
-
-		consecutiveFailures.Add(err)
-
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Warn("adding error to consecutive failures")
-
-		if len(consecutiveFailures) >= defaultErrorCountToExit {
-			log.Error("too many consecutive failures")
-			return errors.Unrecoverable(consecutiveFailures)
-		}
-
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("error while trying to relay messages")
-
-		return nil
 	}
 
 	go func() {
