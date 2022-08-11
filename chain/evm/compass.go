@@ -441,11 +441,21 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var g whoops.Group
+	logger := log.WithField("queue-type-name", queueTypeName)
+	logger.Debug("start processing validator balance request")
 	for _, msg := range msgs {
 		g.Add(
 			whoops.Try(func() {
 				vb := msg.Msg.(*types.ValidatorBalancesAttestation)
 				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
+
+				logger1 := logger.WithFields(
+					log.Fields{
+						"height":          height,
+						"nearest-to-time": vb.FromBlockTime,
+					},
+				)
+				logger1.Debug("got height for time")
 
 				res := &types.ValidatorBalancesAttestationRes{
 					BlockHeight: height,
@@ -455,6 +465,10 @@ func (t compass) processValidatorsBalancesRequest(ctx context.Context, queueType
 				for _, addrHex := range vb.HexAddresses {
 					addr := common.HexToAddress(addrHex)
 					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
+					logger1.WithFields(log.Fields{
+						"evm-address": addr,
+						"balance": balance.
+					}).Info("got balance")
 					res.Balances = append(res.Balances, balance.Text(10))
 				}
 
