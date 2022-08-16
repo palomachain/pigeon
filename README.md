@@ -42,7 +42,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 ## Install
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.5.0/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.5.1/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
