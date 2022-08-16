@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -119,6 +120,28 @@ var (
 			fmt.Println("Don't lose your password! Otherwise you'd lose access to your key!")
 			fmt.Println(acc)
 			return nil
+		},
+	}
+	evmKeysExportPrivateKey = &cobra.Command{
+		Use:   "export [directory] [address] [export-location]",
+		Short: "exports a private key",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ks := evm.OpenKeystore(args[0])
+			acc, err := ks.Find(accounts.Account{
+				Address: common.HexToAddress(args[1]),
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Println("Password to unlock:")
+			pass := readLineFromStdin(true)
+			bz, err := ks.Export(acc, pass, pass)
+			if err != nil {
+				return err
+			}
+			fmt.Println("Writing the private key in JSON format in: ", args[2])
+			return ioutil.WriteFile(args[2], bz, 0o600)
 		},
 	}
 
@@ -303,5 +326,6 @@ func init() {
 		evmKeysListCmd,
 		evmKeysGenerateCmd,
 		evmKeysImportCmd,
+		evmKeysExportPrivateKey,
 	)
 }
