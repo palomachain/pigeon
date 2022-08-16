@@ -29,7 +29,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 
 ## Active Networks
 
-### Public Testnest 6
+### Public Testnest 7
 
 
 
