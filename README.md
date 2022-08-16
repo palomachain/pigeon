@@ -82,7 +82,7 @@ Create configuration file here `~/.pigeon/config.yaml`
 loop-timeout: 5s
 
 paloma:
-  chain-id: paloma-testnet-6
+  chain-id: paloma-testnet-7
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
