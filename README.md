@@ -80,6 +80,7 @@ Create configuration file here `~/.pigeon/config.yaml`
 
 ```yaml
 loop-timeout: 5s
+health-check-port: 5757
 
 paloma:
   chain-id: paloma-testnet-7
