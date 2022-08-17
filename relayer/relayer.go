@@ -76,8 +76,3 @@ func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorie
 		relayerConfig: cfg,
 	}
 }
-
-func (r *Relayer) init() error {
-
-	return nil
-}

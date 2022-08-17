@@ -22,23 +22,27 @@ const (
 func (r *Relayer) Start(ctx context.Context) error {
 	log.Info("starting relayer")
 
-	if err := r.init(); err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("couldn't initialize relayer")
-		return err
-	}
-	processors, err := r.buildProcessors(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := r.updateExternalChainInfos(ctx, processors); err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("couldn't update external chain info")
-		return err
-	}
+	go func() {
+		ticker := time.NewTicker(defaultLoopTimeout)
+		defer ticker.Stop()
+		for range ticker.C {
+			processors, err := r.buildProcessors(ctx)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"err": err,
+				}).Error("couldn't build processors to update external chain info")
+				continue
+			}
+			log.Info("trying to update external chain info")
+			if err := r.updateExternalChainInfos(ctx, processors); err != nil {
+				log.WithFields(log.Fields{
+					"err": err,
+				}).Error("couldn't update external chain info. Will try again.")
+			} else {
+				return
+			}
+		}
+	}()
 
 	ticker := time.NewTicker(defaultLoopTimeout)
 	defer ticker.Stop()
@@ -102,7 +106,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 				return whoops.WrapS(ErrUnknown, "ticker channel for message processing was closed unexpectedly")
 			}
 			if err := process(); err != nil {
-				return err
+				log.WithError(err).Error("error while trying to process messages")
 			}
 		}
 	}

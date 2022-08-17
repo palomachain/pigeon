@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/palomachain/pigeon/app"
+	"github.com/palomachain/pigeon/health"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +18,22 @@ var (
 		Use:   "start",
 		Short: "starts the pigeon server",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			pid := os.Getpid()
 			fmt.Println("*chirp chirp*")
+			fmt.Println("PID:", pid)
 			ctx := catchKillSignal(cmd.Context(), 30*time.Second)
+
+			// start healthcheck server
+			go func() {
+				health.StartHTTPServer(
+					ctx,
+					app.Config().HealthCheckPort(),
+					pid,
+					app.Version(),
+					app.Commit(),
+				)
+			}()
+
 			err := app.Relayer().Start(ctx)
 			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return nil
