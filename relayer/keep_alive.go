@@ -53,6 +53,7 @@ func (r *Relayer) startKeepAlive(ctx context.Context) {
 				err := r.palomaClient.KeepValidatorAlive(ctx)
 				if err != nil {
 					log.WithError(err).Error("error while trying to keep pigeon alive")
+					continue
 				}
 			}
 		}

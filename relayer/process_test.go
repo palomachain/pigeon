@@ -186,7 +186,6 @@ func TestProcessing(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			relayer := tt.setup(t)
-			require.NoError(t, relayer.init())
 
 			processors, err := relayer.buildProcessors(ctx)
 			require.ErrorIs(t, err, tt.buildProcessorErr)

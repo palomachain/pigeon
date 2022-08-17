@@ -42,9 +42,18 @@ func (f Filepath) Path() string {
 }
 
 type Root struct {
+	HealthCheckPortRaw int `yaml:"health-check-port"`
+
 	Paloma Paloma `yaml:"paloma"`
 
 	EVM map[string]EVM `yaml:"evm"`
+}
+
+func (r *Root) HealthCheckPort() int {
+	if r.HealthCheckPortRaw == 0 {
+		panic(whoops.String("invalid health check port in pigeon's config file"))
+	}
+	return r.HealthCheckPortRaw
 }
 
 func (r *Root) init() {
