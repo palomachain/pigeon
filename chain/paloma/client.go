@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/strangelove-ventures/lens/client/query"
 	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -19,7 +20,10 @@ import (
 	evm "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
+
+type ResultStatus = coretypes.ResultStatus
 
 //go:generate mockery --name=MessageSender
 type MessageSender interface {
@@ -335,6 +339,20 @@ func (c Client) KeepValidatorAlive(ctx context.Context) error {
 
 	_, err := c.MessageSender.SendMsg(ctx, msg)
 	return err
+}
+
+func (c Client) Status(ctx context.Context) (*ResultStatus, error) {
+	q := query.Query{Client: &c.L.ChainClient, Options: query.DefaultOptions()}
+	return q.Status()
+}
+
+func (c Client) PalomaStatus(ctx context.Context) error {
+	res, err := c.Status(ctx)
+	if err != nil {
+		return err
+	}
+	_ = res
+	return nil
 }
 
 func broadcastMessageSignatures(

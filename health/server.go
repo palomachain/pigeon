@@ -11,7 +11,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	palomaWasOnline = false
+)
+
 type jsonResponse struct {
+	OK      bool   `json:"ok"`
 	Pid     int    `json:"pid"`
 	Version string `json:"version"`
 	Commit  string `json:"commit"`
@@ -28,6 +33,7 @@ func StartHTTPServer(
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		pid := os.Getpid()
 		if err := json.NewEncoder(w).Encode(jsonResponse{
+			OK:      palomaWasOnline,
 			Pid:     pid,
 			Version: appVersion,
 			Commit:  commit,

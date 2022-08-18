@@ -34,6 +34,12 @@ var (
 				)
 			}()
 
+			// wait for paloma to get online
+			health.WaitForPaloma(ctx, app.PalomaClient())
+
+			// build a context that will get canceled if paloma ever goes offline
+			ctx = health.CancelContextIfPalomaIsDown(ctx, app.PalomaClient())
+
 			err := app.Relayer().Start(ctx)
 			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return nil

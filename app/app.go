@@ -11,6 +11,7 @@ import (
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/relayer"
 	consensustypes "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -37,6 +38,8 @@ var (
 	_evmFactory *evm.Factory
 
 	_timeAdapter time.Time
+
+	_healthCheckService *health.Service
 )
 
 var (
@@ -212,4 +215,15 @@ func Time() time.Time {
 		_timeAdapter = time.New()
 	}
 	return _timeAdapter
+}
+
+func HealthCheckService() health.Service {
+	if _healthCheckService == nil {
+		_healthCheckService = &health.Service{
+			Checks: []health.Checker{
+				Relayer(),
+			},
+		}
+	}
+	return *_healthCheckService
 }

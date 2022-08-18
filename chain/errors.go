@@ -14,6 +14,9 @@ const (
 
 	ErrNotConnectedToRightChain = whoops.String("not connected to the right chain")
 
+	ErrMissingAccount    = whoops.Errorf("missing account for chain %s")
+	ErrAccountBalanceLow = whoops.Errorf("account balance %s for account %s (%s) is lower than minimum allowed balance")
+
 	EnrichedChainReferenceID whoops.Field[string] = "chainReferenceID"
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"

@@ -428,7 +428,11 @@ func (c Client) ExecuteSmartContract(
 }
 
 func (c Client) BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error) {
-	return c.conn.BalanceAt(ctx, address, new(big.Int).SetUint64(blockHeight))
+	var bh *big.Int
+	if blockHeight > 0 {
+		bh = new(big.Int).SetUint64(blockHeight)
+	}
+	return c.conn.BalanceAt(ctx, address, bh)
 }
 
 func (c Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error) {

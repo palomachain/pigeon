@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/palomachain/pigeon/health"
 )
 
 type QueuedMessage struct {
@@ -53,6 +54,7 @@ type ChainInfo interface {
 
 //go:generate mockery --name=Processor
 type Processor interface {
+	health.Checker
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
 	SupportedQueues() []string
 

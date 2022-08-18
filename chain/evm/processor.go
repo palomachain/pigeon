@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,11 +28,28 @@ type Processor struct {
 
 	turnstoneEVMContract common.Address
 
-	blockHeight     int64
-	blockHeightHash common.Hash
+	blockHeight       int64
+	blockHeightHash   common.Hash
+	minOnChainBalance *big.Int
 }
 
 var _ chain.Processor = Processor{}
+
+func (p Processor) HealthCheck(ctx context.Context) error {
+	if len(p.evmClient.addr) == 0 {
+		return chain.ErrMissingAccount.Format(p.chainReferenceID)
+	}
+	balance, err := p.evmClient.BalanceAt(ctx, p.evmClient.addr, 0)
+	if err != nil {
+		return err
+	}
+
+	if balance.Cmp(p.minOnChainBalance) == -1 {
+		return chain.ErrAccountBalanceLow.Format(balance, p.evmClient.addr, p.chainReferenceID, p.minOnChainBalance)
+	}
+
+	return nil
+}
 
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
