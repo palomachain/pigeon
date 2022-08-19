@@ -35,22 +35,6 @@ type Processor struct {
 
 var _ chain.Processor = Processor{}
 
-func (p Processor) HealthCheck(ctx context.Context) error {
-	if len(p.evmClient.addr) == 0 {
-		return chain.ErrMissingAccount.Format(p.chainReferenceID)
-	}
-	balance, err := p.evmClient.BalanceAt(ctx, p.evmClient.addr, 0)
-	if err != nil {
-		return err
-	}
-
-	if balance.Cmp(p.minOnChainBalance) == -1 {
-		return chain.ErrAccountBalanceLow.Format(balance, p.evmClient.addr, p.chainReferenceID, p.minOnChainBalance)
-	}
-
-	return nil
-}
-
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
 		[]string{
