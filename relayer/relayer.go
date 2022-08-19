@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/common"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/chain"
@@ -28,6 +29,7 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
+	GetValidator(ctx context.Context) (*stakingtypes.Validator, error)
 
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)

@@ -2,10 +2,7 @@ package relayer
 
 import (
 	"context"
-	goerrors "errors"
-	"fmt"
 	"math/big"
-	"net"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
@@ -13,6 +10,8 @@ import (
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
+
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error) {
@@ -76,14 +75,21 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 
 	if err != nil {
-		for e := err; e != nil; e = goerrors.Unwrap(e) {
-			if ue, ok := e.(*net.OpError); ok {
-				fmt.Println(ue)
-				fmt.Printf("%#v\n", ue)
-			}
-			fmt.Printf("%T\n", e)
-		}
 		return err
+	}
+
+	val, err := r.palomaClient.GetValidator(ctx)
+	if err != nil {
+		return err
+	}
+
+	isStaking := false
+	if val != nil {
+		if !val.Jailed {
+			if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
+				isStaking = true
+			}
+		}
 	}
 
 	var g whoops.Group
@@ -96,6 +102,16 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 		}
 
 		g.Add(p.HealthCheck(ctx))
+	}
+
+	if !isStaking {
+		// then these errors are only warning
+		log.Warn("validator is not staking. ensure to fix these errors if you wish to stake.")
+		for _, err := range g {
+			log.WithError(err).Warn("blocker for becoming a staking validator")
+		}
+
+		return nil
 	}
 
 	return g.Return()

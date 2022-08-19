@@ -7,6 +7,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/strangelove-ventures/lens/client/query"
@@ -341,9 +342,12 @@ func (c Client) KeepValidatorAlive(ctx context.Context) error {
 	return err
 }
 
+func (c Client) lensQuery() *query.Query {
+	return &query.Query{Client: &c.L.ChainClient, Options: query.DefaultOptions()}
+}
+
 func (c Client) Status(ctx context.Context) (*ResultStatus, error) {
-	q := query.Query{Client: &c.L.ChainClient, Options: query.DefaultOptions()}
-	return q.Status()
+	return c.lensQuery().Status()
 }
 
 func (c Client) PalomaStatus(ctx context.Context) error {
@@ -358,6 +362,14 @@ func (c Client) PalomaStatus(ctx context.Context) error {
 	}
 	_ = res
 	return nil
+}
+
+func (c Client) GetValidator(ctx context.Context) (*stakingtypes.Validator, error) {
+	res, err := c.lensQuery().Staking_Validator(c.GetValidatorAddress().String())
+	if err != nil {
+		return nil, err
+	}
+	return &res.Validator, nil
 }
 
 func broadcastMessageSignatures(
