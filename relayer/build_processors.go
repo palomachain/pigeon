@@ -83,17 +83,19 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 		return err
 	}
 
+	if val == nil {
+		// I am sorry, but where *is* your validator?
+		return ErrNotAValidatorAccount
+	}
+
 	isStaking := false
-	if val != nil {
-		if !val.Jailed {
-			if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
-				isStaking = true
-			}
+	if !val.Jailed {
+		if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
+			isStaking = true
 		}
 	}
 
 	var g whoops.Group
-
 	for _, chainInfo := range chainsInfos {
 		p, err := r.processorFactory(chainInfo)
 		if err != nil {
@@ -106,9 +108,9 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 
 	if !isStaking {
 		// then these errors are only warning
-		log.Warn("validator is not staking. ensure to fix these errors if you wish to stake.")
+		log.Warn("validator is not staking. ensure to fix these warning if you wish to stake.")
 		for _, err := range g {
-			log.WithError(err).Warn("blocker for becoming a staking validator")
+			log.WithError(err).Warn("blocker for becoming a staking validator. Fix if you wish to stake.")
 		}
 
 		return nil

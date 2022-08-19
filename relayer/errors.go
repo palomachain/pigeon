@@ -10,4 +10,6 @@ var (
 	ErrUnknown            = errors.Unrecoverable(whoops.String("unknown errror"))
 
 	ErrInvalidMinOnChainBalance = whoops.Errorf("invalid minOnChainBalance: %s")
+
+	ErrNotAValidatorAccount = whoops.String("not a validator account")
 )
