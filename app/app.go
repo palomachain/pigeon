@@ -134,8 +134,8 @@ func PalomaClient() *paloma.Client {
 
 		_palomaClient = &paloma.Client{
 			L:             lensClient,
-			GRPCClient:    lensClient,
-			MessageSender: lensClient,
+			GRPCClient:    paloma.GRPCClientDowner{W: lensClient},
+			MessageSender: paloma.MessageSenderDowner{W: lensClient},
 			PalomaConfig:  palomaConfig,
 		}
 		_palomaClient.Init()

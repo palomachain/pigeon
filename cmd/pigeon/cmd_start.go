@@ -10,6 +10,7 @@ import (
 
 	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/health"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -35,12 +36,18 @@ var (
 			}()
 
 			// wait for paloma to get online
-			health.WaitForPaloma(ctx, app.PalomaClient())
+			waitCtx, cancelFnc := context.WithTimeout(ctx, 2*time.Minute)
+			err := health.WaitForPaloma(waitCtx, app.PalomaClient())
+			cancelFnc()
+			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+				log.WithError(err).Fatal("exiting as paloma was not detected to be running")
+				return err
+			}
 
 			// build a context that will get canceled if paloma ever goes offline
 			ctx = health.CancelContextIfPalomaIsDown(ctx, app.PalomaClient())
 
-			err := app.Relayer().Start(ctx)
+			err = app.Relayer().Start(ctx)
 			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return nil
 			}

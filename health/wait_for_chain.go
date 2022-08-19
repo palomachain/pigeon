@@ -12,8 +12,7 @@ type PalomaStatuser interface {
 	PalomaStatus(ctx context.Context) error
 }
 
-func WaitForPaloma(ctx context.Context, ps PalomaStatuser) {
-	palomaWasOnline = false
+func WaitForPaloma(ctx context.Context, ps PalomaStatuser) error {
 	const checkTimeout = 5 * time.Second
 	t := time.NewTicker(checkTimeout)
 	t1 := make(chan time.Time, 1)
@@ -23,14 +22,16 @@ func WaitForPaloma(ctx context.Context, ps PalomaStatuser) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		case <-ch:
 			statusErr := ps.PalomaStatus(ctx)
 			if statusErr == nil {
 				// good!
 				// paloma was detected to be running
-				palomaWasOnline = true
-				return
+				// giving some time for paloma to start
+				log.Info("paloma detected being online. Sleeping for 5 seconds to give it time to properly start.")
+				time.Sleep(5 * time.Second)
+				return nil
 			}
 			log.WithError(statusErr).Error("waiting for paloma to start running")
 		}
@@ -56,7 +57,6 @@ func CancelContextIfPalomaIsDown(ctx context.Context, ps PalomaStatuser) context
 				statusErr := ps.PalomaStatus(ctx)
 				if statusErr != nil {
 					log.WithError(statusErr).Error("unable to get paloma status")
-					cancelFnc()
 					return
 				}
 			}

@@ -348,6 +348,11 @@ func (c Client) Status(ctx context.Context) (*ResultStatus, error) {
 
 func (c Client) PalomaStatus(ctx context.Context) error {
 	res, err := c.Status(ctx)
+
+	if IsPalomaDown(err) {
+		return whoops.Wrap(ErrPalomaIsDown, err)
+	}
+
 	if err != nil {
 		return err
 	}

@@ -21,3 +21,4 @@ const (
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"
 )
+

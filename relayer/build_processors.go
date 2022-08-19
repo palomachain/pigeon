@@ -2,7 +2,10 @@ package relayer
 
 import (
 	"context"
+	goerrors "errors"
+	"fmt"
 	"math/big"
+	"net"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
@@ -71,7 +74,15 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 
 func (r *Relayer) HealthCheck(ctx context.Context) error {
 	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
+
 	if err != nil {
+		for e := err; e != nil; e = goerrors.Unwrap(e) {
+			if ue, ok := e.(*net.OpError); ok {
+				fmt.Println(ue)
+				fmt.Printf("%#v\n", ue)
+			}
+			fmt.Printf("%T\n", e)
+		}
 		return err
 	}
 
