@@ -29,7 +29,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 
 ## Active Networks
 
-### Public Testnest 7
+### Public Testnest 8
 
 
 
@@ -83,7 +83,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-7
+  chain-id: paloma-testnet-8
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
