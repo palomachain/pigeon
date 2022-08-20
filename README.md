@@ -28,6 +28,7 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
+* Paloma Testnet 8 (Aug 18, 2022)
 
 ### Public Testnest 8
 
@@ -42,7 +43,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 ## Install
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.5.1/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.6.0/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
