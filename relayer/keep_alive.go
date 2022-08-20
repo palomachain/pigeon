@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/palomachain/pigeon/util/channels"
@@ -37,8 +38,10 @@ func (r *Relayer) startKeepAlive(ctx context.Context) {
 			log.Debug("querying get alive time")
 			aliveUntil, err := r.palomaClient.QueryGetValidatorAliveUntil(ctx)
 			if err != nil {
-				log.WithError(err).Error("error while getting the alive time for a validator")
-				continue
+				if !strings.Contains(err.Error(), "validator is not in keep alive store") {
+					log.WithError(err).Error("error while getting the alive time for a validator")
+					continue
+				}
 			}
 			now := r.time.Now().UTC()
 			ttl := aliveUntil.Sub(now)
