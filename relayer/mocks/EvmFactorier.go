@@ -18,13 +18,13 @@ type EvmFactorier struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash
-func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartContractID string, smartContractABIJson string, smartContractAddress string, chainID *big.Int, blockHeight int64, blockHeightHash common.Hash) (chain.Processor, error) {
-	ret := _m.Called(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash)
+// Build provides a mock function with given fields: cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance
+func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartContractID string, smartContractABIJson string, smartContractAddress string, chainID *big.Int, blockHeight int64, blockHeightHash common.Hash, minOnChainBalance *big.Int) (chain.Processor, error) {
+	ret := _m.Called(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance)
 
 	var r0 chain.Processor
-	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash) chain.Processor); ok {
-		r0 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash)
+	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash, *big.Int) chain.Processor); ok {
+		r0 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chain.Processor)
@@ -32,8 +32,8 @@ func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartCont
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash) error); ok {
-		r1 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash)
+	if rf, ok := ret.Get(1).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash, *big.Int) error); ok {
+		r1 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance)
 	} else {
 		r1 = ret.Error(1)
 	}

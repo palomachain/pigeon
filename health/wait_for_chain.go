@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:generate mockery --name=PalomaStatuser
 type PalomaStatuser interface {
 	PalomaStatus(ctx context.Context) error
 }
