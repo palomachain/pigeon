@@ -10,6 +10,7 @@ import (
 
 	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/health"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,14 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pid := os.Getpid()
 			fmt.Println("*chirp chirp*")
-			fmt.Println("PID:", pid)
+			log.WithFields(
+				log.Fields{
+					"PID":     pid,
+					"version": app.Version(),
+					"commit":  app.Commit(),
+				},
+			).Info("app info")
+
 			ctx := catchKillSignal(cmd.Context(), 30*time.Second)
 
 			// start healthcheck server
