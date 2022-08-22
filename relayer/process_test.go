@@ -92,6 +92,7 @@ func TestProcessing(t *testing.T) {
 						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
 						ReferenceBlockHeight:  5,
 						ReferenceBlockHash:    "0x12",
+						MinOnChainBalance:     "10000",
 					},
 				}, nil)
 				pal.On("QueryMessagesInQueue", mock.Anything, mock.Anything).Return(
@@ -156,6 +157,7 @@ func TestProcessing(t *testing.T) {
 						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
 						ReferenceBlockHeight:  5,
 						ReferenceBlockHash:    "0x12",
+						MinOnChainBalance:     "10000",
 					},
 				}, nil)
 
