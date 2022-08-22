@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
@@ -18,18 +19,17 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 
 	val, err := r.palomaClient.GetValidator(ctx)
 	if err != nil {
-		return err
-	}
-
-	if val == nil {
-		// I am sorry, but where *is* your validator?
-		return ErrNotAValidatorAccount
+		if !strings.Contains(err.Error(), "NotFound") {
+			return err
+		}
 	}
 
 	isStaking := false
-	if !val.Jailed {
-		if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
-			isStaking = true
+	if val != nil {
+		if !val.Jailed {
+			if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
+				isStaking = true
+			}
 		}
 	}
 
