@@ -1,0 +1,29 @@
+package evm
+
+import (
+	"bytes"
+	"context"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/palomachain/pigeon/chain"
+)
+
+func (p Processor) HealthCheck(ctx context.Context) error {
+	var zeroAddr common.Address
+	if len(p.evmClient.addr) == 0 || bytes.Equal(p.evmClient.addr.Bytes(), zeroAddr.Bytes()) {
+		return chain.ErrMissingAccount.Format(p.chainReferenceID)
+	}
+
+	balance, err := p.evmClient.BalanceAt(ctx, p.evmClient.addr, 0)
+	if err != nil {
+		return err
+	}
+
+	cmp := balance.Cmp(p.minOnChainBalance)
+	if cmp == -1 || balance.Cmp(big.NewInt(0)) == 0 {
+		return chain.ErrAccountBalanceLow.Format(balance, p.evmClient.addr, p.chainReferenceID, p.minOnChainBalance)
+	}
+
+	return nil
+}

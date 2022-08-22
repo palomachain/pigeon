@@ -7,6 +7,8 @@ import (
 
 	chain "github.com/palomachain/pigeon/chain"
 
+	cosmos_sdktypes "github.com/cosmos/cosmos-sdk/types"
+
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 
 	mock "github.com/stretchr/testify/mock"
@@ -17,7 +19,7 @@ import (
 
 	time "time"
 
-	types "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 )
@@ -104,16 +106,39 @@ func (_m *PalomaClienter) BroadcastMessageSignatures(ctx context.Context, signat
 	return r0
 }
 
+// GetValidator provides a mock function with given fields: ctx
+func (_m *PalomaClienter) GetValidator(ctx context.Context) (*types.Validator, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *types.Validator
+	if rf, ok := ret.Get(0).(func(context.Context) *types.Validator); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Validator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetValidatorAddress provides a mock function with given fields:
-func (_m *PalomaClienter) GetValidatorAddress() types.ValAddress {
+func (_m *PalomaClienter) GetValidatorAddress() cosmos_sdktypes.ValAddress {
 	ret := _m.Called()
 
-	var r0 types.ValAddress
-	if rf, ok := ret.Get(0).(func() types.ValAddress); ok {
+	var r0 cosmos_sdktypes.ValAddress
+	if rf, ok := ret.Get(0).(func() cosmos_sdktypes.ValAddress); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.ValAddress)
+			r0 = ret.Get(0).(cosmos_sdktypes.ValAddress)
 		}
 	}
 

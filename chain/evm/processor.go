@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,8 +28,9 @@ type Processor struct {
 
 	turnstoneEVMContract common.Address
 
-	blockHeight     int64
-	blockHeightHash common.Hash
+	blockHeight       int64
+	blockHeightHash   common.Hash
+	minOnChainBalance *big.Int
 }
 
 var _ chain.Processor = Processor{}

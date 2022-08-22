@@ -47,6 +47,11 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 
 	chainID := big.NewInt(int64(chainInfo.GetChainID()))
 
+	minOnChainBalance, ok := new(big.Int).SetString(chainInfo.GetMinOnChainBalance(), 10)
+	if !ok {
+		return nil, ErrInvalidMinOnChainBalance.Format(chainInfo.GetMinOnChainBalance())
+	}
+
 	processor, err := r.evmFactory.Build(
 		cfg,
 		chainInfo.GetChainReferenceID(),
@@ -56,6 +61,7 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 		chainID,
 		int64(chainInfo.GetReferenceBlockHeight()),
 		common.HexToHash(chainInfo.GetReferenceBlockHash()),
+		minOnChainBalance,
 	)
 	if err != nil {
 		return nil, whoops.Wrap(err, retErr)

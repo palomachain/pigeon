@@ -30,6 +30,7 @@ func (f *Factory) Build(
 	chainID *big.Int,
 	blockHeight int64,
 	blockHeightHash common.Hash,
+	minOnChainBalance *big.Int,
 ) (chain.Processor, error) {
 
 	var smartContractABI *abi.ABI
@@ -65,10 +66,11 @@ func (f *Factory) Build(
 			evm:                 client,
 			startingBlockHeight: blockHeight,
 		},
-		evmClient:        client,
-		chainType:        "EVM",
-		chainReferenceID: chainReferenceID,
-		blockHeight:      blockHeight,
-		blockHeightHash:  blockHeightHash,
+		evmClient:         client,
+		chainType:         "EVM",
+		chainReferenceID:  chainReferenceID,
+		blockHeight:       blockHeight,
+		blockHeightHash:   blockHeightHash,
+		minOnChainBalance: minOnChainBalance,
 	}, nil
 }

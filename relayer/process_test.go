@@ -92,6 +92,7 @@ func TestProcessing(t *testing.T) {
 						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
 						ReferenceBlockHeight:  5,
 						ReferenceBlockHash:    "0x12",
+						MinOnChainBalance:     "10000",
 					},
 				}, nil)
 				pal.On("QueryMessagesInQueue", mock.Anything, mock.Anything).Return(
@@ -113,7 +114,7 @@ func TestProcessing(t *testing.T) {
 
 				factory := mocks.NewEvmFactorier(t)
 
-				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
+				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
 					config.Root{
@@ -156,12 +157,13 @@ func TestProcessing(t *testing.T) {
 						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
 						ReferenceBlockHeight:  5,
 						ReferenceBlockHash:    "0x12",
+						MinOnChainBalance:     "10000",
 					},
 				}, nil)
 
 				factory := mocks.NewEvmFactorier(t)
 
-				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
+				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
 					config.Root{
