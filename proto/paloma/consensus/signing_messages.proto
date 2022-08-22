@@ -1,7 +1,7 @@
 syntax = "proto3";
 //import "google/protobuf/any.proto";
 
-package volumefi.paloma.consensus;
+package palomachain.paloma.consensus;
 
 option go_package = "github.com/palomachain/paloma/x/consensus/types";
 

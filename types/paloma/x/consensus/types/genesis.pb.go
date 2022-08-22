@@ -77,7 +77,7 @@ func (m *GenesisState) GetPortId() string {
 }
 
 func init() {
-	proto.RegisterType((*GenesisState)(nil), "volumefi.paloma.consensus.GenesisState")
+	proto.RegisterType((*GenesisState)(nil), "palomachain.paloma.consensus.GenesisState")
 }
 
 func init() { proto.RegisterFile("paloma/consensus/genesis.proto", fileDescriptor_93c9525680636b3a) }
