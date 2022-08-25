@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -10,12 +11,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-func (r *Relayer) HealthCheck(ctx context.Context) error {
-	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
-
-	if err != nil {
-		return err
-	}
+func (r *Relayer) isStaking(ctx context.Context) error {
 
 	val, err := r.palomaClient.GetValidator(ctx)
 	if err != nil {
@@ -30,6 +26,29 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 			if val.Status == stakingtypes.Bonded || val.Status == stakingtypes.Unbonding {
 				isStaking = true
 			}
+		}
+	}
+
+	if !isStaking {
+		return ErrValidatorIsNotStaking
+	}
+	return nil
+}
+
+func (r *Relayer) HealthCheck(ctx context.Context) error {
+	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	err = r.isStaking(ctx)
+	isStaking := false
+	if err == nil {
+		isStaking = true
+	} else {
+		if !errors.Is(err, ErrValidatorIsNotStaking) {
+			return err
 		}
 	}
 

@@ -17,9 +17,35 @@ const (
 	defaultLoopTimeout = 1 * time.Minute
 )
 
+func (r *Relayer) waitUntilStaking(ctx context.Context) error {
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		err := r.isStaking(ctx)
+		switch {
+		case err == nil:
+			// validator is staking
+			log.Info("validator is staking")
+			return nil
+		case goerrors.Is(err, ErrValidatorIsNotStaking):
+			// does nothing
+			log.Info("not staking. waiting")
+		default:
+			return err
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+}
+
 // Start starts the relayer. It's responsible for handling the communication
 // with Paloma and other chains.
 func (r *Relayer) Start(ctx context.Context) error {
+	if err := r.waitUntilStaking(ctx); err != nil {
+		return err
+	}
+
 	log.Info("starting relayer")
 
 	go func() {

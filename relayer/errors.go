@@ -12,4 +12,6 @@ var (
 	ErrInvalidMinOnChainBalance = whoops.Errorf("invalid minOnChainBalance: %s")
 
 	ErrNotAValidatorAccount = whoops.String("not a validator account")
+
+	ErrValidatorIsNotStaking = whoops.String("validator is not staking")
 )
