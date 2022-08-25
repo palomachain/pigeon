@@ -56,10 +56,16 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 			),
 		)
 		sig, err := p.evmClient.sign(ctx, msgBytes)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"message-id": msg.ID,
+			}).Error("signing a message failed")
+			return chain.SignedQueuedMessage{}, err
+		}
+
 		log.WithFields(log.Fields{
-			"sig": sig,
-			"err": err,
-		}).Info("signing a message")
+			"message-id": msg.ID,
+		}).Info("signed a message")
 
 		if err != nil {
 			return chain.SignedQueuedMessage{}, err
