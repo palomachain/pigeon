@@ -28,11 +28,9 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnet 8 (Aug 18, 2022)
+* Paloma Testnet 9 (Aug 25, 2022)
 
-### Public Testnest 8
-
-
+### Public Testnest 9
 
 
 ## ISSUES
@@ -42,8 +40,15 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
+**If you are upgrading from `paloma-testnet-8` to `paloma-testnet-9` ensure to add `health-check-port: 5757` to your pigeon yaml configuration file. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
+
+**Note**
+
+If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
+If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
+
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.6.1/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.7.0/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
@@ -52,7 +57,10 @@ mkdir ~/.pigeon
 If you're upgrading to the most recent version, you will need to stop `pigeond` before removing the old binary and copying the new binary into place.
 
 If you want to install from source use 
-```go build ./cmd/pigeon```
+
+```
+go build ./cmd/pigeon
+```
 
 
 ## Set up your EVM Keys. Don't forget your passwords!
