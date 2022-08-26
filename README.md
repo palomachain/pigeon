@@ -96,7 +96,7 @@ paloma:
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
-  keyring-type: test
+  keyring-type: os
   signing-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
   gas-adjustment: 1.5
