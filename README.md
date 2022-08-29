@@ -28,9 +28,9 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnet 9 (Aug 25, 2022)
+* Paloma Testnet 10 (Aug 29, 2022)
 
-### Public Testnest 9
+### Public Testnest 10
 
 
 ## ISSUES
@@ -40,7 +40,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from `paloma-testnet-8` to `paloma-testnet-9` ensure to add `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma's chain-id field to paloma-testnet-9. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-10. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
 
 **Note**
 
@@ -92,7 +92,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-9
+  chain-id: paloma-testnet-10
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
