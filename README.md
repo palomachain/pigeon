@@ -22,13 +22,15 @@ We have active, helpful communities on Twitter and Telegram.
 
 * [Twitter](https://twitter.com/paloma_chain)
 * [Telegram](https://t.me/palomachain)
+* [Discord](https://discord.gg/HtUvgxvh5N)
+* [Forum](https://forum.palomachain.com/)
 
 ## Releases
 
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnet 10 (Aug 29, 2022)
+* Paloma Testnest 10 (Aug 29, 2022)
 
 ### Public Testnest 10
 
