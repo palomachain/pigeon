@@ -96,6 +96,11 @@ type CompassConsensus struct {
 	originalSignatures [][]byte
 }
 
+type CompassLogicCallArgs struct {
+	LogicContractAddress common.Address
+	Payload              []byte
+}
+
 func (c CompassConsensus) OriginalSignatures() [][]byte {
 	return c.originalSignatures
 }
@@ -145,7 +150,6 @@ func (t compass) submitLogicCall(
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
-
 		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 		whoops.Assert(err)
 		if executed {
@@ -164,13 +168,18 @@ func (t compass) submitLogicCall(
 		}
 
 		con := BuildCompassConsensus(ctx, valset, origMessage.Signatures)
+		compassArgs := CompassLogicCallArgs{
+			LogicContractAddress: common.HexToAddress(msg.GetHexContractAddress()),
+			Payload:              msg.GetPayload(),
+		}
 
 		tx, err := t.callCompass(ctx, "submit_logic_call", []any{
 			con,
-			common.HexToAddress(msg.GetHexContractAddress()),
-			msg.GetPayload(),
-			msg.GetDeadline(),
+			compassArgs,
+			new(big.Int).SetInt64(int64(origMessage.ID)),
+			new(big.Int).SetInt64(msg.GetDeadline()),
 		})
+
 		if err != nil {
 			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
