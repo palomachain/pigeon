@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/palomachain/pigeon/chain/evm"
 	log "github.com/sirupsen/logrus"
 	"github.com/vizualni/whoops"
 
@@ -73,5 +74,13 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 		return nil
 	}
 
+	return g.Return()
+}
+
+func (r *Relayer) BootHealthCheck(ctx context.Context) error {
+	var g whoops.Group
+	for _, cfg := range r.config.EVM {
+		g.Add(evm.TestAndVerifyConfig(ctx, cfg))
+	}
 	return g.Return()
 }

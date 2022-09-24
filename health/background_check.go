@@ -56,3 +56,21 @@ func (s Service) Check(ctx context.Context) {
 		log.Fatal("exiting due to health check failures")
 	}
 }
+
+func (s Service) BootChecker(ctx context.Context) {
+	var g whoops.Group
+
+	for _, hc := range s.Checks {
+		b, ok := hc.(BootChecker)
+		if !ok {
+			continue
+		}
+		g.Add(b.BootHealthCheck(ctx))
+	}
+
+	if g.Err() {
+		for _, err := range g {
+			log.WithError(err).Warn("boot health check failed")
+		}
+	}
+}

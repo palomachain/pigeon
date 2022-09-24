@@ -142,7 +142,7 @@ func (c *Client) init() error {
 		}
 		acc := accounts.Account{Address: c.addr}
 
-		c.keystore.Unlock(acc, config.KeyringPassword(c.config.KeyringPassEnvName))
+		whoops.Assert(c.keystore.Unlock(acc, config.KeyringPassword(c.config.KeyringPassEnvName)))
 
 		c.conn = whoops.Must(ethclient.Dial(c.config.BaseRPCURL))
 	})
