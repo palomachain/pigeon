@@ -61,8 +61,7 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				loggerQueuedMessages = loggerQueuedMessages.WithFields(log.Fields{
 					"signed-messages": slice.Map(signedMessages, func(msg chain.SignedQueuedMessage) log.Fields {
 						return log.Fields{
-							"id":        msg.ID,
-							"signature": msg.Signature,
+							"id": msg.ID,
 						}
 					}),
 				})

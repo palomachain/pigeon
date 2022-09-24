@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/config"
 )
 
 func (p Processor) HealthCheck(ctx context.Context) error {
@@ -25,5 +26,20 @@ func (p Processor) HealthCheck(ctx context.Context) error {
 		return chain.ErrAccountBalanceLow.Format(balance, p.evmClient.addr, p.chainReferenceID, p.minOnChainBalance)
 	}
 
+	return nil
+}
+
+func TestAndVerifyConfig(ctx context.Context, cfg config.EVM) error {
+	cli := &Client{
+		config: cfg,
+	}
+	err := cli.init()
+	if err != nil {
+		return err
+	}
+	_, err = cli.conn.BlockNumber(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
