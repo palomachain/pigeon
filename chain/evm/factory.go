@@ -67,7 +67,7 @@ func (f *Factory) Build(
 			startingBlockHeight: blockHeight,
 		},
 		evmClient:         client,
-		chainType:         "EVM",
+		chainType:         "evm",
 		chainReferenceID:  chainReferenceID,
 		blockHeight:       blockHeight,
 		blockHeightHash:   blockHeightHash,
