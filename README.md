@@ -123,9 +123,18 @@ evm:
   eth-main:
     chain-id: 1
     base-rpc-url: ${ETH_RPC_URL}
-    keyring-pass-env-name: ETH_PASSWORD
+    keyring-pass-env-name: "ETH_PASSWORD"
     signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
+    gas-adjustment: 1.2
+
+  bsc-main:
+    chain-id: 56
+    base-rpc-url: ${BSC_RPC_URL}
+    keyring-pass-env-name: "BSC_PASSWORD"
+    signing-key: ${BSC_SIGNING_KEY}
+    keyring-dir: ~/.pigeon/keys/evm/bsc-main
+    gas-adjustment: 1.2
 ```
 
 
