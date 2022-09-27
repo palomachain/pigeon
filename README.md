@@ -31,6 +31,9 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 
 ## Active Networks
 * Paloma Testnest 10 (Aug 29, 2022)
+* Ethereum Mainnet (relay)
+* Binance Smart Chain Mainnet (relay)
+
 
 ### Public Testnest 10
 
@@ -67,15 +70,26 @@ go build ./cmd/pigeon
 
 ## Set up your EVM Keys. Don't forget your passwords!
 
+Ethereum Mainnet (eth-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
+```
+Binance Smart Chain Mainnet (bsc-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/bsc-main
 ```
 
 or import existing you existing Ethereum evm private keys
 
+Ethereum Mainnet (eth-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/eth-main
 ```
+Binance Smart Chain Mainnet (bsc-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/bsc-main
+```
+
 
 ### Config setup
 
@@ -112,6 +126,15 @@ evm:
     keyring-pass-env-name: ETH_PASSWORD
     signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
+    gas-adjustment: 1.2
+
+  bsc-main:
+    chain-id: 56
+    base-rpc-url: ${BSC_RPC_URL}
+    keyring-pass-env-name: BSC_PASSWORD
+    signing-key: ${BSC_SIGNING_KEY}
+    keyring-dir: ~/.pigeon/keys/evm/bsc-main
+    gas-adjustment: 1.2
 ```
 
 
