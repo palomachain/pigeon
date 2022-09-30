@@ -295,7 +295,7 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	var g whoops.Group
 
 	if latestMessageID.Uint64() == 0 {
-		g.Add(ErrEvm.WrapS("valset_id that was returned is zero"))
+		g.Add(ErrEvm.WrapS("could not find the valset_id in EVM logs"))
 	}
 
 	g.Add(retErr)
