@@ -294,6 +294,8 @@ func shouldDoBinarySearchFromError(err error) bool {
 		return true
 	case strings.Contains(err.Error(), "block range is too wide"):
 		return true
+	case strings.Contains(err.Error(), "exceed maximum block range"):
+		return true
 	}
 
 	return false
