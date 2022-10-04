@@ -30,12 +30,12 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnest 10 (Aug 29, 2022)
+* Paloma Testnest 11 (Oct 4, 2022)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 
 
-### Public Testnest 10
+### Public Testnest 11
 
 
 ## ISSUES
@@ -45,7 +45,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-10. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-11. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
 
 **Note**
 
@@ -53,7 +53,7 @@ If you're joining while testnet didn't boot up yet you may see a log line saying
 If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.8.0/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.9.1/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
@@ -108,7 +108,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-10
+  chain-id: paloma-testnet-11
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
