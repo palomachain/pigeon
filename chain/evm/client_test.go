@@ -125,7 +125,7 @@ func TestExecutingSmartContract(t *testing.T) {
 			contract := StoredContracts()["simple"]
 			args := executeSmartContractIn{
 				chainID:       big.NewInt(1337),
-				gasAdjustment: 1.0,
+				gasAdjustment: 1.6, // 4 times of 12.5% increment
 				contract:      common.HexToAddress("0xBABA"),
 				signingAddr:   acc.Address,
 				abi:           contract.ABI,

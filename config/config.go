@@ -23,6 +23,10 @@ type CosmosSpecificClientConfig struct {
 	GasPrices     string `yaml:"gas-prices"`
 }
 
+type EVMSpecificClientConfig struct {
+	TxType uint8 `yaml:"tx-type"`
+}
+
 type ChainClientConfig struct {
 	BaseRPCURL         string   `yaml:"base-rpc-url"`
 	KeyringPassEnvName string   `yaml:"keyring-pass-env-name"`
@@ -61,7 +65,8 @@ func (r *Root) init() {
 }
 
 type EVM struct {
-	ChainClientConfig `yaml:",inline"`
+	EVMSpecificClientConfig `yaml:",inline"`
+	ChainClientConfig       `yaml:",inline"`
 }
 
 type Paloma struct {

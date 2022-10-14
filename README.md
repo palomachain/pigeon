@@ -126,7 +126,8 @@ evm:
     keyring-pass-env-name: ETH_PASSWORD
     signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
-    gas-adjustment: 1.2
+    gas-adjustment: 1.6
+    tx-type: 2
 
   bnb-main:
     chain-id: 56
@@ -134,7 +135,8 @@ evm:
     keyring-pass-env-name: BNB_PASSWORD
     signing-key: ${BNB_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/bnb-main
-    gas-adjustment: 1.2
+    gas-adjustment: 1
+    tx-type: 0
 ```
 
 
