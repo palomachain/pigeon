@@ -66,7 +66,7 @@ func deployContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = signingAddr
 		// adjusting the gas price
-		if gasAdjustment > 1.0 {
+		if txType != 2 && gasAdjustment > 1.0 {
 			gasAdj := big.NewFloat(gasAdjustment)
 			gasAdj = gasAdj.Mul(gasAdj, new(big.Float).SetInt(gasPrice))
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
@@ -75,6 +75,7 @@ func deployContract(
 		var gasTipCap *big.Int
 
 		if txType == 2 {
+			gasPrice = gasPrice.Mul(gasPrice, new(big.Int).SetInt64(2))
 			gasTipCap, err = ethClient.SuggestGasTipCap(ctx)
 			whoops.Assert(err)
 			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
