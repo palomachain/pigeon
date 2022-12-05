@@ -53,7 +53,7 @@ If you're joining while testnet didn't boot up yet you may see a log line saying
 If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.11.0/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.12.0/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
