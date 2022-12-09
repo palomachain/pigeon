@@ -122,7 +122,6 @@ type ethClientConn interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
-	SuggestGasTipCap(ctx context.Context) (*big.Int, error)
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
@@ -211,7 +210,7 @@ func callSmartContract(
 		var gasTipCap *big.Int
 
 		if args.txType == 2 {
-			gasPrice = gasPrice.Mul(gasPrice, big.NewInt(2)) // double gas price for EIP-1559 tx
+			gasPrice = gasPrice.Mul(gasPrice, new(big.Int).SetInt64(2)) // double gas price for EIP-1559 tx
 			gasTipCap, err = args.ethClient.SuggestGasTipCap(ctx)
 			whoops.Assert(err)
 			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
