@@ -201,7 +201,7 @@ func callSmartContract(
 		logger.WithField("suggested-gas-price", gasPrice).Debug("suggested gas price")
 
 		// adjusting the gas price
-		if args.txType != 2 && args.gasAdjustment > 1.0 { // gas adjustment to below 1.0 is dangerous
+		if args.gasAdjustment > 1.0 {
 			gasAdj := big.NewFloat(args.gasAdjustment)
 			gasAdj = gasAdj.Mul(gasAdj, new(big.Float).SetInt(gasPrice))
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
@@ -210,7 +210,6 @@ func callSmartContract(
 		var gasTipCap *big.Int
 
 		if args.txType == 2 {
-			gasPrice = gasPrice.Mul(gasPrice, new(big.Int).SetInt64(2)) // double gas price for EIP-1559 tx
 			gasTipCap, err = args.ethClient.SuggestGasTipCap(ctx)
 			whoops.Assert(err)
 			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
