@@ -114,16 +114,29 @@ func (t compass) updateValset(
 	return whoops.TryVal(func() *ethtypes.Transaction {
 		currentValsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
+		logger := log.WithFields(log.Fields{
+			"chain-reference-id": t.ChainReferenceID,
+			"current-valset-id":  currentValsetID,
+		})
+		logger.Debug("update_valset")
 
 		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, currentValsetID, t.ChainReferenceID)
 		whoops.Assert(err)
 
 		if currentValset == nil {
+			logger := log.WithFields(log.Fields{
+				"current-valset-id": currentValsetID,
+			})
+			logger.Debug("current valset is empty")
 			whoops.Assert(fmt.Errorf("oh no"))
 		}
 
 		consensusReached := isConsensusReached(currentValset, origMessage)
 		if !consensusReached {
+			logger := log.WithFields(log.Fields{
+				"current-valset-id": currentValsetID,
+			})
+			logger.Debug("no consensus")
 			whoops.Assert(ErrNoConsensus)
 		}
 
@@ -132,12 +145,24 @@ func (t compass) updateValset(
 			TransformValsetToCompassValset(newValset),
 		})
 		if err != nil {
+			logger := log.WithFields(log.Fields{
+				"current-valset-id": currentValsetID,
+			})
+			logger.Debug("call_compass error")
 			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
+				logger := log.WithFields(log.Fields{
+					"current-valset-id": currentValsetID,
+				})
+				logger.Debug("smart contract error")
 				return nil
 			}
 			whoops.Assert(err)
 		}
+		logger0 := log.WithFields(log.Fields{
+			"current-valset-id": currentValsetID,
+		})
+		logger0.Debug("success")
 
 		return tx
 	})
