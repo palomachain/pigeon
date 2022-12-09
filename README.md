@@ -126,8 +126,8 @@ evm:
     keyring-pass-env-name: ETH_PASSWORD
     signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
-    gas-adjustment: 2
-    tx-type: 2
+    gas-adjustment: 2 # will replace with hardcoded value (2) if txType is 2
+    tx-type: 2 # According to EIP-1559, Type(0x02) means EIP-1559 tx, Type(0x00) means legacy tx.
 
   bnb-main:
     chain-id: 56
@@ -136,7 +136,7 @@ evm:
     signing-key: ${BNB_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/bnb-main
     gas-adjustment: 1
-    tx-type: 0
+    tx-type: 0 # omitting or any values except 2 works as 0 (legacy tx)
 ```
 
 
