@@ -554,10 +554,18 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 	for _, sig := range msg.Signatures {
 		signaturesMap[sig.SignedByAddress] = sig
 	}
+	log.WithFields(log.Fields{
+		"validators-size": len(val.Validators),
+	}).Debug("confirming consensus reached")
 	var s uint64
 	for i := range val.Validators {
 		val, pow := val.Validators[i], val.Powers[i]
 		sig, ok := signaturesMap[val]
+		log.WithFields(log.Fields{
+			"i":         i,
+			"validator": val,
+			"power":     pow,
+		}).Debug("checking consensus")
 		if !ok {
 			continue
 		}
@@ -569,14 +577,23 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 		if err != nil {
 			continue
 		}
+		log.WithFields(log.Fields{
+			"i": i,
+		}).Debug("good ecrecover")
 		pk, err := crypto.UnmarshalPubkey(recoveredPK)
 		if err != nil {
 			continue
 		}
+		log.WithFields(log.Fields{
+			"i": i,
+		}).Debug("good unmarshal")
 		recoveredAddr := crypto.PubkeyToAddress(*pk)
 		if val == recoveredAddr.Hex() {
 			s += pow
 		}
+		log.WithFields(log.Fields{
+			"i": i,
+		}).Debug("good consensus")
 	}
 	if s >= powerThreshold {
 		return true
