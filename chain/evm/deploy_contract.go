@@ -32,7 +32,6 @@ func (c Client) DeployContract(
 		bytecode,
 		constructorInput,
 		c.config.GasAdjustment,
-		c.config.TxType,
 	)
 }
 
@@ -46,7 +45,6 @@ func deployContract(
 	bytecode []byte,
 	constructorInput []byte,
 	gasAdjustment float64,
-	txType uint8,
 ) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
 	logger := log.WithField("chainID", chainID)
 	err = whoops.Try(func() {
@@ -66,45 +64,23 @@ func deployContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = signingAddr
 		// adjusting the gas price
-		if gasAdjustment > 1.0 {
+		if gasAdjustment > 0.0 {
 			gasAdj := big.NewFloat(gasAdjustment)
 			gasAdj = gasAdj.Mul(gasAdj, new(big.Float).SetInt(gasPrice))
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
-		}
-
-		var gasTipCap *big.Int
-
-		if txType == 2 {
-			gasTipCap, err = ethClient.SuggestGasTipCap(ctx)
-			whoops.Assert(err)
-			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
-			logger.WithFields(log.Fields{
-				"gas-max-price": gasPrice,
-				"gas-max-tip":   gasTipCap,
-			}).Info("adjusted eip-1559 gas price")
-			txOpts.GasFeeCap = gasPrice
-			txOpts.GasTipCap = gasTipCap
-			logger = logger.WithFields(log.Fields{
-				"gas-limit":     txOpts.GasLimit,
-				"gas-max-price": txOpts.GasFeeCap,
-				"gas-max-tip":   txOpts.GasTipCap,
-				"nonce":         txOpts.Nonce,
-				"from":          txOpts.From,
-				"tx-type":       2,
-			})
-		} else {
 			logger.WithFields(log.Fields{
 				"gas-price": gasPrice,
-			}).Info("adjusted legacy gas price")
-			txOpts.GasPrice = gasPrice
-			logger = logger.WithFields(log.Fields{
-				"gas-limit": txOpts.GasLimit,
-				"gas-price": txOpts.GasPrice,
-				"nonce":     txOpts.Nonce,
-				"from":      txOpts.From,
-				"tx-type":   0,
-			})
+			}).Info("adjusted gas price")
 		}
+
+		txOpts.GasPrice = gasPrice
+
+		logger = logger.WithFields(log.Fields{
+			"gas-limit": txOpts.GasLimit,
+			"gas-price": txOpts.GasPrice,
+			"nonce":     txOpts.Nonce,
+			"from":      txOpts.From,
+		})
 
 		// hack begins here:
 		// constructor input arguments are already properly encoded, but
@@ -123,25 +99,13 @@ func deployContract(
 			constructorArgs...,
 		)
 		whoops.Assert(err)
-		if tx.Type() == 2 {
-			logger.WithFields(log.Fields{
-				"tx-hash":          tx.Hash(),
-				"tx-gas-limit":     tx.Gas(),
-				"tx-gas-max-price": tx.GasFeeCap(),
-				"tx-gas-max-tip":   tx.GasTipCap(),
-				"tx-cost":          tx.Cost(),
-				"tx-type":          tx.Type(),
-			}).Info("tx executed")
-		} else {
-			logger.WithFields(log.Fields{
-				"tx-hash":      tx.Hash(),
-				"tx-gas-limit": tx.Gas(),
-				"tx-gas-price": tx.GasPrice(),
-				"tx-cost":      tx.Cost(),
-				"tx-type":      tx.Type(),
-			}).Info("tx executed")
 
-		}
+		logger.WithFields(log.Fields{
+			"tx-hash":      tx.Hash(),
+			"tx-gas-limit": tx.Gas(),
+			"tx-gas-price": tx.GasPrice(),
+			"tx-cost":      tx.Cost(),
+		}).Info("tx executed")
 	})
 	return
 }
