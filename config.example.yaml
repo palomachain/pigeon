@@ -21,4 +21,3 @@ evm:
     signing-key: 0xe4Ab6f4D62Ba7e0bBC4CF6c5E8153e105108FBa9
     keyring-dir: ~/.pigeon/keys/evm/ropsten
     gas-adjustment: 2.0
-    tx-type: 2
