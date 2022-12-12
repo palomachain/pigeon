@@ -226,6 +226,7 @@ func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainRefer
 	})
 	log.WithFields(log.Fields{
 		"valset-length": len(valsetRes.Valset.Validators),
+		"power-length":  len(valsetRes.Valset.Powers),
 	}).Debug("got valset by id")
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
