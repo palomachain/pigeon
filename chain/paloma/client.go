@@ -21,6 +21,7 @@ import (
 	evm "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
+	log "github.com/sirupsen/logrus"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -223,6 +224,13 @@ func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainRefer
 		ValsetID:         id,
 		ChainReferenceID: chainReferenceID,
 	})
+	log.WithFields(log.Fields{
+		"valset-length":      len(valsetRes.Valset.Validators),
+		"power-length":       len(valsetRes.Valset.Powers),
+		"valset-id-out":      valsetRes.Valset.ValsetID,
+		"valset-id-in":       id,
+		"chain-reference-id": chainReferenceID,
+	}).Debug("got valset by id")
 	if err != nil {
 		if strings.Contains(err.Error(), "item not found in store") {
 			return nil, whoops.Enrich(

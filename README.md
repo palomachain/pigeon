@@ -30,12 +30,12 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnest 13 (Oct 27, 2022)
+* Paloma Testnest 10 (Aug 29, 2022)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 
 
-### Public Testnest 13
+### Public Testnest 10
 
 
 ## ISSUES
@@ -45,7 +45,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-13 (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-10. You can check [the example config file](https://github.com/palomachain/pigeon/blob/7af3c7f8ff8c5523a53f496c988ade5c5e9e105f/config.example.yaml#L2).**
 
 **Note**
 
@@ -53,7 +53,7 @@ If you're joining while testnet didn't boot up yet you may see a log line saying
 If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.12.0/pigeon_Linux_x86_64.tar.gz | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.8.0/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
 chmod +x /usr/local/bin/pigeon
 mkdir ~/.pigeon
@@ -74,9 +74,9 @@ Ethereum Mainnet (eth-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/eth-main
 ```
-Binance Smart Chain Mainnet (bnb-main)
+Binance Smart Chain Mainnet (bsc-main)
 ```
-pigeon evm keys generate-new ~/.pigeon/keys/evm/bnb-main
+pigeon evm keys generate-new ~/.pigeon/keys/evm/bsc-main
 ```
 
 or import existing you existing Ethereum evm private keys
@@ -85,9 +85,9 @@ Ethereum Mainnet (eth-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/eth-main
 ```
-Binance Smart Chain Mainnet (bnb-main)
+Binance Smart Chain Mainnet (bsc-main)
 ```
-pigeon evm keys import ~/.pigeon/keys/evm/bnb-main
+pigeon evm keys import ~/.pigeon/keys/evm/bsc-main
 ```
 
 
@@ -108,7 +108,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-13
+  chain-id: paloma-testnet-10
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
@@ -126,17 +126,15 @@ evm:
     keyring-pass-env-name: ETH_PASSWORD
     signing-key: ${ETH_SIGNING_KEY}
     keyring-dir: ~/.pigeon/keys/evm/eth-main
-    gas-adjustment: 2
-    tx-type: 2
+    gas-adjustment: 1.2
 
-  bnb-main:
+  bsc-main:
     chain-id: 56
-    base-rpc-url: ${BNB_RPC_URL}
-    keyring-pass-env-name: BNB_PASSWORD
-    signing-key: ${BNB_SIGNING_KEY}
-    keyring-dir: ~/.pigeon/keys/evm/bnb-main
-    gas-adjustment: 1
-    tx-type: 0
+    base-rpc-url: ${BSC_RPC_URL}
+    keyring-pass-env-name: BSC_PASSWORD
+    signing-key: ${BSC_SIGNING_KEY}
+    keyring-dir: ~/.pigeon/keys/evm/bsc-main
+    gas-adjustment: 1.2
 ```
 
 
@@ -150,9 +148,6 @@ PALOMA_KEYRING_PASS=<your Paloma key password>
 ETH_RPC_URL=<Your Ethereum mainnet RPC URL>
 ETH_PASSWORD=<Your ETH Key Password>
 ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
-BNB_RPC_URL=<Your Binance mainnet RPC URL>
-BNB_PASSWORD=<Your BNB Key Password>
-BNB_SIGNING_KEY=<Your BNB SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```

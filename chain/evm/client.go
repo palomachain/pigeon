@@ -122,7 +122,6 @@ type ethClientConn interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
-	SuggestGasTipCap(ctx context.Context) (*big.Int, error)
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
@@ -159,7 +158,6 @@ type executeSmartContractIn struct {
 
 	chainID       *big.Int
 	gasAdjustment float64
-	txType        uint8
 
 	abi      abi.ABI
 	contract common.Address
@@ -202,27 +200,13 @@ func callSmartContract(
 		logger.WithField("suggested-gas-price", gasPrice).Debug("suggested gas price")
 
 		// adjusting the gas price
-		if args.txType != 2 && args.gasAdjustment > 1.0 { // gas adjustment to below 1.0 is dangerous
+		if args.gasAdjustment > 0.0 {
 			gasAdj := big.NewFloat(args.gasAdjustment)
 			gasAdj = gasAdj.Mul(gasAdj, new(big.Float).SetInt(gasPrice))
 			gasPrice, _ = gasAdj.Int(big.NewInt(0))
-		}
-
-		var gasTipCap *big.Int
-
-		if args.txType == 2 {
-			gasPrice = gasPrice.Mul(gasPrice, big.NewInt(2)) // double gas price for EIP-1559 tx
-			gasTipCap, err = args.ethClient.SuggestGasTipCap(ctx)
-			whoops.Assert(err)
-			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
-			logger.WithFields(log.Fields{
-				"gas-max-price": gasPrice,
-				"gas-max-tip":   gasTipCap,
-			}).Debug("adjusted eip-1559 gas price")
-		} else {
 			logger.WithFields(log.Fields{
 				"gas-price": gasPrice,
-			}).Debug("adjusted legacy gas price")
+			}).Debug("adjusted gas price")
 		}
 
 		boundContract := bind.NewBoundContract(
@@ -241,49 +225,27 @@ func callSmartContract(
 		whoops.Assert(err)
 
 		txOpts.Nonce = big.NewInt(int64(nonce))
-
+		txOpts.GasPrice = gasPrice
 		txOpts.From = args.signingAddr
 
-		if args.txType == 2 {
-			txOpts.GasFeeCap = gasPrice
-			txOpts.GasTipCap = gasTipCap
-			logger.WithFields(log.Fields{
-				"gas-limit":     txOpts.GasLimit,
-				"gas-max-price": txOpts.GasFeeCap,
-				"gas-max-tip":   txOpts.GasTipCap,
-				"nonce":         txOpts.Nonce,
-				"from":          txOpts.From,
-			}).Debug("executing tx")
-		} else {
-			txOpts.GasPrice = gasPrice
-			logger.WithFields(log.Fields{
-				"gas-limit": txOpts.GasLimit,
-				"gas-price": txOpts.GasPrice,
-				"nonce":     txOpts.Nonce,
-				"from":      txOpts.From,
-			}).Debug("executing tx")
-		}
+		logger = logger.WithFields(log.Fields{
+			"gas-limit": txOpts.GasLimit,
+			"gas-price": txOpts.GasPrice,
+			"nonce":     txOpts.Nonce,
+			"from":      txOpts.From,
+		})
+
+		logger.Debug("executing tx")
 
 		tx, err := boundContract.RawTransact(txOpts, packedBytes)
 		whoops.Assert(err)
 
-		if args.txType == 2 {
-			logger.WithFields(log.Fields{
-				"tx-hash":          tx.Hash(),
-				"tx-gas-limit":     tx.Gas(),
-				"tx-gas-max-price": tx.GasFeeCap(),
-				"tx-gas-max-tip":   tx.GasTipCap(),
-				"tx-cost":          tx.Cost(),
-			}).Debug("tx executed")
-		} else {
-			logger.WithFields(log.Fields{
-				"tx-hash":      tx.Hash(),
-				"tx-gas-limit": tx.Gas(),
-				"tx-gas-price": tx.GasPrice(),
-				"tx-cost":      tx.Cost(),
-			}).Debug("tx executed")
-		}
-
+		logger.WithFields(log.Fields{
+			"tx-hash":      tx.Hash(),
+			"tx-gas-limit": tx.Gas(),
+			"tx-gas-price": tx.GasPrice(),
+			"tx-cost":      tx.Cost(),
+		}).Debug("tx executed")
 		return tx
 	})
 }
@@ -456,7 +418,6 @@ func (c Client) ExecuteSmartContract(
 			ethClient:     c.conn,
 			chainID:       chainID,
 			gasAdjustment: c.config.GasAdjustment,
-			txType:        c.config.TxType,
 			abi:           contractAbi,
 			contract:      addr,
 			signingAddr:   c.addr,
