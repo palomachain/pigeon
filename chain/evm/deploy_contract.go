@@ -115,6 +115,8 @@ func rawDeploy(opts *bind.TransactOpts, abi abi.ABI, bytecode []byte, backend bi
 	c := bind.NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
 	tx, err := c.RawTransact(opts, append(bytecode, packedConstructorInput...))
+	logger := log.WithField("constructor-input", packedConstructorInput)
+	logger.Info("raw deploy")
 	if err != nil {
 		return common.Address{}, nil, err
 	}

@@ -236,6 +236,12 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
+		logger := log.WithFields(log.Fields{
+			"chain-id":          t.ChainReferenceID,
+			"constructor-input": msg.GetConstructorInput(),
+		})
+
+		logger.Info("upload smart contract")
 		_, tx, err := t.evm.DeployContract(
 			ctx,
 			t.chainID,
