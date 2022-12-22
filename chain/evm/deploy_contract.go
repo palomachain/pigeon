@@ -2,6 +2,7 @@ package evm
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -91,6 +92,9 @@ func deployContract(
 		// hack ends here
 
 		logger.Info("deploying contract")
+
+		fmt.Printf("[deploySmartContractToChain] UNPACK ERR: %v\n", err)
+		fmt.Printf("[deploySmartContractToChain] UNPACK ARGS: %+v\n", constructorArgs)
 		contractAddr, tx, _, err = bind.DeployContract(
 			txOpts,
 			contractAbi,
