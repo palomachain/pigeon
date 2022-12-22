@@ -242,6 +242,12 @@ func (t compass) uploadSmartContract(
 		})
 
 		logger.Info("upload smart contract")
+
+		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(msg.GetConstructorInput())
+
+		fmt.Printf("[uploadSmartContract] UNPACK ERR: %v\n", err)
+		fmt.Printf("[uploadSmartContract] UNPACK ARGS: %+v\n", constructorArgs)
+
 		_, tx, err := t.evm.DeployContract(
 			ctx,
 			t.chainID,
