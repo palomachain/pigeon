@@ -236,14 +236,16 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
+		constructorInput := msg.GetConstructorInput()
+
 		logger := log.WithFields(log.Fields{
 			"chain-id":          t.ChainReferenceID,
-			"constructor-input": msg.GetConstructorInput(),
+			"constructor-input": constructorInput,
 		})
 
 		logger.Info("upload smart contract")
 
-		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(msg.GetConstructorInput())
+		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(constructorInput)
 
 		fmt.Printf("[uploadSmartContract] UNPACK ERR: %v\n", err)
 		fmt.Printf("[uploadSmartContract] UNPACK ARGS: %+v\n", constructorArgs)
@@ -253,8 +255,14 @@ func (t compass) uploadSmartContract(
 			t.chainID,
 			contractABI,
 			msg.GetBytecode(),
-			msg.GetConstructorInput(),
+			constructorInput,
 		)
+
+		constructorArgs, _ = contractABI.Constructor.Inputs.Unpack(constructorInput)
+
+		fmt.Printf("[uploadSmartContract-after DeployContract] UNPACK ERR: %v\n", err)
+		fmt.Printf("[uploadSmartContract-after DeployContract] UNPACK ARGS: %+v\n", constructorArgs)
+
 		if err != nil {
 			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
