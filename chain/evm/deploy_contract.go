@@ -102,6 +102,10 @@ func deployContract(
 			ethClient,
 			constructorArgs...,
 		)
+		constructorArgs, _ = contractAbi.Constructor.Inputs.Unpack(constructorInput)
+
+		fmt.Printf("[deploySmartContractToChain-after bind.DeployContract] UNPACK ERR: %v\n", err)
+		fmt.Printf("[deploySmartContractToChain-after bind.DeployContract] UNPACK ARGS: %+v\n", constructorArgs)
 		whoops.Assert(err)
 
 		logger.WithFields(log.Fields{
