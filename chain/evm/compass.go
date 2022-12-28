@@ -450,6 +450,13 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UpdateValset:
+			logger := log.WithFields(log.Fields{
+				"chain-reference-id": t.ChainReferenceID,
+				"queue-name":         queueTypeName,
+				"msg-id":             rawMsg.ID,
+				"msg-type":           "Message_UpdateValset",
+			})
+			logger.Debug("switch-case")
 			tx, processingErr = t.updateValset(
 				ctx,
 				queueTypeName,
@@ -457,6 +464,13 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UploadSmartContract:
+			logger := log.WithFields(log.Fields{
+				"chain-reference-id": t.ChainReferenceID,
+				"queue-name":         queueTypeName,
+				"msg-id":             rawMsg.ID,
+				"message-type":       "Message_UploadSmartContract",
+			})
+			logger.Debug("switch-case")
 			tx, processingErr = t.uploadSmartContract(
 				ctx,
 				queueTypeName,
