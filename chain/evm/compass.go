@@ -458,7 +458,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				"msg-msg":                rawMsg.Msg,
 				"msg-nonce":              rawMsg.Nonce,
 				"msg-public-access-data": rawMsg.PublicAccessData,
-				"msg-type":               "Message_UpdateValset",
+				"message-type":           "Message_UpdateValset",
 			})
 			logger.Debug("switch-case")
 			tx, processingErr = t.updateValset(
