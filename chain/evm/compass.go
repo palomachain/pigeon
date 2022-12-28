@@ -460,7 +460,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				"msg-public-access-data": rawMsg.PublicAccessData,
 				"message-type":           "Message_UpdateValset",
 			})
-			logger.Debug("switch-case")
+			logger.Debug("switch-case-message-update-valset")
 			tx, processingErr = t.updateValset(
 				ctx,
 				queueTypeName,
@@ -478,7 +478,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				"msg-public-access-data": rawMsg.PublicAccessData,
 				"message-type":           "Message_UploadSmartContract",
 			})
-			logger.Debug("switch-case")
+			logger.Debug("switch-case-message-upload-contract")
 			tx, processingErr = t.uploadSmartContract(
 				ctx,
 				queueTypeName,
