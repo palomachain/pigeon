@@ -450,6 +450,17 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UpdateValset:
+			logger := log.WithFields(log.Fields{
+				"chain-reference-id":     t.ChainReferenceID,
+				"queue-name":             queueTypeName,
+				"msg-id":                 rawMsg.ID,
+				"msg-bytes-to-sign":      rawMsg.BytesToSign,
+				"msg-msg":                rawMsg.Msg,
+				"msg-nonce":              rawMsg.Nonce,
+				"msg-public-access-data": rawMsg.PublicAccessData,
+				"message-type":           "Message_UpdateValset",
+			})
+			logger.Debug("switch-case-message-update-valset")
 			tx, processingErr = t.updateValset(
 				ctx,
 				queueTypeName,
@@ -457,6 +468,17 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UploadSmartContract:
+			logger := log.WithFields(log.Fields{
+				"chain-reference-id":     t.ChainReferenceID,
+				"queue-name":             queueTypeName,
+				"msg-id":                 rawMsg.ID,
+				"msg-bytes-to-sign":      rawMsg.BytesToSign,
+				"msg-msg":                rawMsg.Msg,
+				"msg-nonce":              rawMsg.Nonce,
+				"msg-public-access-data": rawMsg.PublicAccessData,
+				"message-type":           "Message_UploadSmartContract",
+			})
+			logger.Debug("switch-case-message-upload-contract")
 			tx, processingErr = t.uploadSmartContract(
 				ctx,
 				queueTypeName,
