@@ -20,7 +20,7 @@ var (
 		Short: "starts the pigeon server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pid := os.Getpid()
-			fmt.Println("*chirp chirp*")
+			fmt.Println("*coo! coo!*")
 			log.WithFields(
 				log.Fields{
 					"PID":     pid,
