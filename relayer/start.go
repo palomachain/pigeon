@@ -51,21 +51,23 @@ func (r *Relayer) Start(ctx context.Context) error {
 	go func() {
 		ticker := time.NewTicker(defaultLoopTimeout)
 		defer ticker.Stop()
+
 		for range ticker.C {
 			processors, err := r.buildProcessors(ctx)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"err": err,
 				}).Error("couldn't build processors to update external chain info")
+
 				continue
 			}
+
 			log.Info("trying to update external chain info")
+
 			if err := r.updateExternalChainInfos(ctx, processors); err != nil {
 				log.WithFields(log.Fields{
 					"err": err,
 				}).Error("couldn't update external chain info. Will try again.")
-			} else {
-				return
 			}
 		}
 	}()
@@ -73,7 +75,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 	ticker := time.NewTicker(defaultLoopTimeout)
 	defer ticker.Stop()
 
-	// only used to enter into the loop below emmidiaetly after the first "tick"
+	// only used to enter into the loop below immediately after the first "tick"
 	firstLoopEnter := make(chan time.Time, 1)
 	firstLoopEnter <- time.Time{}
 
@@ -117,6 +119,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 	go func() {
 		r.startKeepAlive(ctx)
 	}()
+
 	tickerCh := channels.FanIn(ticker.C, firstLoopEnter)
 	for {
 		log.Debug("waiting on the loop for a new tick")
