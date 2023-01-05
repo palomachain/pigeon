@@ -63,11 +63,18 @@ func TestExecutingSmartContract(t *testing.T) {
 
 				ethMock.On("SuggestGasPrice", mock.Anything).Return(big.NewInt(444), nil)
 
+				ethMock.On("SuggestGasTipCap", mock.Anything).Return(big.NewInt(4), nil)
+
 				ethMock.On("PendingCodeAt", mock.Anything, args.contract).Return([]byte("a"), nil)
 
 				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
 
 				ethMock.On("SendTransaction", mock.Anything, mock.Anything).Return(nil)
+
+				ethMock.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&types.Header{
+					Number:  big.NewInt(134),
+					BaseFee: big.NewInt(100),
+				}, nil)
 
 				args.ethClient = ethMock
 			},
@@ -93,11 +100,18 @@ func TestExecutingSmartContract(t *testing.T) {
 
 				ethMock.On("SuggestGasPrice", mock.Anything).Return(big.NewInt(444), nil)
 
+				ethMock.On("SuggestGasTipCap", mock.Anything).Return(big.NewInt(4), nil)
+
 				ethMock.On("PendingCodeAt", mock.Anything, args.contract).Return([]byte("a"), nil)
 
 				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
 
 				ethMock.On("SendTransaction", mock.Anything, mock.Anything).Return(fakeErr)
+
+				ethMock.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&types.Header{
+					Number:  big.NewInt(134),
+					BaseFee: big.NewInt(100),
+				}, nil)
 
 				args.ethClient = ethMock
 			},
@@ -125,7 +139,8 @@ func TestExecutingSmartContract(t *testing.T) {
 			contract := StoredContracts()["simple"]
 			args := executeSmartContractIn{
 				chainID:       big.NewInt(1337),
-				gasAdjustment: 1.0,
+				gasAdjustment: 2.0,
+				txType:        2,
 				contract:      common.HexToAddress("0xBABA"),
 				signingAddr:   acc.Address,
 				abi:           contract.ABI,
