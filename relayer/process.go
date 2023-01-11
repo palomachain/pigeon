@@ -113,7 +113,13 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 					if errors.Is(err, context.DeadlineExceeded) {
 						return nil
 					}
-					logger.WithField("err", err).Error("error relaying messages")
+					logger.WithFields(log.Fields{
+						"err":        err,
+						"queue-name": queueName,
+						"messages-to-relay": slice.Map(relayCandidateMsgs, func(msg chain.MessageWithSignatures) uint64 {
+							return msg.ID
+						}),
+					}).Error("error relaying messages")
 					return err
 				}
 			}
