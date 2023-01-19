@@ -30,12 +30,12 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnest 13 (Oct 27, 2022)
+* Paloma Testnest 14 (Jan 19, 2023)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 
 
-### Public Testnest 13
+### Public Testnest 14
 
 
 ## ISSUES
@@ -45,7 +45,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-13 (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-14 (see example below).**
 
 **Note**
 
@@ -108,7 +108,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-13
+  chain-id: paloma-testnet-14
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
