@@ -35,7 +35,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 * Binance Smart Chain Mainnet (relay)
 
 
-### Public Testnest 14
+### Public Testnest 15
 
 
 ## ISSUES
@@ -45,7 +45,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-14 (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-15 (see example below).**
 
 **Note**
 
@@ -108,7 +108,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-14
+  chain-id: paloma-testnet-15
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
