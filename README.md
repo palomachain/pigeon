@@ -33,6 +33,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 * Paloma Testnest 14 (Jan 19, 2023)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
+* Polygon Mainnet (relay)
 
 
 ### Public Testnest 15
@@ -78,6 +79,10 @@ Binance Smart Chain Mainnet (bnb-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/bnb-main
 ```
+Polygon Mainnet (matic-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/matic-main
+```
 
 or import existing you existing Ethereum evm private keys
 
@@ -88,6 +93,10 @@ pigeon evm keys import ~/.pigeon/keys/evm/eth-main
 Binance Smart Chain Mainnet (bnb-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/bnb-main
+```
+Polygon Mainnet (matic-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/matic-main
 ```
 
 
@@ -137,6 +146,15 @@ evm:
     keyring-dir: ~/.pigeon/keys/evm/bnb-main
     gas-adjustment: 1
     tx-type: 0
+
+  matic-main:
+    chain-id: 137
+    base-rpc-url: ${MATIC_RPC_URL}
+    keyring-pass-env-name: MATIC_PASSWORD
+    signing-key: ${MATIC_SIGNING_KEY}
+    keyring-dir: ~/.pigeon/keys/evm/matic-main
+    gas-adjustment: 2
+    tx-type: 2
 ```
 
 
@@ -153,6 +171,9 @@ ETH_SIGNING_KEY=<Your ETH SIGNING KEY>
 BNB_RPC_URL=<Your Binance mainnet RPC URL>
 BNB_PASSWORD=<Your BNB Key Password>
 BNB_SIGNING_KEY=<Your BNB SIGNING KEY>
+MATIC_RPC_URL=<Your Binance mainnet RPC URL>
+MATIC_PASSWORD=<Your BNB Key Password>
+MATIC_SIGNING_KEY=<Your BNB SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
