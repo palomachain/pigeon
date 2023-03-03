@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
+	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/palomachain/pigeon/app"
 	"github.com/spf13/cobra"
-	"github.com/vizualni/whoops"
 )
 
 var (

@@ -5,10 +5,10 @@ import (
 	goerrors "errors"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/channels"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (

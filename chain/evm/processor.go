@@ -6,13 +6,13 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -18,7 +19,6 @@ import (
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/vizualni/whoops"
 )
 
 const (

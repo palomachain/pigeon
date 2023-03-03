@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"io/fs"
+	"io/ioutil"
 	"math"
 	"math/big"
 	"path/filepath"
@@ -11,9 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"io/fs"
-	"io/ioutil"
-
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -25,13 +25,12 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	proto "github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/VolumeFi/whoops"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,7 +12,6 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"
 	"github.com/stretchr/testify/mock"
-	"github.com/vizualni/whoops"
 
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 )

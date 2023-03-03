@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/gogo/protobuf/grpc"
-	proto "github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/strangelove-ventures/lens/client/query"
-	"github.com/vizualni/whoops"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/pigeon/chain"
