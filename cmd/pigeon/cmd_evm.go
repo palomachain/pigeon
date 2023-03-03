@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -75,7 +76,9 @@ var (
 				return err
 			}
 
-			ioutil.WriteFile("/tmp/ooo.hex", []byte(common.Bytes2Hex(b)), 0o666)
+			if err := os.WriteFile("/tmp/ooo.hex", []byte(common.Bytes2Hex(b)), 0o666); err != nil {
+				return err
+			}
 
 			fmt.Println(b)
 			fmt.Println(common.Bytes2Hex(b))
@@ -97,7 +100,6 @@ var (
 			// 	"address": addr,
 			// 	"tx":      tx,
 			// }).Info("smart contract deployed")
-			return nil
 		},
 	}
 	evmKeysGenerateCmd = &cobra.Command{

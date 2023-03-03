@@ -55,7 +55,7 @@ var (
 
 func StoredContracts() map[string]StoredContract {
 	readOnce.Do(func() {
-		fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
+		err := fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
 			logger := log.WithFields(log.Fields{
 				"path": path,
 			})
@@ -88,6 +88,9 @@ func StoredContracts() map[string]StoredContract {
 			}
 			return nil
 		})
+		if err != nil {
+			log.WithField("err", err).Error("error iterating over the stored contracts")
+		}
 	})
 	return _contracts
 }
