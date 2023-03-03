@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # prints error if a specific command does not exist
 function panic_if_command_not_exists() {
