@@ -525,7 +525,7 @@ func (c Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint6
 func (c Client) FindCurrentBlockNumber(ctx context.Context) (*big.Int, error) {
 	header, err := c.conn.HeaderByNumber(ctx, nil)
 	if err != nil {
-		return big.NewInt(0), err
+		return nil, err
 	}
 	return header.Number, nil
 }
