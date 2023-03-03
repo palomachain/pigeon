@@ -40,6 +40,7 @@ type evmClienter interface {
 
 	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
+	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
 }
 
 type compass struct {
@@ -355,22 +356,30 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 }
 
 func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+
+	if err != nil {
+		return false, err
+	}
+	fromBlock := *big.NewInt(0)
+	fromBlock.Sub(blockNumber, big.NewInt(9999))
 	filter := etherum.FilterQuery{
 		Addresses: []common.Address{
 			t.smartContractAddr,
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("LagicCallEvent(address,bytes,uint256)")),
+				crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256)")),
 				common.Hash{},
 				common.Hash{},
 				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
 			},
 		},
+		FromBlock: blockNumber,
 	}
 
 	var found bool
-	_, err := t.evm.FilterLogs(ctx, filter, big.NewInt(t.startingBlockHeight), func(logs []etherumtypes.Log) bool {
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		found = len(logs) > 0
 		return !found
 	})
