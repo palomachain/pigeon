@@ -23,8 +23,8 @@ import (
 
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/vizualni/whoops"
 	"google.golang.org/grpc"
 )
 

@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/vizualni/whoops"
+	"github.com/VolumeFi/whoops"
 )
 
 const (
@@ -21,4 +21,3 @@ const (
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"
 )
-

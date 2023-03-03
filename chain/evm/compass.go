@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,7 +21,6 @@ import (
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (

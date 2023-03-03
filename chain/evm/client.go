@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -30,7 +31,6 @@ import (
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 const (

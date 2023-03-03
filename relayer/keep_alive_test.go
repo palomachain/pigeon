@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/palomachain/pigeon/relayer/mocks"
 	timemock "github.com/palomachain/pigeon/util/time/mocks"
 	"github.com/stretchr/testify/mock"
-	"github.com/vizualni/whoops"
 )
 
 func TestKeepAlive(t *testing.T) {

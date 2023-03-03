@@ -3,7 +3,7 @@ package errors
 import (
 	"errors"
 
-	"github.com/vizualni/whoops"
+	"github.com/VolumeFi/whoops"
 )
 
 const (
