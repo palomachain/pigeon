@@ -5,6 +5,7 @@ import (
 	"strings"
 	gotime "time"
 
+	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/chain"
@@ -20,7 +21,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
-	"github.com/vizualni/whoops"
 )
 
 const (

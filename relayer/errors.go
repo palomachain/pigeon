@@ -1,8 +1,8 @@
 package relayer
 
 import (
+	"github.com/VolumeFi/whoops"
 	"github.com/palomachain/pigeon/errors"
-	"github.com/vizualni/whoops"
 )
 
 var (

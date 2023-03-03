@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/palomachain/pigeon/chain/evm"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )

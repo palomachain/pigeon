@@ -3,9 +3,9 @@ package paloma
 import (
 	"context"
 
+	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/grpc"
-	"github.com/vizualni/whoops"
 
 	ggrpc "google.golang.org/grpc"
 )

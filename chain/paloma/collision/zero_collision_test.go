@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
-	mock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/vizualni/whoops"
 )
 
 func TestCollisions(t *testing.T) {

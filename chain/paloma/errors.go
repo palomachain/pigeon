@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/vizualni/whoops"
+	"github.com/VolumeFi/whoops"
 )
 
 const (

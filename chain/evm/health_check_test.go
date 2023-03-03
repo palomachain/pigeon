@@ -5,12 +5,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/stretchr/testify/mock"
-	"github.com/vizualni/whoops"
 )
 
 func TestGinkgo(t *testing.T) {

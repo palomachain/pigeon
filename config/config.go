@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/vizualni/whoops"
+	"github.com/VolumeFi/whoops"
 
 	"gopkg.in/yaml.v2"
 )

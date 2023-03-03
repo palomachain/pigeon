@@ -4,12 +4,12 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
-	"github.com/vizualni/whoops"
 )
 
 func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error) {
