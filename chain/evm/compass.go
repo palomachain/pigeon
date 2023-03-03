@@ -381,7 +381,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	var found bool
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
 		found = len(logs) > 0
-		return !found
+		return found
 	})
 
 	if err != nil {
