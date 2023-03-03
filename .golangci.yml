@@ -1,0 +1,26 @@
+run:
+  go: '1.20'
+  issues-exit-code: 1
+  timeout: 10m
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  skip-dirs:
+    - .git
+    - .docker
+    - .bin
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+  fast: false
+
+issues:
+  # Restricts maximum count of issues to display with the same text, and show all instead.
+  max-same-issues: 0
+  max-issues-per-linter: 0
+  exclude-rules:
+  # disabling some linters for test files
+    - path: _test\.go
+      linters:
+        - errcheck

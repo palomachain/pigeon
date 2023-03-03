@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"io/fs"
+	"io/ioutil"
 	"math"
 	"math/big"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-
-	"io/fs"
-	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum"
 	etherum "github.com/ethereum/go-ethereum"
@@ -25,7 +24,7 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	proto "github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -56,7 +55,7 @@ var (
 
 func StoredContracts() map[string]StoredContract {
 	readOnce.Do(func() {
-		fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
+		err := fs.WalkDir(contractsFS, ".", func(path string, d fs.DirEntry, err error) error {
 			logger := log.WithFields(log.Fields{
 				"path": path,
 			})
@@ -89,6 +88,9 @@ func StoredContracts() map[string]StoredContract {
 			}
 			return nil
 		})
+		if err != nil {
+			log.WithField("err", err).Error("error iterating over the stored contracts")
+		}
 	})
 	return _contracts
 }
