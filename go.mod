@@ -7,7 +7,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/ethereum/go-ethereum v1.10.18
 	github.com/gogo/protobuf v1.3.3
-	github.com/onsi/ginkgo/v2 v2.8.4
+	github.com/onsi/ginkgo/v2 v2.9.0
 	github.com/onsi/gomega v1.27.2
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/sirupsen/logrus v1.8.1
