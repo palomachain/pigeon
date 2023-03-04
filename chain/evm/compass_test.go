@@ -136,6 +136,11 @@ func TestMessageProcessing(t *testing.T) {
 					fn(isArbitraryCallExecutedLogs)
 				})
 
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
+
 				return evm, paloma
 			},
 		},
@@ -193,6 +198,11 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
+
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
@@ -236,6 +246,11 @@ func TestMessageProcessing(t *testing.T) {
 						valsetUpdatedEvent(1, "abc", currentValsetID),
 					})
 				})
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
