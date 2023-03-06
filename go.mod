@@ -10,7 +10,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.0
 	github.com/onsi/gomega v1.27.2
 	github.com/regen-network/cosmos-proto v0.3.1
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	github.com/strangelove-ventures/lens v0.3.1-0.20220329150126-16b15e90cf34
 	github.com/stretchr/testify v1.8.2
