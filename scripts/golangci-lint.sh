@@ -4,7 +4,7 @@ set -euo pipefail
 # installs the golangci-lint of the specific version to the specific directory
 function install_golangci_lint() {
   local version="$1"
-  local project_dir="." # cd "$(git rev-parse --show-toplevel)"
+  local project_dir="$2"
 
   # check presence and version of golangci-lint
   if [[ -f "$project_dir/third_party/golangci-lint" ]]; then
