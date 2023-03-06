@@ -16,9 +16,6 @@ builds:
       - darwin
     goarch:
       - amd64
-    goamd64:
-      - v3
-
 
 archives:
   - replacements:
