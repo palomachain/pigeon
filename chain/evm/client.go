@@ -209,7 +209,7 @@ func callSmartContract(
 		if err != nil {
 			logger.
 				WithField("error", err).
-				Error("callSmartContract: error calculating pending nonce")
+				Error("callSmartContract: error calculating suggested gas price")
 		}
 		whoops.Assert(err)
 
