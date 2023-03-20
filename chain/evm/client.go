@@ -178,30 +178,40 @@ func callSmartContract(
 	args executeSmartContractIn,
 ) (*etherumtypes.Transaction, error) {
 	logger := log.WithFields(log.Fields{
-		"chain-id":      args.chainID,
-		"contract-addr": args.contract,
-
-		"method":    args.method,
-		"arguments": args.arguments,
-
+		"chain-id":        args.chainID,
+		"contract-addr":   args.contract,
+		"method":          args.method,
+		"arguments":       args.arguments,
 		"gas-adjustments": args.gasAdjustment,
-
-		"signing-addr": args.signingAddr,
+		"signing-addr":    args.signingAddr,
 	})
 	return whoops.TryVal(func() *etherumtypes.Transaction {
 		packedBytes, err := args.abi.Pack(
 			args.method,
 			args.arguments...,
 		)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("callSmartContract: error packing input")
+		}
 		whoops.Assert(err)
 
 		nonce, err := args.ethClient.PendingNonceAt(ctx, args.signingAddr)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("callSmartContract: error calculating pending nonce")
+		}
 		whoops.Assert(err)
 
 		gasPrice, err := args.ethClient.SuggestGasPrice(ctx)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("callSmartContract: error calculating suggested gas price")
+		}
 		whoops.Assert(err)
-
-		logger.WithField("suggested-gas-price", gasPrice).Debug("suggested gas price")
 
 		// adjusting the gas price
 		if args.txType != 2 && args.gasAdjustment > 1.0 {
@@ -215,6 +225,11 @@ func callSmartContract(
 		if args.txType == 2 {
 			gasPrice = gasPrice.Mul(gasPrice, big.NewInt(2)) // double gas price for EIP-1559 tx
 			gasTipCap, err = args.ethClient.SuggestGasTipCap(ctx)
+			if err != nil {
+				logger.
+					WithField("error", err).
+					Error("callSmartContract: error calling SuggestGasTipCap")
+			}
 			whoops.Assert(err)
 			gasPrice = gasPrice.Add(gasPrice, gasTipCap)
 			logger.WithFields(log.Fields{
@@ -240,6 +255,11 @@ func callSmartContract(
 			accounts.Account{Address: args.signingAddr},
 			args.chainID,
 		)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("callSmartContract: error calling bind.NewKeyStoreTransactorWithChainID")
+		}
 		whoops.Assert(err)
 
 		txOpts.Nonce = big.NewInt(int64(nonce))
@@ -266,6 +286,11 @@ func callSmartContract(
 		}
 
 		tx, err := boundContract.RawTransact(txOpts, packedBytes)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("callSmartContract: error calling boundContract.RawTransact")
+		}
 		whoops.Assert(err)
 
 		if args.txType == 2 {
