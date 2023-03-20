@@ -71,11 +71,6 @@ func TestExecutingSmartContract(t *testing.T) {
 
 				ethMock.On("SendTransaction", mock.Anything, mock.Anything).Return(nil)
 
-				ethMock.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&types.Header{
-					Number:  big.NewInt(134),
-					BaseFee: big.NewInt(100),
-				}, nil)
-
 				args.ethClient = ethMock
 			},
 		},
@@ -107,11 +102,6 @@ func TestExecutingSmartContract(t *testing.T) {
 				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
 
 				ethMock.On("SendTransaction", mock.Anything, mock.Anything).Return(fakeErr)
-
-				ethMock.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&types.Header{
-					Number:  big.NewInt(134),
-					BaseFee: big.NewInt(100),
-				}, nil)
 
 				args.ethClient = ethMock
 			},
