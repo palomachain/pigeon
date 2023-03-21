@@ -225,11 +225,29 @@ func (t compass) uploadSmartContract(
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *etherumtypes.Transaction {
+		constructorInput := msg.GetConstructorInput()
+		logger := log.WithFields(log.Fields{
+			"chain-id":          t.ChainReferenceID,
+			"constructor-input": constructorInput,
+		})
+		logger.Info("upload smart contract")
+
 		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
+		if err != nil {
+			logger.
+				WithField("error", err.Error()).
+				Error("uploadSmartContract: error parsing ABI")
+		}
+		// todo refactor that "assert" usage. Go way is returning error, rather than panic/recover as try/catch equivalent (it is not equivalent)
 		whoops.Assert(err)
 
 		// 0 means to get the latest valset
 		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
+		if err != nil {
+			logger.
+				WithField("error", err.Error()).
+				Error("uploadSmartContract: error querying valset from Paloma")
+		}
 		whoops.Assert(err)
 
 		consensusReached := isConsensusReached(latestValset, origMessage)
@@ -237,19 +255,16 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		constructorInput := msg.GetConstructorInput()
-
-		logger := log.WithFields(log.Fields{
-			"chain-id":          t.ChainReferenceID,
-			"constructor-input": constructorInput,
-		})
-
-		logger.Info("upload smart contract")
-
 		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(constructorInput)
-
-		fmt.Printf("[uploadSmartContract] UNPACK ERR: %v\n", err)
-		fmt.Printf("[uploadSmartContract] UNPACK ARGS: %+v\n", constructorArgs)
+		logger.
+			WithField("args", constructorArgs).
+			Info("uploadSmartContract: ABI contract constructor inputs unpack")
+		if err != nil {
+			logger.
+				WithField("error", err.Error()).
+				WithField("input", constructorInput).
+				Error("uploadSmartContract: error unpacking ABI contract constructor inputs")
+		}
 
 		_, tx, err := t.evm.DeployContract(
 			ctx,
@@ -259,14 +274,15 @@ func (t compass) uploadSmartContract(
 			constructorInput,
 		)
 
-		constructorArgs, _ = contractABI.Constructor.Inputs.Unpack(constructorInput)
-
-		fmt.Printf("[uploadSmartContract-after DeployContract] UNPACK ERR: %v\n", err)
-		fmt.Printf("[uploadSmartContract-after DeployContract] UNPACK ARGS: %+v\n", constructorArgs)
-
 		if err != nil {
+			logger.
+				WithField("error", err.Error()).
+				WithField("input", constructorInput).
+				Error("uploadSmartContract: error calling DeployContract")
+
 			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
+				logger.Info("uploadSmartContract: error calling DeployContract was a smart contract error")
 				return nil
 			}
 			whoops.Assert(err)
