@@ -80,7 +80,7 @@ func newCompassClient(
 	}
 }
 
-type signature struct {
+type CompassSignature struct {
 	V *big.Int
 	R *big.Int
 	S *big.Int
@@ -92,7 +92,7 @@ type CompassValset struct {
 }
 type CompassConsensus struct {
 	Valset     CompassValset
-	Signatures []*big.Int
+	Signatures []CompassSignature
 
 	originalSignatures [][]byte
 }
@@ -425,12 +425,19 @@ func BuildCompassConsensus(
 	for i := range v.GetValidators() {
 		sig, ok := signatureMap[v.GetValidators()[i]]
 		if !ok {
-			con.Signatures = append(con.Signatures, big.NewInt(0), big.NewInt(0), big.NewInt(0))
+			con.Signatures = append(con.Signatures,
+				CompassSignature{
+					V: big.NewInt(0),
+					R: big.NewInt(0),
+					S: big.NewInt(0),
+				})
 		} else {
 			con.Signatures = append(con.Signatures,
-				new(big.Int).SetInt64(int64(sig.Signature[64])+27),
-				new(big.Int).SetBytes(sig.Signature[:32]),
-				new(big.Int).SetBytes(sig.Signature[32:64]),
+				CompassSignature{
+					V: new(big.Int).SetInt64(int64(sig.Signature[64]) + 27),
+					R: new(big.Int).SetBytes(sig.Signature[:32]),
+					S: new(big.Int).SetBytes(sig.Signature[32:64]),
+				},
 			)
 		}
 		con.originalSignatures = append(con.originalSignatures, sig.Signature)

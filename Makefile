@@ -29,6 +29,27 @@ ldflags := $(strip $(ldflags))
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
+###############################################################################
+##                            Helping target                                 ##
+###############################################################################
+
+RED_TEXT_BEGIN?=\033[0;31m
+GREEN_TEXT_BEGIN?=\033[0;32m
+YELLOW_TEXT_BEGIN?=\033[0;33m
+AZURE_TEXT_BEGIN?=\033[0;36m
+COLOURED_TEXT_END?=\033[0m
+
+HELP_ROW_FORMAT := $(shell echo "$(AZURE_TEXT_BEGIN)%-30s$(COLOURED_TEXT_END)%s")
+
+help::
+	@echo "$(YELLOW_TEXT_BEGIN)Pigeon$(COLOURED_TEXT_END):"
+	@printf "$(HELP_ROW_FORMAT)\n" "TARGET"         "DESCRIPTION"
+	@echo "---------------------------------------------------------------------------------"
+	@printf "$(HELP_ROW_FORMAT)\n" "build-linux"    "Builds the application binary for Linux AMD64"
+	@printf "$(HELP_ROW_FORMAT)\n" "test"           "Runs go tests"
+	@printf "$(HELP_ROW_FORMAT)\n" "lint"           "Lints (runs static checks) the code"
+
+
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
 	@go mod verify
@@ -51,4 +72,4 @@ lint: install-linter
 	@echo "--> Linting..."
 	@third_party/golangci-lint run --concurrency 16 ./...
 
-.DEFAULT_GOAL := test
+.DEFAULT_GOAL := help
