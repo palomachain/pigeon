@@ -7,7 +7,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/gogo/protobuf v1.3.3
-	github.com/onsi/ginkgo/v2 v2.9.1
+	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.4
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/sirupsen/logrus v1.9.0
@@ -59,7 +59,7 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
