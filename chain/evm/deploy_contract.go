@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (c Client) DeployContract(
+func (c *Client) DeployContract(
 	ctx context.Context,
 	chainID *big.Int,
 	contractAbi abi.ABI,

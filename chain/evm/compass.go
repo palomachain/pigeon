@@ -41,6 +41,7 @@ type evmClienter interface {
 	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
+	LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error)
 }
 
 type compass struct {
@@ -319,56 +320,16 @@ func (t compass) tryProvidingEvidenceIfSmartContractErr(ctx context.Context, que
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	log.Debug("fetching last valset message id")
-	filter := etherum.FilterQuery{
-		Addresses: []common.Address{
-			t.smartContractAddr,
-		},
-		Topics: [][]common.Hash{
-			{
-				crypto.Keccak256Hash([]byte(valsetUpdatedABISignature)),
-			},
-		},
-		FromBlock: big.NewInt(t.startingBlockHeight),
+	id, err := t.evm.LastValsetID(ctx, t.smartContractAddr)
+	if err != nil {
+		log.
+			WithField("error", err.Error()).
+			WithField("addr", t.smartContractAddr.String()).
+			Error("error getting LastValsetID")
+		return 0, fmt.Errorf("error getting LastValsetID")
 	}
 
-	latestMessageID := big.NewInt(0)
-
-	var retErr error
-	_, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
-		for _, log := range logs {
-			mm := make(map[string]any)
-			err := t.compassAbi.Events["ValsetUpdated"].Inputs.UnpackIntoMap(mm, log.Data)
-			if err != nil {
-				retErr = err
-				return false
-			}
-			id, ok := mm["valset_id"].(*big.Int)
-			if !ok {
-				retErr = ErrEvm.WrapS("valset_id should be big.Int, but it's not")
-				return true
-			}
-
-			latestMessageID = id
-			return true
-		}
-		return false
-	})
-
-	var g whoops.Group
-
-	if latestMessageID.Uint64() == 0 {
-		g.Add(ErrEvm.WrapS("could not find the valset_id in EVM logs"))
-	}
-
-	g.Add(retErr)
-	g.Add(err)
-
-	if g.Err() {
-		return 0, g
-	}
-	log.WithField("valset_id", latestMessageID.Int64()).Debug("got valset_id")
-
-	return uint64(latestMessageID.Int64()), nil
+	return id.Uint64(), nil
 }
 
 func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
