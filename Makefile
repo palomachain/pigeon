@@ -6,6 +6,8 @@ TM_VERSION           := $(shell go list -m github.com/tendermint/tendermint | se
 BUILD_DIR            ?= $(CURDIR)/build
 GOLANGCILINT_VERSION := 1.51.2
 
+.PHONY: install build build-linux clean
+
 ###############################################################################
 ##                                  Version                                  ##
 ###############################################################################
@@ -43,11 +45,12 @@ HELP_ROW_FORMAT := $(shell echo "$(AZURE_TEXT_BEGIN)%-30s$(COLOURED_TEXT_END)%s"
 
 help::
 	@echo "$(YELLOW_TEXT_BEGIN)Pigeon$(COLOURED_TEXT_END):"
-	@printf "$(HELP_ROW_FORMAT)\n" "TARGET"         "DESCRIPTION"
+	@printf "$(HELP_ROW_FORMAT)\n" "TARGET"                  "DESCRIPTION"
 	@echo "---------------------------------------------------------------------------------"
-	@printf "$(HELP_ROW_FORMAT)\n" "build-linux"    "Builds the application binary for Linux AMD64"
-	@printf "$(HELP_ROW_FORMAT)\n" "test"           "Runs go tests"
-	@printf "$(HELP_ROW_FORMAT)\n" "lint"           "Lints (runs static checks) the code"
+	@printf "$(HELP_ROW_FORMAT)\n" "build-linux"             "Builds the application binary for Linux AMD64"
+	@printf "$(HELP_ROW_FORMAT)\n" "test"                    "Runs go tests"
+	@printf "$(HELP_ROW_FORMAT)\n" "lint"                    "Lints (runs static checks) the code"
+	@printf "$(HELP_ROW_FORMAT)\n" "generate-code-from-abi"  "Generates Go code by the smart contract ABI"
 
 
 go.sum: go.mod
@@ -71,5 +74,11 @@ install-linter:
 lint: install-linter
 	@echo "--> Linting..."
 	@third_party/golangci-lint run --concurrency 16 ./...
+
+install-abigen:
+	@bash -c ". scripts/abigen.sh && build_abigen_binary '$(shell pwd)'"
+
+generate-code-from-abi: install-abigen
+	@bash -c ". scripts/abigen.sh && abigen_generate_compass '$(shell pwd)'"
 
 .DEFAULT_GOAL := help

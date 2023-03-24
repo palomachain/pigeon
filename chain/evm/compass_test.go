@@ -177,12 +177,10 @@ func TestMessageProcessing(t *testing.T) {
 
 				currentValsetID := int64(55)
 
-				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
-					fn := args.Get(3).(func([]etherumtypes.Log) bool)
-					fn([]etherumtypes.Log{
-						valsetUpdatedEvent(1, "abc", currentValsetID),
-					})
-				})
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
@@ -240,12 +238,10 @@ func TestMessageProcessing(t *testing.T) {
 
 				currentValsetID := int64(55)
 
-				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
-					fn := args.Get(3).(func([]etherumtypes.Log) bool)
-					fn([]etherumtypes.Log{
-						valsetUpdatedEvent(1, "abc", currentValsetID),
-					})
-				})
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
 
 				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
 					big.NewInt(0),
@@ -305,12 +301,10 @@ func TestMessageProcessing(t *testing.T) {
 
 				currentValsetID := int64(55)
 
-				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
-					fn := args.Get(3).(func([]etherumtypes.Log) bool)
-					fn([]etherumtypes.Log{
-						valsetUpdatedEvent(1, "abc", currentValsetID),
-					})
-				})
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
@@ -374,12 +368,10 @@ func TestMessageProcessing(t *testing.T) {
 
 				currentValsetID := int64(55)
 
-				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
-					fn := args.Get(3).(func([]etherumtypes.Log) bool)
-					fn([]etherumtypes.Log{
-						valsetUpdatedEvent(1, "abc", currentValsetID),
-					})
-				})
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{

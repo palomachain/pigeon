@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"math"
@@ -25,7 +26,9 @@ import (
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/gogo/protobuf/proto"
+	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
@@ -128,6 +131,34 @@ type ethClientConn interface {
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
+type CompassBindingCaller interface {
+	LastCheckpoint(opts *bind.CallOpts) ([32]byte, error)
+	LastValsetId(opts *bind.CallOpts) (*big.Int, error)
+	MessageIdUsed(opts *bind.CallOpts, arg0 *big.Int) (bool, error)
+	TurnstoneId(opts *bind.CallOpts) ([32]byte, error)
+}
+
+type CompassBindingTransactor interface {
+	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, messageId *big.Int, deadline *big.Int) (*ethtypes.Transaction, error)
+	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0) (*ethtypes.Transaction, error)
+}
+
+type CompassBindingFilterer interface {
+	FilterLogicCallEvent(opts *bind.FilterOpts) (*compassABI.CompassLogicCallEventIterator, error)
+	FilterValsetUpdated(opts *bind.FilterOpts) (*compassABI.CompassValsetUpdatedIterator, error)
+	ParseLogicCallEvent(log ethtypes.Log) (*compassABI.CompassLogicCallEvent, error)
+	ParseValsetUpdated(log ethtypes.Log) (*compassABI.CompassValsetUpdated, error)
+	WatchLogicCallEvent(opts *bind.WatchOpts, sink chan<- *compassABI.CompassLogicCallEvent) (event.Subscription, error)
+	WatchValsetUpdated(opts *bind.WatchOpts, sink chan<- *compassABI.CompassValsetUpdated) (event.Subscription, error)
+}
+
+//go:generate mockery --name=CompassBinding
+type CompassBinding interface {
+	CompassBindingCaller
+	CompassBindingTransactor
+	CompassBindingFilterer
+}
+
 func (c *Client) init() error {
 	return whoops.Try(func() {
 
@@ -149,6 +180,10 @@ func (c *Client) init() error {
 
 		c.conn = whoops.Must(ethclient.Dial(c.config.BaseRPCURL))
 	})
+}
+
+func (c *Client) newCompass(addr common.Address) (CompassBinding, error) {
+	return compassABI.NewCompass(addr, c.conn)
 }
 
 //go:generate mockery --name=ethClienter --inpackage --testonly
@@ -314,7 +349,7 @@ func callSmartContract(
 	})
 }
 
-func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
+func (c *Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 	return c.keystore.SignHash(
 		accounts.Account{Address: c.addr},
 		bytes,
@@ -325,7 +360,7 @@ func (c Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 // error saying that there are too many results in the provided block window,
 // then it's going to try to do this using a "binary search" approach while
 // splitting the  possible set in two, recursively.
-func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
+func (c *Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
 	found, err := filterLogs(ctx, c.conn, fq, currBlockHeight, true, fn)
 
 	if err != nil {
@@ -335,11 +370,11 @@ func (c Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBloc
 	return found, err
 }
 
-func (c Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
+func (c *Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
 	return c.conn.TransactionByHash(ctx, txHash)
 }
 
-func (c Client) BlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
+func (c *Client) BlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
 	return c.conn.BlockByHash(ctx, blockHash)
 }
 
@@ -468,7 +503,7 @@ func filterLogs(
 	return false, err
 }
 
-func (c Client) ExecuteSmartContract(
+func (c *Client) ExecuteSmartContract(
 	ctx context.Context,
 	chainID *big.Int,
 	contractAbi abi.ABI,
@@ -494,7 +529,7 @@ func (c Client) ExecuteSmartContract(
 	)
 }
 
-func (c Client) BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error) {
+func (c *Client) BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error) {
 	var bh *big.Int
 	if blockHeight > 0 {
 		bh = new(big.Int).SetUint64(blockHeight)
@@ -502,7 +537,7 @@ func (c Client) BalanceAt(ctx context.Context, address common.Address, blockHeig
 	return c.conn.BalanceAt(ctx, address, bh)
 }
 
-func (c Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error) {
+func (c *Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error) {
 	isTimeSetBeforeBlock := func(height uint64) (bool, error) {
 		h, err := c.conn.HeaderByNumber(ctx, new(big.Int).SetUint64(height))
 		if err != nil {
@@ -550,10 +585,31 @@ func (c Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint6
 	return res, nil
 }
 
-func (c Client) FindCurrentBlockNumber(ctx context.Context) (*big.Int, error) {
+func (c *Client) FindCurrentBlockNumber(ctx context.Context) (*big.Int, error) {
 	header, err := c.conn.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	return header.Number, nil
+}
+
+func (c *Client) LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error) {
+	log.
+		WithField("address", addr.String()).
+		Debug("called LastValsetID in EVM client")
+
+	cmps, err := c.newCompass(addr)
+	if err != nil {
+		log.
+			WithField("error", err.Error()).
+			WithField("address", addr.String()).
+			Error("LastValsetID: error instantiating compass")
+		return nil, fmt.Errorf("error instantiating compass binding: %w", err)
+	}
+
+	callOpts := &bind.CallOpts{
+		Pending: false,
+		Context: ctx,
+	}
+	return cmps.LastValsetId(callOpts)
 }
