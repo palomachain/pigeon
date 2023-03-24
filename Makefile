@@ -6,7 +6,7 @@ TM_VERSION           := $(shell go list -m github.com/tendermint/tendermint | se
 BUILD_DIR            ?= $(CURDIR)/build
 GOLANGCILINT_VERSION := 1.51.2
 
-.PHONY: install build build-linux clean
+.PHONY: install-linter install-abigen build build-linux
 
 ###############################################################################
 ##                                  Version                                  ##

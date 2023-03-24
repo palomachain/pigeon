@@ -29,6 +29,7 @@ function build_abigen_binary() {
   chmod -R +w "$temp_build_folder"
   pushd "$temp_build_folder"
   make all
+  mkdir -p "$project_dir/build/"
   cp "$temp_build_folder/build/bin/abigen" "$project_dir/build/"
   popd
   rm -rf "$temp_build_folder"
