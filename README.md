@@ -30,13 +30,11 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnest 14 (Jan 19, 2023)
+* Paloma Testnest `paloma-testnet-15` (Jan 20, 2023)
+* Paloma Mainnet `messenger` (Feb 8, 2023)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 * Polygon Mainnet (relay)
-
-
-### Public Testnest 15
 
 
 ## ISSUES
@@ -46,13 +44,23 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to paloma-testnet-15 (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-15` for Testnet or `messenger` for Mainnet (see example below).**
 
 **Note**
 
 If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
 If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
+### Testnet
+
+```shell
+wget -O - https://github.com/palomachain/pigeon/releases/download/v0.11.7/pigeon_Linux_x86_64.tar.gz | \
+tar -C /usr/local/bin -xvzf - pigeon
+chmod +x /usr/local/bin/pigeon
+mkdir ~/.pigeon
+```
+
+### Mainnet
 ```shell
 wget -O - https://github.com/palomachain/pigeon/releases/download/v0.11.5/pigeon_Linux_x86_64.tar.gz | \
 tar -C /usr/local/bin -xvzf - pigeon
