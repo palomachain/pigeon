@@ -15,7 +15,7 @@ require (
 	github.com/strangelove-ventures/lens v0.3.1-0.20220329150126-16b15e90cf34
 	github.com/stretchr/testify v1.8.2
 	github.com/tendermint/tendermint v0.34.15
-	golang.org/x/term v0.6.0
+	golang.org/x/term v0.7.0
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.30.0
@@ -125,7 +125,7 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
