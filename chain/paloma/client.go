@@ -9,10 +9,11 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/gogo/protobuf/grpc"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/strangelove-ventures/lens/client/query"
 
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
@@ -22,14 +23,13 @@ import (
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type ResultStatus = coretypes.ResultStatus
 
 //go:generate mockery --name=MessageSender
 type MessageSender interface {
-	SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error)
+	SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error)
 }
 
 type Client struct {
@@ -263,7 +263,7 @@ func (c Client) DeleteJob(ctx context.Context, queueTypeName string, id uint64) 
 		Creator:       c.creator,
 		QueueTypeName: queueTypeName,
 		MessageID:     id,
-	})
+	}, "")
 	return err
 }
 
@@ -297,7 +297,7 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 		},
 	)
 
-	_, err := c.MessageSender.SendMsg(ctx, msg)
+	_, err := c.MessageSender.SendMsg(ctx, msg, "")
 	return err
 }
 
@@ -313,7 +313,7 @@ func (c Client) AddMessageEvidence(ctx context.Context, queueTypeName string, me
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err = c.MessageSender.SendMsg(ctx, msg)
+	_, err = c.MessageSender.SendMsg(ctx, msg, "")
 	return err
 }
 
@@ -325,7 +325,7 @@ func (c Client) SetPublicAccessData(ctx context.Context, queueTypeName string, m
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg)
+	_, err := c.MessageSender.SendMsg(ctx, msg, "")
 	return err
 }
 
@@ -346,7 +346,7 @@ func (c Client) KeepValidatorAlive(ctx context.Context) error {
 		Creator: c.creator,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg)
+	_, err := c.MessageSender.SendMsg(ctx, msg, "")
 	return err
 }
 
@@ -402,7 +402,7 @@ func broadcastMessageSignatures(
 		Creator:        creator,
 		SignedMessages: signedMessages,
 	}
-	_, err := ms.SendMsg(ctx, msg)
+	_, err := ms.SendMsg(ctx, msg, "")
 	return err
 }
 
@@ -419,7 +419,11 @@ func getMainAddress(c Client) sdk.Address {
 	if err != nil {
 		panic(err)
 	}
-	return key.GetAddress()
+	address, err := key.GetAddress()
+	if err != nil {
+		panic(err)
+	}
+	return address
 }
 
 func getCreator(c Client) string {

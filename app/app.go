@@ -7,7 +7,7 @@ import (
 
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"

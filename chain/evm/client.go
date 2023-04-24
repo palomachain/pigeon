@@ -27,7 +27,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"

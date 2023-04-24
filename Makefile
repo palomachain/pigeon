@@ -2,7 +2,6 @@
 
 BRANCH               := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT               := $(shell git log -1 --format='%H')
-TM_VERSION           := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::')
 BUILD_DIR            ?= $(CURDIR)/build
 GOLANGCILINT_VERSION := 1.51.2
 
@@ -24,7 +23,6 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=pigeon \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=pigeon \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-		  -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(TM_VERSION)
 
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))

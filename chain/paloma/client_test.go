@@ -8,7 +8,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/palomachain/pigeon/chain"
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
 	consensus "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
@@ -90,7 +90,7 @@ func makeCodec() lens.Codec {
 				},
 			},
 		},
-	})
+	}, []string{})
 }
 
 func TestQueryingMessagesForSigning(t *testing.T) {
@@ -438,10 +438,10 @@ func TestAddingExternalChainInfo(t *testing.T) {
 	}
 }
 
-type mockMsgSender func(context.Context, sdk.Msg) (*sdk.TxResponse, error)
+type mockMsgSender func(context.Context, sdk.Msg, string) (*sdk.TxResponse, error)
 
-func (m mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
-	return m(ctx, msg)
+func (m mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	return m(ctx, msg, memo)
 }
 func TestBroadcastingMessageSignatures(t *testing.T) {
 	ctx := context.Background()
@@ -469,7 +469,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 					Signature:     []byte(`sig-789`),
 				},
 			},
-			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
+			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 				addMsgSigs, ok := msg.(*consensus.MsgAddMessagesSignatures)
 				require.True(t, ok, "incorrect msg type")
 				require.Len(t, addMsgSigs.SignedMessages, 2)
@@ -488,7 +488,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 		},
 		{
 			name: "msg sender returns an error",
-			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
+			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 				return nil, errTestErr
 			}),
 			signatures: []BroadcastMessageSignatureIn{
