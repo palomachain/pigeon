@@ -13,7 +13,6 @@ builds:
       - -X github.com/palomachain/pigeon/app.commit={{ .FullCommit }}
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
 
