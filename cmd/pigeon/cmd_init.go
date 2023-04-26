@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -19,7 +20,9 @@ var (
 			// check if the signing key exists,
 			// if does not, it creates one which it reads from the passed in config.
 			key := "signing-key"
-			kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin)
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			cdc := clientCtx.Codec
+			kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin, cdc)
 			if err != nil {
 				return err
 			}

@@ -40,8 +40,8 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 	return stream, err
 }
 
-func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
-	res, err := m.W.SendMsg(ctx, msg)
+func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	res, err := m.W.SendMsg(ctx, msg, "")
 
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)

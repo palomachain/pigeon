@@ -4,9 +4,9 @@ import (
 	"io"
 	"time"
 
+	prov "github.com/cometbft/cometbft/light/provider/http"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	lens "github.com/strangelove-ventures/lens/client"
-	prov "github.com/tendermint/tendermint/light/provider/http"
 )
 
 type LensClient struct {
@@ -15,7 +15,7 @@ type LensClient struct {
 
 func (cc *LensClient) Init() error {
 	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.Codec.Marshaler, cc.KeyringOptions...)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func NewChainClient(ccc *lens.ChainClientConfig, input io.Reader, output io.Writ
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
-		Codec:          lens.MakeCodec(ccc.Modules),
+		Codec:          lens.MakeCodec(ccc.Modules, ccc.ExtraCodecs),
 	}}
 	if err := cc.Init(); err != nil {
 		return nil, err

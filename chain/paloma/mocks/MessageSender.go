@@ -16,7 +16,7 @@ type MessageSender struct {
 }
 
 // SendMsg provides a mock function with given fields: ctx, msg
-func (_m *MessageSender) SendMsg(ctx context.Context, msg types.Msg) (*types.TxResponse, error) {
+func (_m *MessageSender) SendMsg(ctx context.Context, msg types.Msg, memo string) (*types.TxResponse, error) {
 	ret := _m.Called(ctx, msg)
 
 	var r0 *types.TxResponse
