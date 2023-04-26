@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -17,9 +18,13 @@ var (
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// check if the signing key exists,
-			// if does not, it creates one which it reads from the passed in config.
+			// if it does not, it creates one which it reads from the passed in config.
 			key := "signing-key"
-			kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin)
+
+			legacyAmino := codec.NewLegacyAmino()
+			aminoCodec := codec.NewAminoCodec(legacyAmino)
+
+			kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin, aminoCodec)
 			if err != nil {
 				return err
 			}

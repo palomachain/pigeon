@@ -36,7 +36,11 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			palomaCli := app.PalomaClient()
 			for _, k := range whoops.Must(palomaCli.Keyring().List()) {
-				fmt.Printf("%s, %s, %s\n", k.GetName(), k.GetAddress(), k.GetPubKey())
+				address, err := k.GetAddress()
+				if err != nil {
+					return err
+				}
+				fmt.Printf("%s, %s, %s\n", k.Name, address, k.PubKey)
 			}
 			return nil
 		},

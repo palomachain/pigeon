@@ -15,7 +15,7 @@ import (
 
 	paloma "github.com/palomachain/pigeon/chain/paloma"
 
-	proto "github.com/gogo/protobuf/proto"
+	proto "github.com/cosmos/gogoproto/proto"
 
 	time "time"
 

@@ -11,7 +11,7 @@ func newClient() *LensClient {
 			Config: &client.ChainClientConfig{
 				ChainID: "random-chain",
 			},
-			Codec: client.MakeCodec(testModules()),
+			Codec: client.MakeCodec(testModules(), []string{}),
 		},
 	}
 }
