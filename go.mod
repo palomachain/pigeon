@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/VolumeFi/whoops v0.7.2
-	github.com/cometbft/cometbft v0.37.0
+	github.com/cometbft/cometbft v0.37.1
 	github.com/cosmos/cosmos-sdk v0.47.1
 	github.com/cosmos/gogoproto v1.4.6
 	github.com/ethereum/go-ethereum v1.11.5
