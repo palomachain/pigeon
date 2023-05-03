@@ -2,6 +2,9 @@ package paloma
 
 import (
 	"context"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"time"
 
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -41,6 +44,10 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 }
 
 func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	sleepSecs := 6
+	log.Debug(fmt.Sprintf("Sleeping %d seconds before sending msg", sleepSecs))
+	time.Sleep(time.Duration(sleepSecs) * time.Second)
+	log.Debug("Sending Msg: ", msg)
 	res, err := m.W.SendMsg(ctx, msg, memo)
 
 	if IsPalomaDown(err) {
