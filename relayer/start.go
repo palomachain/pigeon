@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	goerrors "errors"
+	"sync"
 	"time"
 
 	"github.com/VolumeFi/whoops"
@@ -47,12 +48,14 @@ func (r *Relayer) Start(ctx context.Context) error {
 	}
 
 	log.Info("starting relayer")
+	var locker sync.Mutex
 
 	go func() {
 		ticker := time.NewTicker(defaultLoopTimeout)
 		defer ticker.Stop()
 
 		for range ticker.C {
+			locker.Lock()
 			processors, err := r.buildProcessors(ctx)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -69,6 +72,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 					"err": err,
 				}).Error("couldn't update external chain info. Will try again.")
 			}
+			locker.Unlock()
 		}
 	}()
 
@@ -86,12 +90,14 @@ func (r *Relayer) Start(ctx context.Context) error {
 			return ctx.Err()
 		}
 
+		locker.Lock()
 		processors, err := r.buildProcessors(ctx)
 		if err != nil {
 			return err
 		}
 
 		err = r.Process(ctx, processors)
+		locker.Unlock()
 
 		switch {
 		case err == nil:
@@ -117,7 +123,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 	}
 
 	go func() {
-		r.startKeepAlive(ctx)
+		r.startKeepAlive(ctx, &locker)
 	}()
 
 	tickerCh := channels.FanIn(ticker.C, firstLoopEnter)

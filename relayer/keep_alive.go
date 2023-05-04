@@ -3,13 +3,14 @@ package relayer
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/palomachain/pigeon/util/channels"
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) startKeepAlive(ctx context.Context) {
+func (r *Relayer) startKeepAlive(ctx context.Context, locker *sync.Mutex) {
 	log.Debug("starting keep alive loop")
 	defer func() {
 		log.Debug("existing keep alive loop")
@@ -53,7 +54,9 @@ func (r *Relayer) startKeepAlive(ctx context.Context) {
 				"should-send-keep-alive": sendKeepAlive,
 			}).Debug("checking keep alive")
 			if sendKeepAlive {
+				locker.Lock()
 				err := r.palomaClient.KeepValidatorAlive(ctx)
+				locker.Unlock()
 				if err != nil {
 					log.WithError(err).Error("error while trying to keep pigeon alive")
 					continue
