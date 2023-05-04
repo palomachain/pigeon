@@ -44,7 +44,7 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 }
 
 func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	sleepSecs := 6
+	sleepSecs := 10
 	log.Debug(fmt.Sprintf("Sleeping %d seconds before sending msg", sleepSecs))
 	time.Sleep(time.Duration(sleepSecs) * time.Second)
 	log.Debug("Sending Msg: ", msg)
