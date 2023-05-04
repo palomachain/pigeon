@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) startKeepAlive(ctx context.Context, locker *sync.Mutex) {
+func (r *Relayer) startKeepAlive(ctx context.Context, locker sync.Locker) {
 	log.Debug("starting keep alive loop")
 	defer func() {
 		log.Debug("existing keep alive loop")
