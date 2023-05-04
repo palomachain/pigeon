@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type FakeMutex struct{}
+
+func (m FakeMutex) Lock()   {}
+func (m FakeMutex) Unlock() {}
+
 func TestKeepAlive(t *testing.T) {
 	randErr := whoops.String("oh no")
 
@@ -96,7 +101,8 @@ func TestKeepAlive(t *testing.T) {
 				palomaClient: paloma,
 			}
 
-			r.startKeepAlive(ctx)
+			var locker FakeMutex
+			r.startKeepAlive(ctx, &locker)
 		})
 	}
 }

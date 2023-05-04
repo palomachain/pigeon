@@ -2,10 +2,11 @@ package paloma
 
 import (
 	"context"
-
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
+	log "github.com/sirupsen/logrus"
+	"time"
 
 	ggrpc "google.golang.org/grpc"
 )
@@ -41,7 +42,9 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 }
 
 func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	log.Debug("Sending Msg: ", msg)
 	res, err := m.W.SendMsg(ctx, msg, memo)
+	time.Sleep(10 * time.Second)
 
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)
