@@ -55,7 +55,6 @@ func (r *Relayer) Start(ctx context.Context) error {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			locker.Lock()
 			processors, err := r.buildProcessors(ctx)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -67,12 +66,15 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 			log.Info("trying to update external chain info")
 
-			if err := r.updateExternalChainInfos(ctx, processors); err != nil {
+			locker.Lock()
+			err = r.updateExternalChainInfos(ctx, processors)
+			locker.Unlock()
+
+			if err != nil {
 				log.WithFields(log.Fields{
 					"err": err,
 				}).Error("couldn't update external chain info. Will try again.")
 			}
-			locker.Unlock()
 		}
 	}()
 
@@ -90,12 +92,12 @@ func (r *Relayer) Start(ctx context.Context) error {
 			return ctx.Err()
 		}
 
-		locker.Lock()
 		processors, err := r.buildProcessors(ctx)
 		if err != nil {
 			return err
 		}
 
+		locker.Lock()
 		err = r.Process(ctx, processors)
 		locker.Unlock()
 
