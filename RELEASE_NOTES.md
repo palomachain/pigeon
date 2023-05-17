@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v1.0.0]
+* (b7ce8f2) Fixing locking issue (#153)
 * (3f26dc5) Moving sleep to before sending a message  (#148)
 * (34e1a87) Slow down Pigeon messages  (#145)
 * (b738553) Bump google.golang.org/grpc from 1.53.0 to 1.54.0  (#141)
