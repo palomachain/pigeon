@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v1.0.0]
+* (118cf7b) Fix GLIBC errors seen by some (#157)
 * (b7ce8f2) Fixing locking issue (#153)
 * (3f26dc5) Moving sleep to before sending a message  (#148)
 * (34e1a87) Slow down Pigeon messages  (#145)
