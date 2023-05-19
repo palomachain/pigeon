@@ -105,10 +105,15 @@ func (r *Relayer) Start(ctx context.Context) error {
 		case err == nil:
 			// success
 			return nil
-		case goerrors.Is(err, context.Canceled) || goerrors.Is(err, context.DeadlineExceeded):
+		case goerrors.Is(err, context.Canceled):
 			log.WithFields(log.Fields{
 				"err": err,
-			}).Debug("exited from the process loop due the context being cancaled")
+			}).Debug("exited from the process loop due the context being canceled")
+			return nil
+		case goerrors.Is(err, context.DeadlineExceeded):
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Debug("exited from the process loop due the context deadline being exceeded")
 			return nil
 		case errors.IsUnrecoverable(err):
 			// there is no way that we can recover from this
