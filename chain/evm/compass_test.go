@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"io/ioutil"
 	"math/big"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -80,6 +82,100 @@ func valsetUpdatedEvent(blockNumber uint64, checkpoint string, valsetID int64) e
 	return etherumtypes.Log{
 		BlockNumber: blockNumber,
 		Data:        data,
+	}
+}
+
+func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
+	tests := []struct {
+		name          string
+		setup         func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
+		expected      bool
+		expectedError error
+	}{
+		{
+			name: "False when unable to find current block number",
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Times(1).Return(nil, errors.New("FindCurrentBlockNumber error"))
+
+				return evm, paloma
+			},
+			expected:      false,
+			expectedError: errors.New("FindCurrentBlockNumber error"),
+		},
+		{
+			name: "False when error filtering logs",
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Times(1).Return(big.NewInt(5000), nil)
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, errors.New("FilterLogs error"))
+
+				return evm, paloma
+			},
+			expected:      false,
+			expectedError: errors.New("FilterLogs error"),
+		},
+		{
+			name: "False when not found in logs",
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Times(1).Return(big.NewInt(5000), nil)
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil)
+
+				return evm, paloma
+			},
+			expected:      false,
+			expectedError: nil,
+		},
+		{
+			name: "True when found in logs",
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Times(1).Return(big.NewInt(1), nil)
+
+				isArbitraryCallExecutedLogs := []etherumtypes.Log{
+					{
+						BlockNumber: 1,
+					},
+				}
+
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
+					fn := args.Get(3).(func([]etherumtypes.Log) bool)
+					fn(isArbitraryCallExecutedLogs)
+				})
+
+				return evm, paloma
+			},
+			expected:      true,
+			expectedError: nil,
+		},
+	}
+
+	asserter := assert.New(t)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evmClienter, palomaClienter := tt.setup(t)
+			comp := newCompassClient(
+				smartContractAddr.Hex(),
+				"id-123",
+				"internal-chain-id",
+				big.NewInt(1),
+				nil,
+				palomaClienter,
+				evmClienter,
+			)
+
+			ctx := context.Background()
+
+			actual, actualError := comp.isArbitraryCallAlreadyExecuted(ctx, 1)
+			asserter.Equal(tt.expected, actual)
+			asserter.Equal(tt.expectedError, actualError)
+		})
 	}
 }
 

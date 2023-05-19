@@ -46,36 +46,37 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 **If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-15` for Testnet or `messenger` for Mainnet (see example below).**
 
-**Note**
+> #### Note:
+> If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
+> If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
-If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
-If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
+> #### Note:
+> Some have seen errors with GLIBC version differences with the downloaded binaries for v1.0.0.  This is caused by a difference in the libraries of the host that built the binary and the host running the binary.
+>
+> We did not find this bug in time to fix it in the v1.0.0 release.  Instead there is a workaround.  If you experience these errors, please pull down the code and build it, rather than downloading the prebuilt binary
 
-### Testnet
+### To get the latest prebuilt `palomad` binary:
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.11.7/pigeon_Linux_x86_64.tar.gz | \
-tar -C /usr/local/bin -xvzf - pigeon
-chmod +x /usr/local/bin/pigeon
+wget -O - https://github.com/palomachain/pigeon/releases/download/v1.0.0/pigeon_Linux_x86_64.tar.gz  | \
+  sudo tar -C /usr/local/bin -xvzf - pigeon
+sudo chmod +x /usr/local/bin/pigeon
+
 mkdir ~/.pigeon
 ```
 
-### Mainnet
+### To build pigeon using latest
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v0.11.5/pigeon_Linux_x86_64.tar.gz | \
-tar -C /usr/local/bin -xvzf - pigeon
-chmod +x /usr/local/bin/pigeon
+git clone https://github.com/palomachain/pigeon.git
+cd pigeon
+git checkout v1.0.0
+make build
+sudo mv ./build/pigeon /usr/local/bin/pigeon
+
 mkdir ~/.pigeon
 ```
 
 If you're upgrading to the most recent version, you will need to stop `pigeond` before removing the old binary and copying the new binary into place.
-
-If you want to install from source use 
-
-```
-go build ./cmd/pigeon
-```
-
 
 ## Set up your EVM Keys. Don't forget your passwords!
 
