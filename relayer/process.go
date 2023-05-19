@@ -2,7 +2,6 @@ package relayer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/palomachain/pigeon/chain"
@@ -41,9 +40,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			})
 
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					return nil
-				}
 				logger.Error("failed getting messages to sign")
 				return err
 			}
@@ -51,9 +47,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 			if len(queuedMessages) > 0 {
 				loggerQueuedMessages.Info("messages to sign")
 				signedMessages, err := p.SignMessages(ctx, queueName, queuedMessages...)
-				if errors.Is(err, context.DeadlineExceeded) {
-					return nil
-				}
 				if err != nil {
 					loggerQueuedMessages.WithError(err).Error("unable to sign messages")
 					return err
@@ -68,9 +61,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				loggerQueuedMessages.Info("signed messages")
 
 				if err = r.broadcastSignatures(ctx, queueName, signedMessages); err != nil {
-					if errors.Is(err, context.DeadlineExceeded) {
-						return nil
-					}
 					loggerQueuedMessages.WithError(err).Error("couldn't broadcast signatures and process attestation")
 					return err
 				}
@@ -110,9 +100,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				})
 				logger.Info("relaying messages")
 				if err = p.ProcessMessages(ctx, queueName, relayCandidateMsgs); err != nil {
-					if errors.Is(err, context.DeadlineExceeded) {
-						return nil
-					}
 					logger.WithFields(log.Fields{
 						"err":        err,
 						"queue-name": queueName,
@@ -132,9 +119,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				})
 				logger.Info("providing evidence for messages")
 				if err = p.ProvideEvidence(ctx, queueName, msgsToProvideEvidenceFor); err != nil {
-					if errors.Is(err, context.DeadlineExceeded) {
-						return nil
-					}
 					logger.WithError(err).Error("error providing evidence for messages")
 					return err
 				}
