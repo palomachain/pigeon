@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/gogoproto v1.4.8
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/cobra v1.7.0
