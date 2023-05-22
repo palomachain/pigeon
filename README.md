@@ -55,7 +55,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 >
 > We did not find this bug in time to fix it in the v1.0.0 release.  Instead there is a workaround.  If you experience these errors, please pull down the code and build it, rather than downloading the prebuilt binary
 
-### To get the latest prebuilt `palomad` binary:
+### To get the latest prebuilt `pigeon` binary:
 
 ```shell
 wget -O - https://github.com/palomachain/pigeon/releases/download/v1.0.0/pigeon_Linux_x86_64.tar.gz  | \
