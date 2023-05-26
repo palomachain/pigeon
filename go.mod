@@ -9,12 +9,12 @@ require (
 	github.com/cosmos/gogoproto v1.4.8
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/cobra v1.7.0
 	github.com/strangelove-ventures/lens v0.5.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	golang.org/x/term v0.8.0
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
 	google.golang.org/grpc v1.55.0
@@ -61,7 +61,7 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
-	github.com/cosmos/ibc-go/v7 v7.0.0 // indirect
+	github.com/cosmos/ibc-go/v7 v7.0.1 // indirect
 	github.com/cosmos/ics23/go v0.9.1-0.20221207100636-b1abd8678aab // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.1 // indirect
 	github.com/cosmos/rosetta-sdk-go v0.10.0 // indirect
