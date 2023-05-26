@@ -51,14 +51,14 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 > If you see this after the chains starts producing blocks, then it means that your validator has been jailed.
 
 > #### Note:
-> Some have seen errors with GLIBC version differences with the downloaded binaries for v1.0.0.  This is caused by a difference in the libraries of the host that built the binary and the host running the binary.
+> Some have seen errors with GLIBC version differences with the downloaded binaries for v1.1.0.  This is caused by a difference in the libraries of the host that built the binary and the host running the binary.
 >
-> We did not find this bug in time to fix it in the v1.0.0 release.  Instead there is a workaround.  If you experience these errors, please pull down the code and build it, rather than downloading the prebuilt binary
+> If you experience these errors, please pull down the code and build it, rather than downloading the prebuilt binary
 
 ### To get the latest prebuilt `pigeon` binary:
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v1.0.0/pigeon_Linux_x86_64.tar.gz  | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v1.1.0/pigeon_Linux_x86_64.tar.gz  | \
   sudo tar -C /usr/local/bin -xvzf - pigeon
 sudo chmod +x /usr/local/bin/pigeon
 
@@ -69,7 +69,7 @@ mkdir ~/.pigeon
 ```shell
 git clone https://github.com/palomachain/pigeon.git
 cd pigeon
-git checkout v1.0.0
+git checkout v1.1.0
 make build
 sudo mv ./build/pigeon /usr/local/bin/pigeon
 
