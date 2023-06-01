@@ -27,8 +27,6 @@ const (
 	maxPower            uint64 = 1 << 32
 	powerThreshold      uint64 = 2_863_311_530
 	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
-
-	valsetUpdatedABISignature = "ValsetUpdated(bytes32,uint256)"
 )
 
 //go:generate mockery --name=evmClienter --inpackage --testonly

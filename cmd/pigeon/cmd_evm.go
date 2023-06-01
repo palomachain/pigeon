@@ -17,10 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	signaturePrefix = "\x19Ethereum Signed Message:\n32"
-)
-
 var (
 	evmCmd = &cobra.Command{
 		Use: "evm",

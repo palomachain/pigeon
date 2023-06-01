@@ -69,22 +69,6 @@ func powerFromPercentage(p float64) uint64 {
 	return uint64(float64(maxPower) * p)
 }
 
-func valsetUpdatedEvent(blockNumber uint64, checkpoint string, valsetID int64) etherumtypes.Log {
-	compassABI := StoredContracts()["compass-evm"].ABI
-	// checkpoint bytes32
-	// valset_id uint256
-	var cp32 [32]byte
-	copy(cp32[:], []byte(checkpoint))
-	data, err := compassABI.Events["ValsetUpdated"].Inputs.Pack(cp32, big.NewInt(valsetID))
-	if err != nil {
-		panic(err)
-	}
-	return etherumtypes.Log{
-		BlockNumber: blockNumber,
-		Data:        data,
-	}
-}
-
 func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 	tests := []struct {
 		name          string

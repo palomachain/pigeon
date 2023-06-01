@@ -36,10 +36,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	smartContractFilename = "compass-evm"
-)
-
 type StoredContract struct {
 	ABI    abi.ABI
 	Source []byte

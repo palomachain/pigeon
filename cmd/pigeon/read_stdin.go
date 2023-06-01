@@ -34,20 +34,6 @@ func readLineFromStdin(isPassword bool) string {
 	return text
 }
 
-func readNTimes(n int, fnc func(string) bool) func(string) bool {
-	count := 0
-	return func(input string) bool {
-		if count >= n {
-			return true
-		}
-		if fnc(input) {
-			return true
-		}
-		count++
-		return false
-	}
-}
-
 func doubleReadInput(prefix string, isPassword bool, failedAttempts int) string {
 	for i := failedAttempts; i > 0; i-- {
 		fmt.Print(prefix)

@@ -26,19 +26,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-var (
-	errTestErr             = errors.New("sample error")
-	simpleMessageTestData1 = &testdata.SimpleMessage{
-		Sender: "bob",
-		Hello:  "mars",
-		World:  "!",
-	}
-	simpleMessageTestData2 = &testdata.SimpleMessage{
-		Sender: "alice",
-		Hello:  "jupiter",
-		World:  "!",
-	}
-)
+var errTestErr = errors.New("sample error")
 
 func consensusQueryServerDialer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)

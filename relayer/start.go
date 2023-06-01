@@ -12,11 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	defaultErrorCountToExit = 5
-
-	defaultLoopTimeout = 1 * time.Minute
-)
+const defaultLoopTimeout = 1 * time.Minute
 
 func (r *Relayer) waitUntilStaking(ctx context.Context) error {
 	for {
