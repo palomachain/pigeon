@@ -11,9 +11,8 @@ import (
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"
-	"github.com/stretchr/testify/mock"
-
 	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestGinkgo(t *testing.T) {
@@ -44,7 +43,7 @@ var _ = Describe("health check", func() {
 
 	BeforeEach(func() {
 		cfg.EVM = map[string]config.EVM{
-			"test": config.EVM{},
+			"test": {},
 		}
 	})
 

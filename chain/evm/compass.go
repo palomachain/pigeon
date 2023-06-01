@@ -206,7 +206,6 @@ func (t compass) submitLogicCall(
 			new(big.Int).SetInt64(int64(origMessage.ID)),
 			new(big.Int).SetInt64(msg.GetDeadline()),
 		})
-
 		if err != nil {
 			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
@@ -274,7 +273,6 @@ func (t compass) uploadSmartContract(
 			msg.GetBytecode(),
 			constructorInput,
 		)
-
 		if err != nil {
 			logger.
 				WithField("error", err.Error()).
@@ -310,7 +308,6 @@ func (t compass) tryProvidingEvidenceIfSmartContractErr(ctx context.Context, que
 	err := t.paloma.AddMessageEvidence(ctx, queueTypeName, msgID, &types.SmartContractExecutionErrorProof{
 		ErrorMessage: jsonRpcErr.Error(),
 	})
-
 	if err != nil {
 		return false, err
 	}
@@ -334,7 +331,6 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 
 func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
-
 	if err != nil {
 		return false, err
 	}

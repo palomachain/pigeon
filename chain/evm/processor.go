@@ -78,7 +78,6 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 		}, nil
 	},
 	)
-
 }
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {

@@ -49,7 +49,6 @@ var _ = Describe("waiting for paloma", func() {
 			})
 		})
 		Context("paloma is online after second loop", func() {
-
 			It("returns context error", func() {
 				m.On("PalomaStatus", mock.Anything).Return(whoops.String("doesnt matter")).Times(1)
 				m.On("PalomaStatus", mock.Anything).Return(nil).Times(1)
@@ -95,5 +94,4 @@ var _ = Describe("canceling context if paloma is down", func() {
 			})
 		})
 	})
-
 })

@@ -13,6 +13,14 @@ linters:
   disable-all: true
   enable:
     - errcheck
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - govet
+    - misspell
+    - unused
+    - gosec
   fast: false
 
 issues:
@@ -20,7 +28,13 @@ issues:
   max-same-issues: 0
   max-issues-per-linter: 0
   exclude-rules:
-  # disabling some linters for test files
+    # disabling some linters for test files
     - path: _test\.go
       linters:
         - errcheck
+        - gosec
+  # disabling some linters rules
+  exclude:
+    # gosec
+    - G101 # Potential hardcoded credentials
+    - G114 # Use of net/http serve function that has no support for setting timeouts

@@ -124,7 +124,6 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 
 	// todo randomise
 	for _, p := range processors {
-
 		// todo randomise
 		for _, queueName := range p.SupportedQueues() {
 			logger := log.WithFields(log.Fields{

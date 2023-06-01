@@ -608,7 +608,8 @@ func TestMessageProcessing(t *testing.T) {
 				return evm, paloma
 			},
 			expErr: nil,
-		}, {
+		},
+		{
 			name: "upload_smart_contract/when smart contract returns an error and sending it to paloma fails, it returns it back",
 			msgs: []chain.MessageWithSignatures{
 				{
@@ -710,7 +711,6 @@ func TestProcessingvalidatorBalancesRequest(t *testing.T) {
 }
 
 func TestProvidingEvidenceForAMessage(t *testing.T) {
-
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
 	}
@@ -799,8 +799,8 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 		})
 	}
 }
-func TestIfTheConsensusHasBeenReached(t *testing.T) {
 
+func TestIfTheConsensusHasBeenReached(t *testing.T) {
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
 	}

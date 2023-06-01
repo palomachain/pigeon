@@ -11,24 +11,22 @@ var (
 	configRequiredCmds []*cobra.Command
 )
 
-var (
-	rootCmd = &cobra.Command{
-		Use:          "pigeon",
-		SilenceUsage: true,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			found := false
-			for _, curr := range configRequiredCmds {
-				if curr == cmd {
-					found = true
-					break
-				}
+var rootCmd = &cobra.Command{
+	Use:          "pigeon",
+	SilenceUsage: true,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		found := false
+		for _, curr := range configRequiredCmds {
+			if curr == cmd {
+				found = true
+				break
 			}
-			if found {
-				app.SetConfigPath(flagConfigPath)
-			}
-		},
-	}
-)
+		}
+		if found {
+			app.SetConfigPath(flagConfigPath)
+		}
+	},
+}
 
 func configRequired(cmd *cobra.Command) {
 	for _, curr := range configRequiredCmds {

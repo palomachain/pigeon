@@ -48,5 +48,4 @@ func StartHTTPServer(
 		log.WithError(err).Error("error starting healtcheck server")
 		panic(err)
 	}
-
 }

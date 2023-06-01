@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/VolumeFi/whoops"
-
 	"gopkg.in/yaml.v2"
 )
 
