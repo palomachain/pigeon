@@ -72,7 +72,15 @@ var (
 				return err
 			}
 
-			if err := os.WriteFile("/tmp/ooo.hex", []byte(common.Bytes2Hex(b)), 0o666); err != nil {
+			tmpF, err := os.CreateTemp("/tmp", "ooo.hex")
+			if err != nil {
+				return err
+			}
+
+			defer os.Remove(tmpF.Name())
+
+			_, err = tmpF.Write([]byte(common.Bytes2Hex(b)))
+			if err != nil {
 				return err
 			}
 
