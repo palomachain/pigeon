@@ -144,27 +144,19 @@ func (r *Relayer) Process(ctx context.Context, processors []chain.Processor) err
 				return err
 			}
 
-			messagesForEvidence := messagesInQueue
-
-			// only pick 5 messages to relay at a time.  This protects against timeouts
-			messagesForRelaying := messagesInQueue
-			if len(messagesForRelaying) > 5 {
-				messagesForRelaying = messagesForRelaying[:5]
-			}
-
 			err = r.SignMessages(ctx, queueName, messagesForSigning, p)
 			if err != nil {
 				logger.Error("failed signing messages")
 				processErrors.Add(err)
 			}
 
-			err = r.ProvideEvidenceForMessages(ctx, queueName, messagesForEvidence, p)
+			err = r.ProvideEvidenceForMessages(ctx, queueName, messagesInQueue, p)
 			if err != nil {
 				logger.Error("failed providing evidence for messages")
 				processErrors.Add(err)
 			}
 
-			err = r.RelayMessages(ctx, queueName, messagesForRelaying, p)
+			err = r.RelayMessages(ctx, queueName, messagesInQueue, p)
 			if err != nil {
 				logger.Error("failed relaying messages")
 				processErrors.Add(err)
