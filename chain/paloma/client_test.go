@@ -6,8 +6,10 @@ import (
 	"net"
 	"testing"
 
+	"github.com/VolumeFi/whoops"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/palomachain/pigeon/chain"
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
@@ -20,27 +22,11 @@ import (
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"google.golang.org/grpc/test/bufconn"
-
-	"github.com/VolumeFi/whoops"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-var (
-	errTestErr             = errors.New("sample error")
-	simpleMessageTestData1 = &testdata.SimpleMessage{
-		Sender: "bob",
-		Hello:  "mars",
-		World:  "!",
-	}
-	simpleMessageTestData2 = &testdata.SimpleMessage{
-		Sender: "alice",
-		Hello:  "jupiter",
-		World:  "!",
-	}
-)
+var errTestErr = errors.New("sample error")
 
 func consensusQueryServerDialer(t *testing.T, msgsrv *consensusmocks.QueryServer) func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)
@@ -305,6 +291,7 @@ func TestGetMessagesInQueue(t *testing.T) {
 		})
 	}
 }
+
 func TestQueryValidatorInfo(t *testing.T) {
 	fakeErr := errors.New("something")
 	fakeExternalInfo := []*valset.ExternalChainInfo{
@@ -443,6 +430,7 @@ type mockMsgSender func(context.Context, sdk.Msg, string) (*sdk.TxResponse, erro
 func (m mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	return m(ctx, msg, memo)
 }
+
 func TestBroadcastingMessageSignatures(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range []struct {

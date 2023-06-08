@@ -26,14 +26,12 @@ type Processor struct {
 	chainType        string
 	chainReferenceID string
 
-	turnstoneEVMContract common.Address
+	turnstoneEVMContract common.Address //nolint:unused
 
 	blockHeight       int64
 	blockHeightHash   common.Hash
 	minOnChainBalance *big.Int
 }
-
-var _ chain.Processor = Processor{}
 
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
@@ -78,7 +76,6 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 		}, nil
 	},
 	)
-
 }
 
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {

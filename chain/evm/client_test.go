@@ -300,7 +300,6 @@ func TestFilterLogs(t *testing.T) {
 }
 
 func TestFindingTheBlockNearestToTime(t *testing.T) {
-
 	type ethHeader struct {
 		height uint64
 		time   uint64

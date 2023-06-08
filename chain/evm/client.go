@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum"
 	etherum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -27,17 +28,12 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/cosmos/gogoproto/proto"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	smartContractFilename = "compass-evm"
 )
 
 type StoredContract struct {
@@ -161,7 +157,6 @@ type CompassBinding interface {
 
 func (c *Client) init() error {
 	return whoops.Try(func() {
-
 		if !ethcommon.IsHexAddress(c.config.SigningKey) {
 			whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(c.config.SigningKey)))
 		}
@@ -362,7 +357,6 @@ func (c *Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {
 // splitting the  possible set in two, recursively.
 func (c *Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error) {
 	found, err := filterLogs(ctx, c.conn, fq, currBlockHeight, true, fn)
-
 	if err != nil {
 		log.WithError(err).Error("error filtering logs")
 	}
@@ -385,7 +379,6 @@ type ethClientToFilterLogs interface {
 }
 
 func shouldDoBinarySearchFromError(err error) bool {
-
 	switch {
 	case strings.Contains(err.Error(), "query returned more than 10000 results"):
 		return true

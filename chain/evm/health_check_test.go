@@ -90,5 +90,4 @@ var _ = Describe("health check", func() {
 			})
 		})
 	})
-
 })

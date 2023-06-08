@@ -2,12 +2,12 @@ package paloma
 
 import (
 	"context"
+	"time"
+
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	log "github.com/sirupsen/logrus"
-	"time"
-
 	ggrpc "google.golang.org/grpc"
 )
 

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
 	"github.com/palomachain/pigeon/app"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -14,7 +14,6 @@ var (
 		Use:   "validate",
 		Short: "validates configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			_, err := app.PalomaClient().Keyring().List()
 			if err != nil {
 				return err

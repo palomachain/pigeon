@@ -6,14 +6,12 @@ import (
 	"strings"
 
 	"github.com/VolumeFi/whoops"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/palomachain/pigeon/chain/evm"
 	log "github.com/sirupsen/logrus"
-
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 func (r *Relayer) isStaking(ctx context.Context) error {
-
 	val, err := r.palomaClient.GetValidator(ctx)
 	if err != nil {
 		if !strings.Contains(err.Error(), "NotFound") {
@@ -38,7 +36,6 @@ func (r *Relayer) isStaking(ctx context.Context) error {
 
 func (r *Relayer) HealthCheck(ctx context.Context) error {
 	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
-
 	if err != nil {
 		return err
 	}

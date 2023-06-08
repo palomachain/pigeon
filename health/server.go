@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -42,11 +43,11 @@ func StartHTTPServer(
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 	log.Info("Starting healthcheck server")
 	if err := server.ListenAndServe(); err != nil {
 		log.WithError(err).Error("error starting healtcheck server")
 		panic(err)
 	}
-
 }

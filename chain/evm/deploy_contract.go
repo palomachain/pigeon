@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -152,17 +151,4 @@ func deployContract(
 		}
 	})
 	return
-}
-
-func rawDeploy(opts *bind.TransactOpts, abi abi.ABI, bytecode []byte, backend bind.ContractBackend, packedConstructorInput []byte) (common.Address, *ethtypes.Transaction, error) {
-	// Otherwise try to deploy the contract
-	c := bind.NewBoundContract(common.Address{}, abi, backend, backend, backend)
-
-	tx, err := c.RawTransact(opts, append(bytecode, packedConstructorInput...))
-	logger := log.WithField("constructor-input", packedConstructorInput)
-	logger.Info("raw deploy")
-	if err != nil {
-		return common.Address{}, nil, err
-	}
-	return crypto.CreateAddress(opts.From, tx.Nonce()), tx, nil
 }

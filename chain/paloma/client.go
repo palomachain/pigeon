@@ -6,15 +6,13 @@ import (
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/cosmos/gogoproto/proto"
-	"github.com/strangelove-ventures/lens/client/query"
-
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	consensus "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
@@ -23,6 +21,7 @@ import (
 	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
 type ResultStatus = coretypes.ResultStatus

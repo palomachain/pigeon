@@ -32,7 +32,6 @@ func (f *Factory) Build(
 	blockHeightHash common.Hash,
 	minOnChainBalance *big.Int,
 ) (chain.Processor, error) {
-
 	var smartContractABI *abi.ABI
 	if len(smartContractABIJson) > 0 {
 		aabi, err := abi.JSON(strings.NewReader(smartContractABIJson))

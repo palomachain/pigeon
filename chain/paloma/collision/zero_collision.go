@@ -1,4 +1,4 @@
-// Zero collision strategy ensures that all pigeons are using the same way of determinig if they can execute a message or not.
+// Zero collision strategy ensures that all pigeons are using the same way of determining if they can execute a message or not.
 // That way we can distribute the jobs without having to write data to paloma so that paloma could do it, as it could be slow.
 // Of course, paloma does not care about the strategy pigeons are using. Somebody could rewrite pigeon to do send all the messages,
 // but then they would be "fighting" with paloma and they (and other pigeons) would spend gas unceccecary.
@@ -143,7 +143,6 @@ func pickWinner(seed []byte, dump []byte, vals []sdk.ValAddress) sdk.ValAddress 
 		}
 		return possibleWinners[0]
 	}
-
 }
 
 // rounds down the block height to the nearest 10
