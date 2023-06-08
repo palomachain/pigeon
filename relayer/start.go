@@ -3,11 +3,11 @@ package relayer
 import (
 	"context"
 	goerrors "errors"
-	"github.com/palomachain/pigeon/errors"
 	"sync"
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/channels"
 	log "github.com/sirupsen/logrus"
 )
