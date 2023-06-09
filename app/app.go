@@ -8,15 +8,15 @@ import (
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	consensustypes "github.com/palomachain/paloma/x/consensus/types"
+	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/relayer"
-	consensustypes "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
-	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
-	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/time"
 	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/byop"
@@ -182,9 +182,9 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 		},
 		MsgsImplementations: []byop.RegisterImplementation{
 			{
-				Iface: (*consensustypes.Message)(nil),
+				Iface: (*consensustypes.ConsensusMsg)(nil),
 				Msgs: []proto.Message{
-					&evmtypes.ArbitrarySmartContractCall{},
+					&evmtypes.SubmitLogicCall{}, // TODO : Test to ensure this is right
 					&evmtypes.Message{},
 					&evmtypes.ValidatorBalancesAttestation{},
 					&evmtypes.ValidatorBalancesAttestationRes{},

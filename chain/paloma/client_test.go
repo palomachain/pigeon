@@ -11,12 +11,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/gogoproto/proto"
+	consensus "github.com/palomachain/paloma/x/consensus/types"
+	consensusmocks "github.com/palomachain/paloma/x/consensus/types/mocks"
+	valset "github.com/palomachain/paloma/x/valset/types"
+	valsetmocks "github.com/palomachain/paloma/x/valset/types/mocks"
 	"github.com/palomachain/pigeon/chain"
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
-	consensus "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
-	consensusmocks "github.com/palomachain/pigeon/types/paloma/x/consensus/types/mocks"
-	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
-	valsetmocks "github.com/palomachain/pigeon/types/paloma/x/valset/types/mocks"
 	"github.com/palomachain/pigeon/types/testdata"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
@@ -68,7 +68,7 @@ func makeCodec() lens.Codec {
 			ModuleName: "testing",
 			MsgsImplementations: []byop.RegisterImplementation{
 				{
-					Iface: (*consensus.Message)(nil),
+					Iface: (*consensus.ConsensusMsg)(nil),
 					Msgs: []proto.Message{
 						&testdata.SimpleMessage{},
 						&testdata.SimpleMessage2{},

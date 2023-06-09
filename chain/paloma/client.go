@@ -13,12 +13,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/cosmos/gogoproto/proto"
+	consensus "github.com/palomachain/paloma/x/consensus/types"
+	evm "github.com/palomachain/paloma/x/evm/types"
+	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
-	consensus "github.com/palomachain/pigeon/types/paloma/x/consensus/types"
-	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
-	evm "github.com/palomachain/pigeon/types/paloma/x/evm/types"
-	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/client/query"
@@ -82,7 +81,7 @@ func queryMessagesForSigning(
 	}
 	res := []chain.QueuedMessage{}
 	for _, msg := range msgs.GetMessageToSign() {
-		var ptr consensus.Message
+		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
@@ -136,7 +135,7 @@ func queryMessagesInQueue(
 				PublicKey:       vs.GetPublicKey(),
 			})
 		}
-		var ptr consensus.Message
+		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
@@ -217,7 +216,7 @@ func (c Client) BlockHeight(ctx context.Context) (int64, error) {
 	return res.SyncInfo.LatestBlockHeight, nil
 }
 
-func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainReferenceID string) (*types.Valset, error) {
+func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainReferenceID string) (*evm.Valset, error) {
 	qc := evm.NewQueryClient(c.GRPCClient)
 	valsetRes, err := qc.GetValsetByID(ctx, &evm.QueryGetValsetByIDRequest{
 		ValsetID:         id,

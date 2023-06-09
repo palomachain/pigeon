@@ -6,9 +6,9 @@ import (
 
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
+	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
-	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	log "github.com/sirupsen/logrus"
 )
 

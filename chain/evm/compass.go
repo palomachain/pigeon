@@ -17,8 +17,8 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
-	"github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
