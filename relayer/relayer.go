@@ -9,11 +9,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
+	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
-	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
-	valset "github.com/palomachain/pigeon/types/paloma/x/valset/types"
 	utiltime "github.com/palomachain/pigeon/util/time"
 )
 

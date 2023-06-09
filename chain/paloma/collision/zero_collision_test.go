@@ -7,7 +7,7 @@ import (
 
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	valsettypes "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/util/slice"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

@@ -5,7 +5,7 @@ package collision
 import (
 	context "context"
 
-	types "github.com/palomachain/pigeon/types/paloma/x/valset/types"
+	types "github.com/palomachain/paloma/x/valset/types"
 	mock "github.com/stretchr/testify/mock"
 )
 

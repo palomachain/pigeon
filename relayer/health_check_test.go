@@ -8,10 +8,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"
-	evmtypes "github.com/palomachain/pigeon/types/paloma/x/evm/types"
 	"github.com/stretchr/testify/mock"
 )
 
