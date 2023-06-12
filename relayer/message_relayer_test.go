@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
