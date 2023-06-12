@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"sync"
 
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -9,10 +10,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) updateExternalChainInfos(ctx context.Context, processors []chain.Processor) error {
+func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Locker) error {
+	err := r.buildProcessors(ctx, locker)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("couldn't build processors to update external chain info")
+
+		return err
+	}
+
 	log.Info("updating external chain infos")
 	externalAccounts := slice.Map(
-		processors,
+		r.processors,
 		func(p chain.Processor) chain.ExternalAccount {
 			return p.ExternalAccount()
 		},
@@ -36,5 +46,9 @@ func (r *Relayer) updateExternalChainInfos(ctx context.Context, processors []cha
 		return nil
 	}
 
-	return r.palomaClient.AddExternalChainInfo(ctx, chainInfos...)
+	locker.Lock()
+	err = r.palomaClient.AddExternalChainInfo(ctx, chainInfos...)
+	locker.Unlock()
+
+	return err
 }

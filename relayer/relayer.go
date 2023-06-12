@@ -63,6 +63,9 @@ type Relayer struct {
 	relayerConfig Config
 
 	time utiltime.Time
+
+	chainsInfos []evmtypes.ChainInfo
+	processors  []chain.Processor
 }
 
 type Config struct {

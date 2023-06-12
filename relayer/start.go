@@ -6,13 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VolumeFi/whoops"
-	"github.com/palomachain/pigeon/errors"
-	"github.com/palomachain/pigeon/util/channels"
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultLoopTimeout = 1 * time.Minute
+const (
+	updateExternalChainsLoopInterval = 1 * time.Minute
+	signMessagesLoopInterval         = 1 * time.Minute
+	relayMessagesLoopInterval        = 1 * time.Minute
+	attestMessagesLoopInterval       = 1 * time.Minute
+)
 
 func (r *Relayer) waitUntilStaking(ctx context.Context) error {
 	for {
@@ -36,6 +38,25 @@ func (r *Relayer) waitUntilStaking(ctx context.Context) error {
 	}
 }
 
+func (r *Relayer) startProcess(ctx context.Context, locker sync.Locker, tickerInterval time.Duration, process func(context.Context, sync.Locker) error) {
+	ticker := time.NewTicker(tickerInterval)
+	defer ticker.Stop()
+
+	logger := log.WithFields(log.Fields{})
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Warn("exiting due to context being done")
+			return
+		case <-ticker.C:
+			err := process(ctx, locker)
+			if err != nil {
+				logger.Error(err)
+			}
+		}
+	}
+}
+
 // Start starts the relayer. It's responsible for handling the communication
 // with Paloma and other chains.
 func (r *Relayer) Start(ctx context.Context) error {
@@ -46,108 +67,13 @@ func (r *Relayer) Start(ctx context.Context) error {
 	log.Info("starting relayer")
 	var locker sync.Mutex
 
-	go r.startUpdateExternalChainInfos(ctx, &locker)
+	// Start background goroutines to run separately from each other
+	go r.startProcess(ctx, &locker, updateExternalChainsLoopInterval, r.UpdateExternalChainInfos)
+	go r.startProcess(ctx, &locker, signMessagesLoopInterval, r.SignMessages)
+	go r.startProcess(ctx, &locker, relayMessagesLoopInterval, r.RelayMessages)
+	go r.startProcess(ctx, &locker, attestMessagesLoopInterval, r.AttestMessages)
 
-	ticker := time.NewTicker(defaultLoopTimeout)
-	defer ticker.Stop()
-
-	// only used to enter into the loop below immediately after the first "tick"
-	firstLoopEnter := make(chan time.Time, 1)
-	firstLoopEnter <- time.Time{}
-
-	go func() {
-		r.startKeepAlive(ctx, &locker)
-	}()
-
-	tickerCh := channels.FanIn(ticker.C, firstLoopEnter)
-	for {
-		log.Debug("waiting on the loop for a new tick")
-		select {
-		case <-ctx.Done():
-			log.Warn("exiting due to context being done")
-			return ctx.Err()
-		case _, chOpen := <-tickerCh:
-			if !chOpen {
-				if ctx.Err() != nil {
-					return nil
-				}
-				return whoops.WrapS(ErrUnknown, "ticker channel for message processing was closed unexpectedly")
-			}
-			if err := r.process(ctx, &locker); err != nil {
-				log.WithError(err).Error("error while trying to process messages")
-			}
-		}
-	}
-}
-
-func (r *Relayer) startUpdateExternalChainInfos(ctx context.Context, locker sync.Locker) {
-	ticker := time.NewTicker(defaultLoopTimeout)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		processors, err := r.buildProcessors(ctx)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Error("couldn't build processors to update external chain info")
-
-			continue
-		}
-
-		log.Info("trying to update external chain info")
-
-		locker.Lock()
-		err = r.updateExternalChainInfos(ctx, processors)
-		locker.Unlock()
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Error("couldn't update external chain info. Will try again.")
-		}
-	}
-}
-
-func (r *Relayer) process(ctx context.Context, locker sync.Locker) error {
-	log.Info("relayer loop")
-	if ctx.Err() != nil {
-		log.Info("exiting relayer loop as context has ended")
-		return ctx.Err()
-	}
-
-	processors, err := r.buildProcessors(ctx)
-	if err != nil {
-		return err
-	}
-
-	locker.Lock()
-	err = r.Process(ctx, processors)
-	locker.Unlock()
-
-	switch {
-	case err == nil:
-		// success
-		return nil
-	case goerrors.Is(err, context.Canceled):
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Debug("exited from the process loop due the context being canceled")
-		return nil
-	case goerrors.Is(err, context.DeadlineExceeded):
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Debug("exited from the process loop due the context deadline being exceeded")
-		return nil
-	case errors.IsUnrecoverable(err):
-		// there is no way that we can recover from this
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("unrecoverable error returned")
-		return err
-	default:
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("error returned in process loop")
-		return nil
-	}
+	// Start the foreground process
+	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, r.keepAlive)
+	return nil
 }
