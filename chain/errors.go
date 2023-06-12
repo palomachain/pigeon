@@ -20,4 +20,6 @@ const (
 	EnrichedChainReferenceID whoops.Field[string] = "chainReferenceID"
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"
+
+	ErrNotValidator = whoops.String("not a validator")
 )
