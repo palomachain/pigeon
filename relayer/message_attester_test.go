@@ -5,44 +5,44 @@ import (
 	"os"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"
+	"github.com/palomachain/pigeon/testutil"
 	timemocks "github.com/palomachain/pigeon/util/time/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestProcessing(t *testing.T) {
+func TestAttestMessages(t *testing.T) {
 	ctx := context.Background()
-	for _, tt := range []struct {
-		name              string
-		setup             func(t *testing.T) *Relayer
-		expErr            error
-		buildProcessorErr error
+	testcases := []struct {
+		name   string
+		setup  func(t *testing.T) *Relayer
+		expErr error
 	}{
 		{
 			name: "without any processor it does nothing",
 			setup: func(t *testing.T) *Relayer {
 				pc := mocks.NewPalomaClienter(t)
 				pc.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return(nil, nil)
-				return New(
+				r := New(
 					config.Root{},
 					pc,
 					evm.NewFactory(pc),
 					timemocks.NewTime(t),
 					Config{},
 				)
+				return r
 			},
 		},
 		{
-			name: "it relays messages",
+			name: "it attests messages",
 			setup: func(t *testing.T) *Relayer {
 				keyringPass := "abcd"
 
@@ -54,15 +54,6 @@ func TestProcessing(t *testing.T) {
 				p := chainmocks.NewProcessor(t)
 				p.On("IsRightChain", mock.Anything).Return(nil)
 				p.On("SupportedQueues").Return([]string{"a"})
-				p.On(
-					"ProcessMessages",
-					mock.Anything,
-					"a",
-					[]chain.MessageWithSignatures{
-						{QueuedMessage: chain.QueuedMessage{ID: 123}},
-						{QueuedMessage: chain.QueuedMessage{ID: 456}},
-					},
-				).Return(nil)
 
 				p.On(
 					"ProvideEvidence",
@@ -74,16 +65,6 @@ func TestProcessing(t *testing.T) {
 				).Return(nil)
 
 				pal := mocks.NewPalomaClienter(t)
-				pal.On("GetValidatorAddress").Return(sdk.ValAddress("abc"))
-				pal.On("BlockHeight", mock.Anything).Return(int64(555), nil)
-				pal.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{Address: sdk.ValAddress("abc")},
-						},
-					},
-					nil,
-				)
 				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
 					{
 						ChainReferenceID:      "main",
@@ -103,10 +84,7 @@ func TestProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				pal.On("QueryMessagesForSigning", mock.Anything, "a").Return(
-					[]chain.QueuedMessage{},
-					nil,
-				)
+
 				os.Setenv("TEST_PASS", keyringPass)
 				t.Cleanup(func() {
 					os.Unsetenv("TEST_PASS")
@@ -183,17 +161,18 @@ func TestProcessing(t *testing.T) {
 					Config{},
 				)
 			},
-			buildProcessorErr: chain.ErrNotConnectedToRightChain,
+			expErr: chain.ErrNotConnectedToRightChain,
 		},
-	} {
+	}
+
+	for _, tt := range testcases {
+		asserter := assert.New(t)
 		t.Run(tt.name, func(t *testing.T) {
 			relayer := tt.setup(t)
 
-			processors, err := relayer.buildProcessors(ctx)
-			require.ErrorIs(t, err, tt.buildProcessorErr)
-
-			err = relayer.Process(ctx, processors)
-			require.ErrorIs(t, err, tt.expErr)
+			var locker testutil.FakeMutex
+			actualErr := relayer.AttestMessages(ctx, &locker)
+			asserter.Equal(tt.expErr, actualErr)
 		})
 	}
 }

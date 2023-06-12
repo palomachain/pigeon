@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"math/big"
+	"sync"
 
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,28 +13,60 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) buildProcessors(ctx context.Context) ([]chain.Processor, error) {
-	chainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
+func (r *Relayer) buildProcessors(ctx context.Context, locker sync.Locker) error {
+	locker.Lock()
+	defer locker.Unlock()
+	queriedChainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	log.WithField("chains-infos", chainsInfos).Trace("got chain infos")
+	log.WithField("chains-infos", queriedChainsInfos).Trace("got chain infos")
 
-	processors := []chain.Processor{}
-	for _, chainInfo := range chainsInfos {
+	// See if we need to update
+	if (r.processors != nil) && (r.chainsInfos != nil) && (len(r.chainsInfos) == len(queriedChainsInfos)) {
+		chainsChanged := false
+		for k, c := range r.chainsInfos {
+			if c.Id != queriedChainsInfos[k].Id ||
+				c.ChainReferenceID != queriedChainsInfos[k].ChainReferenceID ||
+				c.ChainID != queriedChainsInfos[k].ChainID ||
+				string(c.SmartContractUniqueID) != string(queriedChainsInfos[k].SmartContractUniqueID) ||
+				c.SmartContractAddr != queriedChainsInfos[k].SmartContractAddr ||
+				c.ReferenceBlockHeight != queriedChainsInfos[k].ReferenceBlockHeight ||
+				c.ReferenceBlockHash != queriedChainsInfos[k].ReferenceBlockHash ||
+				c.Abi != queriedChainsInfos[k].Abi ||
+				string(c.Bytecode) != string(queriedChainsInfos[k].Bytecode) ||
+				string(c.ConstructorInput) != string(queriedChainsInfos[k].ConstructorInput) ||
+				c.Status != queriedChainsInfos[k].Status ||
+				c.ActiveSmartContractID != queriedChainsInfos[k].ActiveSmartContractID ||
+				c.MinOnChainBalance != queriedChainsInfos[k].MinOnChainBalance {
+				chainsChanged = true
+			}
+		}
+		if !chainsChanged {
+			log.Debug("chain infos unchanged since last tick")
+			return nil
+		}
+	}
+
+	log.Debug("chain infos changed.  building processors")
+
+	r.processors = []chain.Processor{}
+	r.chainsInfos = []evmtypes.ChainInfo{}
+	for _, chainInfo := range queriedChainsInfos {
 		processor, err := r.processorFactory(chainInfo)
 		if errors.IsUnrecoverable(err) {
-			return nil, err
+			return err
 		}
 
 		if err := processor.IsRightChain(ctx); err != nil {
-			return nil, err
+			return err
 		}
 
-		processors = append(processors, processor)
+		r.processors = append(r.processors, processor)
+		r.chainsInfos = append(r.chainsInfos, *chainInfo)
 	}
 
-	return processors, nil
+	return nil
 }
 
 func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Processor, error) {
