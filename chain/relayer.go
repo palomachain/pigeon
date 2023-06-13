@@ -12,6 +12,7 @@ type QueuedMessage struct {
 	Nonce            []byte
 	BytesToSign      []byte
 	PublicAccessData []byte
+	ErrorData        []byte
 	Msg              any
 }
 

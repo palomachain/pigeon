@@ -2,11 +2,9 @@ package relayer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
-	"github.com/palomachain/pigeon/chain/paloma/collision"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,16 +28,33 @@ func (r *Relayer) RelayMessages(ctx context.Context, locker sync.Locker) error {
 	return handleProcessError(err)
 }
 
+func (r *Relayer) getMsgOffsetData(ctx context.Context) (int, int, error) {
+	snapshot, err := r.palomaClient.QueryGetSnapshotByID(ctx, 0)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	numValidators := len(snapshot.Validators)
+	for i, validator := range snapshot.Validators {
+		if r.palomaClient.GetValidatorAddress().String() == validator.Address.String() {
+			return numValidators, i, nil
+		}
+	}
+
+	// If we made it here, somehow our validator address wasn't in the snapshot
+	return 0, 0, chain.ErrNotValidator
+}
+
 func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processor) error {
 	if len(processors) == 0 {
 		return nil
 	}
 
-	ctx, cleanup, err := collision.GoStartLane(ctx, r.palomaClient, r.palomaClient.GetValidatorAddress())
+	// Get the offset for this validator so that we know which messages to relay
+	numValidators, myMsgOffset, err := r.getMsgOffsetData(ctx)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
 
 	// todo randomise
 	for _, p := range processors {
@@ -50,7 +65,7 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 				"action":     "relay",
 			})
 
-			messagesInQueue, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+			messagesInQueue, err := r.palomaClient.QueryMessagesForRelaying(ctx, queueName)
 
 			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
@@ -70,10 +85,10 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 					return len(msg.PublicAccessData) == 0
 				},
 				func(msg chain.MessageWithSignatures) bool {
-					return collision.AllowedToExecute(
-						ctx,
-						[]byte(fmt.Sprintf("%s-%d", queueName, msg.ID)),
-					)
+					return len(msg.ErrorData) == 0
+				},
+				func(msg chain.MessageWithSignatures) bool {
+					return (int(msg.ID) % numValidators) == myMsgOffset
 				},
 			)
 

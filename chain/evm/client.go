@@ -98,6 +98,7 @@ func StoredContracts() map[string]StoredContract {
 type PalomaClienter interface {
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
+	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 }
 

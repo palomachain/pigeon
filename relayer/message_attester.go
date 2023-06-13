@@ -42,10 +42,9 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 				"action":     "attest",
 			})
 
-			messagesInQueue, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+			messagesInQueue, err := r.palomaClient.QueryMessagesForAttesting(ctx, queueName)
 
-			logger = log.WithFields(log.Fields{
-				"queue-name": queueName,
+			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
 					return msg.ID
 				}),
@@ -58,7 +57,7 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 			}
 
 			msgsToAttest := slice.Filter(messagesInQueue, func(msg chain.MessageWithSignatures) bool {
-				return len(msg.PublicAccessData) > 0
+				return len(msg.PublicAccessData) > 0 || len(msg.ErrorData) > 0
 			})
 
 			if len(msgsToAttest) > 0 {

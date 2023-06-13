@@ -76,7 +76,7 @@ func TestAttestMessages(t *testing.T) {
 						MinOnChainBalance:     "10000",
 					},
 				}, nil)
-				pal.On("QueryMessagesInQueue", mock.Anything, mock.Anything).Return(
+				pal.On("QueryMessagesForAttesting", mock.Anything, mock.Anything).Return(
 					[]chain.MessageWithSignatures{
 						{QueuedMessage: chain.QueuedMessage{ID: 123}},
 						{QueuedMessage: chain.QueuedMessage{ID: 456}},

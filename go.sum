@@ -865,8 +865,8 @@ github.com/openzipkin/zipkin-go v0.2.1/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnh
 github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
 github.com/ory/dockertest v3.3.5+incompatible h1:iLLK6SQwIhcbrG783Dghaaa3WPzGc+4Emza6EbVUUGA=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
-github.com/palomachain/paloma v0.11.5-0.20230609200954-2111c64052eb h1:2uLsVebnyykVfv9aHu+3V9t4BwhNdyqlHGfK6GrUSIA=
-github.com/palomachain/paloma v0.11.5-0.20230609200954-2111c64052eb/go.mod h1:Egc6cv++ZQ/PUYooJFBLIINhBSRiIRRDXPkNkujmF6c=
+github.com/palomachain/paloma v0.11.5-0.20230613170335-a165a4645595 h1:HbD5dTeKmCnRwVMW1y7ysMsQRxISynoN7/cvC01KrWc=
+github.com/palomachain/paloma v0.11.5-0.20230613170335-a165a4645595/go.mod h1:Egc6cv++ZQ/PUYooJFBLIINhBSRiIRRDXPkNkujmF6c=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

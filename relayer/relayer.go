@@ -22,11 +22,13 @@ type PalomaClienter interface {
 	AddExternalChainInfo(ctx context.Context, chainInfos ...paloma.ChainInfoIn) error
 	QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
-	QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
+	QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
+	QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
 	QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error)
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
+	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
 	GetValidator(ctx context.Context) (*stakingtypes.Validator, error)

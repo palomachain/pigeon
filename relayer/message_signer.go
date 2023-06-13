@@ -50,7 +50,7 @@ func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor
 				return err
 			}
 
-			logger = log.WithFields(log.Fields{
+			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesForSigning, func(msg chain.QueuedMessage) uint64 {
 					return msg.ID
 				}),

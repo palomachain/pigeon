@@ -267,6 +267,58 @@ func (_m *PalomaClienter) QueryGetValidatorAliveUntil(ctx context.Context) (time
 	return r0, r1
 }
 
+// QueryMessagesForAttesting provides a mock function with given fields: ctx, queueTypeName
+func (_m *PalomaClienter) QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	ret := _m.Called(ctx, queueTypeName)
+
+	var r0 []chain.MessageWithSignatures
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.MessageWithSignatures, error)); ok {
+		return rf(ctx, queueTypeName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.MessageWithSignatures); ok {
+		r0 = rf(ctx, queueTypeName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.MessageWithSignatures)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, queueTypeName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// QueryMessagesForRelaying provides a mock function with given fields: ctx, queueTypeName
+func (_m *PalomaClienter) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	ret := _m.Called(ctx, queueTypeName)
+
+	var r0 []chain.MessageWithSignatures
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.MessageWithSignatures, error)); ok {
+		return rf(ctx, queueTypeName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.MessageWithSignatures); ok {
+		r0 = rf(ctx, queueTypeName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.MessageWithSignatures)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, queueTypeName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // QueryMessagesForSigning provides a mock function with given fields: ctx, queueTypeName
 func (_m *PalomaClienter) QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error) {
 	ret := _m.Called(ctx, queueTypeName)
@@ -281,32 +333,6 @@ func (_m *PalomaClienter) QueryMessagesForSigning(ctx context.Context, queueType
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]chain.QueuedMessage)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, queueTypeName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// QueryMessagesInQueue provides a mock function with given fields: ctx, queueTypeName
-func (_m *PalomaClienter) QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	ret := _m.Called(ctx, queueTypeName)
-
-	var r0 []chain.MessageWithSignatures
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.MessageWithSignatures, error)); ok {
-		return rf(ctx, queueTypeName)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.MessageWithSignatures); ok {
-		r0 = rf(ctx, queueTypeName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.MessageWithSignatures)
 		}
 	}
 
@@ -343,6 +369,20 @@ func (_m *PalomaClienter) QueryValidatorInfo(ctx context.Context) ([]*valsettype
 	}
 
 	return r0, r1
+}
+
+// SetErrorData provides a mock function with given fields: ctx, queueTypeName, messageID, data
+func (_m *PalomaClienter) SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
+	ret := _m.Called(ctx, queueTypeName, messageID, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, []byte) error); ok {
+		r0 = rf(ctx, queueTypeName, messageID, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // SetPublicAccessData provides a mock function with given fields: ctx, queueTypeName, messageID, data

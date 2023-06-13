@@ -183,7 +183,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			msgs, err := app.PalomaClient().QueryMessagesInQueue(ctx, args[0])
+			msgs, err := app.PalomaClient().QueryMessagesForAttesting(ctx, args[0])
 			if err != nil {
 				return err
 			}
@@ -242,7 +242,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			msgs, err := app.PalomaClient().QueryMessagesInQueue(ctx, args[0])
+			msgs, err := app.PalomaClient().QueryMessagesForAttesting(ctx, args[0])
 			if err != nil {
 				return err
 			}
