@@ -114,15 +114,21 @@ func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName string, ms
 		}
 
 		logger = logger.WithField("message-id", rawMsg.ID)
-		if len(rawMsg.PublicAccessData) == 0 {
+		switch {
+		case len(rawMsg.ErrorData) > 0:
+			logger.Debug("providing error proof for message")
+			gErr.Add(
+				p.compass.provideErrorProof(ctx, queueTypeName, rawMsg),
+			)
+		case len(rawMsg.PublicAccessData) > 0:
+			logger.Debug("providing tx proof for message")
+			gErr.Add(
+				p.compass.provideTxProof(ctx, queueTypeName, rawMsg),
+			)
+		default:
 			logger.Debug("skipping message as there is no proof")
 			continue
 		}
-
-		logger.Debug("providing proof for message")
-		gErr.Add(
-			p.compass.provideTxProof(ctx, queueTypeName, rawMsg),
-		)
 	}
 	return gErr.Return()
 }

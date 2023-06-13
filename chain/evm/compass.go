@@ -149,7 +149,7 @@ func (t compass) updateValset(
 				"current-valset-id": currentValsetID,
 			})
 			logger.Debug("call_compass error")
-			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
 				logger := log.WithFields(log.Fields{
 					"current-valset-id": currentValsetID,
@@ -205,7 +205,7 @@ func (t compass) submitLogicCall(
 			new(big.Int).SetInt64(msg.GetDeadline()),
 		})
 		if err != nil {
-			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
 				return nil
 			}
@@ -277,7 +277,7 @@ func (t compass) uploadSmartContract(
 				WithField("input", constructorInput).
 				Error("uploadSmartContract: error calling DeployContract")
 
-			isSmartContractError := whoops.Must(t.tryProvidingEvidenceIfSmartContractErr(ctx, queueTypeName, origMessage.ID, err))
+			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
 				logger.Info("uploadSmartContract: error calling DeployContract was a smart contract error")
 				return nil
@@ -289,28 +289,27 @@ func (t compass) uploadSmartContract(
 	})
 }
 
-func (t compass) tryProvidingEvidenceIfSmartContractErr(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
+func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
 	var jsonRpcErr rpc.DataError
 	if !errors.As(errToProcess, &jsonRpcErr) {
-		return false, nil
-	}
-
-	log.WithFields(
-		log.Fields{
-			"queue-type-name": queueTypeName,
-			"message-id":      msgID,
-			"error-message":   jsonRpcErr.Error(),
-		},
-	).Warn("smart contract returned an error")
-
-	err := t.paloma.AddMessageEvidence(ctx, queueTypeName, msgID, &types.SmartContractExecutionErrorProof{
-		ErrorMessage: jsonRpcErr.Error(),
-	})
-	if err != nil {
+		err := t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(errToProcess.Error()))
 		return false, err
-	}
+	} else {
+		log.WithFields(
+			log.Fields{
+				"queue-type-name": queueTypeName,
+				"message-id":      msgID,
+				"error-message":   jsonRpcErr.Error(),
+			},
+		).Warn("smart contract returned an error")
 
-	return true, nil
+		err := t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(jsonRpcErr.Error()))
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
 }
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
@@ -410,6 +409,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		if ctx.Err() != nil {
 			logger.Debug("exiting processing message context")
 			break
+		}
+
+		if len(rawMsg.ErrorData) > 0 {
+			logger.Warn("skipping the message as it already has error data")
+			continue
 		}
 
 		if len(rawMsg.PublicAccessData) > 0 {
@@ -563,6 +567,19 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 
 	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &types.TxExecutedProof{
 		SerializedTX: txProof,
+	})
+}
+
+// provideErrorProof provides a pass-through proof for an error during relaying
+func (t compass) provideErrorProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
+	log.WithFields(log.Fields{
+		"queue-type-name":    queueTypeName,
+		"msg-id":             rawMsg.ID,
+		"public-access-data": rawMsg.PublicAccessData,
+	}).Debug("providing error proof")
+
+	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &types.SmartContractExecutionErrorProof{
+		ErrorMessage: string(rawMsg.PublicAccessData),
 	})
 }
 

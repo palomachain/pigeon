@@ -97,12 +97,23 @@ func queryMessagesForSigning(
 	return res, nil
 }
 
-// QueryMessagesInQueue returns all messages that are currently in the queue.
-func (c Client) QueryMessagesInQueue(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+// QueryMessagesForAttesting returns all messages that are currently in the queue except those already attested for.
+func (c Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
 	return queryMessagesInQueue(
 		ctx,
 		queueTypeName,
 		c.valAddr,
+		c.GRPCClient,
+		c.L.Codec.Marshaler,
+	)
+}
+
+// QueryMessagesForRelaying returns all messages that are currently in the queue.
+func (c Client) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	return queryMessagesInQueue(
+		ctx,
+		queueTypeName,
+		nil,
 		c.GRPCClient,
 		c.L.Codec.Marshaler,
 	)
@@ -147,6 +158,7 @@ func queryMessagesInQueue(
 				Msg:              ptr,
 				BytesToSign:      msg.GetBytesToSign(),
 				PublicAccessData: msg.GetPublicAccessData(),
+				ErrorData:        msg.GetErrorData(),
 			},
 			Signatures: valSigs,
 		})
@@ -317,6 +329,18 @@ func (c Client) AddMessageEvidence(ctx context.Context, queueTypeName string, me
 
 func (c Client) SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
 	msg := &consensus.MsgSetPublicAccessData{
+		Creator:       c.creator,
+		Data:          data,
+		MessageID:     messageID,
+		QueueTypeName: queueTypeName,
+	}
+
+	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	return err
+}
+
+func (c Client) SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
+	msg := &consensus.MsgSetErrorData{
 		Creator:       c.creator,
 		Data:          data,
 		MessageID:     messageID,

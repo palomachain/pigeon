@@ -188,7 +188,7 @@ func TestRelayMessages(t *testing.T) {
 						MinOnChainBalance:     "10000",
 					},
 				}, nil)
-				pal.On("QueryMessagesInQueue", mock.Anything, mock.Anything).Return(
+				pal.On("QueryMessagesForRelaying", mock.Anything, mock.Anything).Return(
 					[]chain.MessageWithSignatures{
 						{QueuedMessage: chain.QueuedMessage{ID: 1}},
 						{QueuedMessage: chain.QueuedMessage{ID: 2}},

@@ -552,7 +552,7 @@ func TestMessageProcessing(t *testing.T) {
 			},
 		},
 		{
-			name: "upload_smart_contract/when smart contract returns an error it sends it to paloma as evidence",
+			name: "upload_smart_contract/when smart contract returns an error it sends it to paloma as error data",
 			msgs: []chain.MessageWithSignatures{
 				{
 					QueuedMessage: chain.QueuedMessage{
@@ -586,9 +586,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
-				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), &types.SmartContractExecutionErrorProof{
-					ErrorMessage: fakeErr.Error(),
-				}).Return(nil)
+				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return evm, paloma
 			},
 			expErr: nil,
@@ -628,9 +626,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
-				paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(555), &types.SmartContractExecutionErrorProof{
-					ErrorMessage: fakeErr.Error(),
-				}).Return(dummyErr)
+				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(dummyErr)
 				return evm, paloma
 			},
 			expErr: dummyErr,

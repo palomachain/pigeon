@@ -65,7 +65,7 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 				"action":     "relay",
 			})
 
-			messagesInQueue, err := r.palomaClient.QueryMessagesInQueue(ctx, queueName)
+			messagesInQueue, err := r.palomaClient.QueryMessagesForRelaying(ctx, queueName)
 
 			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
@@ -83,6 +83,9 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 				messagesInQueue,
 				func(msg chain.MessageWithSignatures) bool {
 					return len(msg.PublicAccessData) == 0
+				},
+				func(msg chain.MessageWithSignatures) bool {
+					return len(msg.ErrorData) == 0
 				},
 				func(msg chain.MessageWithSignatures) bool {
 					return (int(msg.ID) % numValidators) == myMsgOffset

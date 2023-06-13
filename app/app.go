@@ -167,6 +167,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgDeleteJob{},
 					&consensustypes.MsgAddEvidence{},
 					&consensustypes.MsgSetPublicAccessData{},
+					&consensustypes.MsgSetErrorData{},
 				},
 			},
 			{
