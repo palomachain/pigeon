@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
