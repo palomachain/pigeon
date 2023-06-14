@@ -11,9 +11,9 @@ import (
 
 const (
 	updateExternalChainsLoopInterval = 1 * time.Minute
-	signMessagesLoopInterval         = 1 * time.Minute
-	relayMessagesLoopInterval        = 1 * time.Minute
-	attestMessagesLoopInterval       = 1 * time.Minute
+	signMessagesLoopInterval         = 10 * time.Second
+	relayMessagesLoopInterval        = 10 * time.Second
+	attestMessagesLoopInterval       = 10 * time.Second
 )
 
 func (r *Relayer) waitUntilStaking(ctx context.Context) error {
@@ -64,7 +64,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("starting relayer")
+	log.Info("starting pigeon")
 	var locker sync.Mutex
 
 	// Start background goroutines to run separately from each other
