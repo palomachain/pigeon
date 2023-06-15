@@ -21,5 +21,5 @@ const (
 	EnrichedID               whoops.Field[uint64] = "id"
 	EnrichedItemType         whoops.Field[string] = "type"
 
-	ErrNotValidator = whoops.String("not a validator")
+	ErrNotValidator = whoops.String("not a validator in current snapshot")
 )

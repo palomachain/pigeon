@@ -68,6 +68,8 @@ type Relayer struct {
 
 	chainsInfos []evmtypes.ChainInfo
 	processors  []chain.Processor
+
+	staking bool
 }
 
 type Config struct {
@@ -82,5 +84,6 @@ func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorie
 		evmFactory:    evmFactory,
 		time:          customTime,
 		relayerConfig: cfg,
+		staking:       false,
 	}
 }
