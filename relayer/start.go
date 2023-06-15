@@ -11,9 +11,9 @@ import (
 
 const (
 	updateExternalChainsLoopInterval = 1 * time.Minute
-	signMessagesLoopInterval         = 10 * time.Second
-	relayMessagesLoopInterval        = 10 * time.Second
-	attestMessagesLoopInterval       = 10 * time.Second
+	signMessagesLoopInterval         = 1 * time.Second
+	relayMessagesLoopInterval        = 1 * time.Second
+	attestMessagesLoopInterval       = 1 * time.Second
 )
 
 func (r *Relayer) waitUntilStaking(ctx context.Context) error {
