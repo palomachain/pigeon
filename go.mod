@@ -10,7 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
-	github.com/palomachain/paloma v0.11.5-0.20230613170335-a165a4645595
+	github.com/palomachain/paloma v1.3.0
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/cobra v1.7.0
 	github.com/strangelove-ventures/lens v0.5.1
