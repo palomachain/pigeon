@@ -3,8 +3,7 @@
 ###########################
 ####     Base image    ####
 ###########################
-FROM golang:1.18-stretch AS base
-MAINTAINER Matija Martinic <matija@volume.finance>
+FROM golang:1.20-bullseye AS base
 WORKDIR /app
 
 ###########################
