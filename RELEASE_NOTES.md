@@ -9,6 +9,7 @@
 * Loop every second by @ToasterTheBrave in https://github.com/palomachain/pigeon/pull/185
 * Continue checking if a pigeon is staking by @ToasterTheBrave in https://github.com/palomachain/pigeon/pull/186
 * Upgrade to paloma v1.3.0 by @ToasterTheBrave in https://github.com/palomachain/pigeon/pull/187
+* Upgrade release script to go 1.20 by @ToasterTheBrave in https://github.com/palomachain/pigeon/pull/198
 
 
 **Full Changelog**: https://github.com/palomachain/pigeon/compare/v1.1.1...v1.2.0
