@@ -5,10 +5,8 @@ import (
 	"os"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
@@ -20,104 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-func TestGetMsgOffsetData(t *testing.T) {
-	ctx := context.Background()
-	testcases := []struct {
-		name                  string
-		setup                 func(t *testing.T) *Relayer
-		expectedNumValidators int
-		expectedOffset        int
-		expErr                error
-	}{
-		{
-			name: "returns error when error retrieving snapshot",
-			setup: func(t *testing.T) *Relayer {
-				pc := mocks.NewPalomaClienter(t)
-				pc.On("QueryGetSnapshotByID", mock.Anything, mock.Anything).Return(nil, chain.ErrNotFound)
-				r := New(
-					config.Root{},
-					pc,
-					evm.NewFactory(pc),
-					timemocks.NewTime(t),
-					Config{},
-				)
-				return r
-			},
-			expectedNumValidators: 0,
-			expectedOffset:        0,
-			expErr:                chain.ErrNotFound,
-		},
-		{
-			name: "returns error if our validator address wasn't in the list",
-			setup: func(t *testing.T) *Relayer {
-				pc := mocks.NewPalomaClienter(t)
-				pc.On("QueryGetSnapshotByID", mock.Anything, mock.Anything).Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{Address: sdk.ValAddress("abc")},
-							{Address: sdk.ValAddress("def")},
-							{Address: sdk.ValAddress("ghi")},
-						},
-					},
-					nil,
-				)
-				pc.On("GetValidatorAddress").Return(sdk.ValAddress("xyz"))
-				r := New(
-					config.Root{},
-					pc,
-					evm.NewFactory(pc),
-					timemocks.NewTime(t),
-					Config{},
-				)
-				return r
-			},
-			expectedNumValidators: 0,
-			expectedOffset:        0,
-			expErr:                chain.ErrNotValidator,
-		},
-		{
-			name: "returns expected number of validators and our offset in success case",
-			setup: func(t *testing.T) *Relayer {
-				pc := mocks.NewPalomaClienter(t)
-				pc.On("QueryGetSnapshotByID", mock.Anything, mock.Anything).Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{Address: sdk.ValAddress("abc")},
-							{Address: sdk.ValAddress("def")},
-							{Address: sdk.ValAddress("ghi")},
-						},
-					},
-					nil,
-				)
-				pc.On("GetValidatorAddress").Return(sdk.ValAddress("def"))
-				r := New(
-					config.Root{},
-					pc,
-					evm.NewFactory(pc),
-					timemocks.NewTime(t),
-					Config{},
-				)
-				return r
-			},
-			expectedNumValidators: 3,
-			expectedOffset:        1,
-			expErr:                nil,
-		},
-	}
-
-	for _, tt := range testcases {
-		asserter := assert.New(t)
-		t.Run(tt.name, func(t *testing.T) {
-			relayer := tt.setup(t)
-
-			actualNumValidators, actualOffset, actualErr := relayer.getMsgOffsetData(ctx)
-			asserter.Equal(tt.expectedNumValidators, actualNumValidators)
-			asserter.Equal(tt.expectedOffset, actualOffset)
-			asserter.Equal(tt.expErr, actualErr)
-		})
-	}
-}
 
 func TestRelayMessages(t *testing.T) {
 	ctx := context.Background()
@@ -142,7 +42,7 @@ func TestRelayMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "it relays messages for this relayer's offset",
+			name: "it relays messages",
 			setup: func(t *testing.T) *Relayer {
 				keyringPass := "abcd"
 
@@ -160,23 +60,12 @@ func TestRelayMessages(t *testing.T) {
 					"a",
 					[]chain.MessageWithSignatures{
 						{QueuedMessage: chain.QueuedMessage{ID: 1}},
-						{QueuedMessage: chain.QueuedMessage{ID: 7}},
+						{QueuedMessage: chain.QueuedMessage{ID: 2}},
+						{QueuedMessage: chain.QueuedMessage{ID: 3}},
 					},
 				).Return(nil)
 
 				pal := mocks.NewPalomaClienter(t)
-				pal.On("GetValidatorAddress").Return(sdk.ValAddress("def"))
-				pal.On("QueryGetSnapshotByID", mock.Anything, mock.Anything).Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{Address: sdk.ValAddress("abc")},
-							{Address: sdk.ValAddress("def")},
-							{Address: sdk.ValAddress("ghi")},
-						},
-					},
-					nil,
-				)
-
 				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
 					{
 						ChainReferenceID:      "main",
@@ -193,12 +82,6 @@ func TestRelayMessages(t *testing.T) {
 						{QueuedMessage: chain.QueuedMessage{ID: 1}},
 						{QueuedMessage: chain.QueuedMessage{ID: 2}},
 						{QueuedMessage: chain.QueuedMessage{ID: 3}},
-						{QueuedMessage: chain.QueuedMessage{ID: 4, PublicAccessData: []byte("tx hash")}},
-						{QueuedMessage: chain.QueuedMessage{ID: 5, PublicAccessData: []byte("tx hash")}},
-						{QueuedMessage: chain.QueuedMessage{ID: 6, PublicAccessData: []byte("tx hash")}},
-						{QueuedMessage: chain.QueuedMessage{ID: 7}},
-						{QueuedMessage: chain.QueuedMessage{ID: 8}},
-						{QueuedMessage: chain.QueuedMessage{ID: 9}},
 					},
 					nil,
 				)

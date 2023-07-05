@@ -193,3 +193,5 @@ require (
 )
 
 replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
+
+replace github.com/palomachain/paloma => github.com/volumefi/paloma v1.3.2-0.20230705171534-3388a4fb3d69

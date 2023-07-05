@@ -99,7 +99,7 @@ func queryMessagesForSigning(
 
 // QueryMessagesForAttesting returns all messages that are currently in the queue except those already attested for.
 func (c Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesInQueue(
+	return queryMessagesForAttesting(
 		ctx,
 		queueTypeName,
 		c.valAddr,
@@ -110,26 +110,73 @@ func (c Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName str
 
 // QueryMessagesForRelaying returns all messages that are currently in the queue.
 func (c Client) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesInQueue(
+	return queryMessagesForRelaying(
 		ctx,
 		queueTypeName,
-		nil,
+		c.valAddr,
 		c.GRPCClient,
 		c.L.Codec.Marshaler,
 	)
 }
 
-func queryMessagesInQueue(
+func queryMessagesForRelaying(
 	ctx context.Context,
 	queueTypeName string,
-	skipEvidence sdk.ValAddress,
+	valAddress sdk.ValAddress,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 ) ([]chain.MessageWithSignatures, error) {
 	qc := consensus.NewQueryClient(c)
-	msgs, err := qc.MessagesInQueue(ctx, &consensus.QueryMessagesInQueueRequest{
-		QueueTypeName:                    queueTypeName,
-		SkipEvidenceProvidedByValAddress: skipEvidence,
+	msgs, err := qc.QueuedMessagesForRelaying(ctx, &consensus.QueryQueuedMessagesForRelayingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    valAddress,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	msgsWithSig := []chain.MessageWithSignatures{}
+	for _, msg := range msgs.Messages {
+		valSigs := []chain.ValidatorSignature{}
+		for _, vs := range msg.SignData {
+			valSigs = append(valSigs, chain.ValidatorSignature{
+				ValAddress:      vs.GetValAddress(),
+				Signature:       vs.GetSignature(),
+				SignedByAddress: vs.GetExternalAccountAddress(),
+				PublicKey:       vs.GetPublicKey(),
+			})
+		}
+		var ptr consensus.ConsensusMsg
+		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
+		if err != nil {
+			return nil, err
+		}
+		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
+			QueuedMessage: chain.QueuedMessage{
+				ID:               msg.Id,
+				Nonce:            msg.Nonce,
+				Msg:              ptr,
+				BytesToSign:      msg.GetBytesToSign(),
+				PublicAccessData: msg.GetPublicAccessData(),
+				ErrorData:        msg.GetErrorData(),
+			},
+			Signatures: valSigs,
+		})
+	}
+	return msgsWithSig, err
+}
+
+func queryMessagesForAttesting(
+	ctx context.Context,
+	queueTypeName string,
+	valAddress sdk.ValAddress,
+	c grpc.ClientConn,
+	anyunpacker codectypes.AnyUnpacker,
+) ([]chain.MessageWithSignatures, error) {
+	qc := consensus.NewQueryClient(c)
+	msgs, err := qc.QueuedMessagesForAttesting(ctx, &consensus.QueryQueuedMessagesForAttestingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    valAddress,
 	})
 	if err != nil {
 		return nil, err

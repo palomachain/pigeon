@@ -56,18 +56,14 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 				return err
 			}
 
-			msgsToAttest := slice.Filter(messagesInQueue, func(msg chain.MessageWithSignatures) bool {
-				return len(msg.PublicAccessData) > 0 || len(msg.ErrorData) > 0
-			})
-
-			if len(msgsToAttest) > 0 {
+			if len(messagesInQueue) > 0 {
 				logger := logger.WithFields(log.Fields{
-					"messages-to-attest": slice.Map(msgsToAttest, func(msg chain.MessageWithSignatures) uint64 {
+					"messages-to-attest": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
 						return msg.ID
 					}),
 				})
-				logger.Info("attesting ", len(msgsToAttest), " messages")
-				err := p.ProvideEvidence(ctx, queueName, msgsToAttest)
+				logger.Info("attesting ", len(messagesInQueue), " messages")
+				err := p.ProvideEvidence(ctx, queueName, messagesInQueue)
 				if err != nil {
 					logger.WithError(err).Error("error attesting messages")
 					return err
