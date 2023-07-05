@@ -79,19 +79,19 @@ func queryMessagesForSigning(
 	if err != nil {
 		return nil, err
 	}
-	res := []chain.QueuedMessage{}
-	for _, msg := range msgs.GetMessageToSign() {
+	res := make([]chain.QueuedMessage, len(msgs.GetMessageToSign()))
+	for i, msg := range msgs.GetMessageToSign() {
 		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, chain.QueuedMessage{
+		res[i] = chain.QueuedMessage{
 			ID:          msg.GetId(),
 			Nonce:       msg.GetNonce(),
 			BytesToSign: msg.GetBytesToSign(),
 			Msg:         ptr,
-		})
+		}
 	}
 
 	return res, nil
@@ -135,23 +135,24 @@ func queryMessagesForRelaying(
 		return nil, err
 	}
 
-	msgsWithSig := []chain.MessageWithSignatures{}
-	for _, msg := range msgs.Messages {
-		valSigs := []chain.ValidatorSignature{}
-		for _, vs := range msg.SignData {
-			valSigs = append(valSigs, chain.ValidatorSignature{
+	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
+
+	for i, msg := range msgs.Messages {
+		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
+		for j, vs := range msg.SignData {
+			valSigs[j] = chain.ValidatorSignature{
 				ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
 				PublicKey:       vs.GetPublicKey(),
-			})
+			}
 		}
 		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
+		msgsWithSig[i] = chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
 				ID:               msg.Id,
 				Nonce:            msg.Nonce,
@@ -161,7 +162,7 @@ func queryMessagesForRelaying(
 				ErrorData:        msg.GetErrorData(),
 			},
 			Signatures: valSigs,
-		})
+		}
 	}
 	return msgsWithSig, err
 }
@@ -182,23 +183,23 @@ func queryMessagesForAttesting(
 		return nil, err
 	}
 
-	msgsWithSig := []chain.MessageWithSignatures{}
-	for _, msg := range msgs.Messages {
-		valSigs := []chain.ValidatorSignature{}
-		for _, vs := range msg.SignData {
-			valSigs = append(valSigs, chain.ValidatorSignature{
+	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
+	for i, msg := range msgs.Messages {
+		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
+		for j, vs := range msg.SignData {
+			valSigs[j] = chain.ValidatorSignature{
 				ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
 				PublicKey:       vs.GetPublicKey(),
-			})
+			}
 		}
 		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
+		msgsWithSig[i] = chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
 				ID:               msg.Id,
 				Nonce:            msg.Nonce,
@@ -208,7 +209,7 @@ func queryMessagesForAttesting(
 				ErrorData:        msg.GetErrorData(),
 			},
 			Signatures: valSigs,
-		})
+		}
 	}
 	return msgsWithSig, err
 }
@@ -458,14 +459,14 @@ func broadcastMessageSignatures(
 	if len(signatures) == 0 {
 		return nil
 	}
-	var signedMessages []*consensus.ConsensusMessageSignature
-	for _, sig := range signatures {
-		signedMessages = append(signedMessages, &consensus.ConsensusMessageSignature{
+	signedMessages := make([]*consensus.ConsensusMessageSignature, len(signatures))
+	for i, sig := range signatures {
+		signedMessages[i] = &consensus.ConsensusMessageSignature{
 			Id:              sig.ID,
 			QueueTypeName:   sig.QueueTypeName,
 			Signature:       sig.Signature,
 			SignedByAddress: sig.SignedByAddress,
-		})
+		}
 	}
 	msg := &consensus.MsgAddMessagesSignatures{
 		Creator:        creator,
