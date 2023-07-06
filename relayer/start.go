@@ -27,7 +27,7 @@ func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
 		log.Info("validator is staking")
 		r.staking = true
 	} else {
-		log.Error("validator is not staking")
+		log.Info("validator is not staking... waiting")
 		r.staking = false
 	}
 	return nil

@@ -78,8 +78,6 @@ func TestAttestMessages(t *testing.T) {
 				}, nil)
 				pal.On("QueryMessagesForAttesting", mock.Anything, mock.Anything).Return(
 					[]chain.MessageWithSignatures{
-						{QueuedMessage: chain.QueuedMessage{ID: 123}},
-						{QueuedMessage: chain.QueuedMessage{ID: 456}},
 						{QueuedMessage: chain.QueuedMessage{ID: 789, PublicAccessData: []byte("tx hash")}},
 					},
 					nil,

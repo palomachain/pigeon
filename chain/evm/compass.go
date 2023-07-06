@@ -411,16 +411,6 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			break
 		}
 
-		if len(rawMsg.ErrorData) > 0 {
-			logger.Warn("skipping the message as it already has error data")
-			continue
-		}
-
-		if len(rawMsg.PublicAccessData) > 0 {
-			logger.Warn("skipping the message as it already has public access data")
-			continue
-		}
-
 		var processingErr error
 		var tx *ethtypes.Transaction
 		msg := rawMsg.Msg.(*types.Message)

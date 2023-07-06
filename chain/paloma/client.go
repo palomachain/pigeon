@@ -79,19 +79,19 @@ func queryMessagesForSigning(
 	if err != nil {
 		return nil, err
 	}
-	res := []chain.QueuedMessage{}
-	for _, msg := range msgs.GetMessageToSign() {
+	res := make([]chain.QueuedMessage, len(msgs.GetMessageToSign()))
+	for i, msg := range msgs.GetMessageToSign() {
 		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, chain.QueuedMessage{
+		res[i] = chain.QueuedMessage{
 			ID:          msg.GetId(),
 			Nonce:       msg.GetNonce(),
 			BytesToSign: msg.GetBytesToSign(),
 			Msg:         ptr,
-		})
+		}
 	}
 
 	return res, nil
@@ -99,7 +99,7 @@ func queryMessagesForSigning(
 
 // QueryMessagesForAttesting returns all messages that are currently in the queue except those already attested for.
 func (c Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesInQueue(
+	return queryMessagesForAttesting(
 		ctx,
 		queueTypeName,
 		c.valAddr,
@@ -110,48 +110,49 @@ func (c Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName str
 
 // QueryMessagesForRelaying returns all messages that are currently in the queue.
 func (c Client) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesInQueue(
+	return queryMessagesForRelaying(
 		ctx,
 		queueTypeName,
-		nil,
+		c.valAddr,
 		c.GRPCClient,
 		c.L.Codec.Marshaler,
 	)
 }
 
-func queryMessagesInQueue(
+func queryMessagesForRelaying(
 	ctx context.Context,
 	queueTypeName string,
-	skipEvidence sdk.ValAddress,
+	valAddress sdk.ValAddress,
 	c grpc.ClientConn,
 	anyunpacker codectypes.AnyUnpacker,
 ) ([]chain.MessageWithSignatures, error) {
 	qc := consensus.NewQueryClient(c)
-	msgs, err := qc.MessagesInQueue(ctx, &consensus.QueryMessagesInQueueRequest{
-		QueueTypeName:                    queueTypeName,
-		SkipEvidenceProvidedByValAddress: skipEvidence,
+	msgs, err := qc.QueuedMessagesForRelaying(ctx, &consensus.QueryQueuedMessagesForRelayingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    valAddress,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	msgsWithSig := []chain.MessageWithSignatures{}
-	for _, msg := range msgs.Messages {
-		valSigs := []chain.ValidatorSignature{}
-		for _, vs := range msg.SignData {
-			valSigs = append(valSigs, chain.ValidatorSignature{
+	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
+
+	for i, msg := range msgs.Messages {
+		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
+		for j, vs := range msg.SignData {
+			valSigs[j] = chain.ValidatorSignature{
 				ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
 				PublicKey:       vs.GetPublicKey(),
-			})
+			}
 		}
 		var ptr consensus.ConsensusMsg
 		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
 		}
-		msgsWithSig = append(msgsWithSig, chain.MessageWithSignatures{
+		msgsWithSig[i] = chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
 				ID:               msg.Id,
 				Nonce:            msg.Nonce,
@@ -161,7 +162,54 @@ func queryMessagesInQueue(
 				ErrorData:        msg.GetErrorData(),
 			},
 			Signatures: valSigs,
-		})
+		}
+	}
+	return msgsWithSig, err
+}
+
+func queryMessagesForAttesting(
+	ctx context.Context,
+	queueTypeName string,
+	valAddress sdk.ValAddress,
+	c grpc.ClientConn,
+	anyunpacker codectypes.AnyUnpacker,
+) ([]chain.MessageWithSignatures, error) {
+	qc := consensus.NewQueryClient(c)
+	msgs, err := qc.QueuedMessagesForAttesting(ctx, &consensus.QueryQueuedMessagesForAttestingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    valAddress,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
+	for i, msg := range msgs.Messages {
+		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
+		for j, vs := range msg.SignData {
+			valSigs[j] = chain.ValidatorSignature{
+				ValAddress:      vs.GetValAddress(),
+				Signature:       vs.GetSignature(),
+				SignedByAddress: vs.GetExternalAccountAddress(),
+				PublicKey:       vs.GetPublicKey(),
+			}
+		}
+		var ptr consensus.ConsensusMsg
+		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
+		if err != nil {
+			return nil, err
+		}
+		msgsWithSig[i] = chain.MessageWithSignatures{
+			QueuedMessage: chain.QueuedMessage{
+				ID:               msg.Id,
+				Nonce:            msg.Nonce,
+				Msg:              ptr,
+				BytesToSign:      msg.GetBytesToSign(),
+				PublicAccessData: msg.GetPublicAccessData(),
+				ErrorData:        msg.GetErrorData(),
+			},
+			Signatures: valSigs,
+		}
 	}
 	return msgsWithSig, err
 }
@@ -411,14 +459,14 @@ func broadcastMessageSignatures(
 	if len(signatures) == 0 {
 		return nil
 	}
-	var signedMessages []*consensus.ConsensusMessageSignature
-	for _, sig := range signatures {
-		signedMessages = append(signedMessages, &consensus.ConsensusMessageSignature{
+	signedMessages := make([]*consensus.ConsensusMessageSignature, len(signatures))
+	for i, sig := range signatures {
+		signedMessages[i] = &consensus.ConsensusMessageSignature{
 			Id:              sig.ID,
 			QueueTypeName:   sig.QueueTypeName,
 			Signature:       sig.Signature,
 			SignedByAddress: sig.SignedByAddress,
-		})
+		}
 	}
 	msg := &consensus.MsgAddMessagesSignatures{
 		Creator:        creator,
