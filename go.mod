@@ -10,7 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
-	github.com/palomachain/paloma v1.3.1
+	github.com/palomachain/paloma v1.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/strangelove-ventures/lens v0.5.1
@@ -193,5 +193,3 @@ require (
 )
 
 replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
-
-replace github.com/palomachain/paloma => github.com/volumefi/paloma v1.3.2-0.20230705171534-3388a4fb3d69

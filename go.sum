@@ -874,6 +874,8 @@ github.com/openzipkin/zipkin-go v0.2.1/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnh
 github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnhQw8ySjnjRyN4=
 github.com/ory/dockertest v3.3.5+incompatible h1:iLLK6SQwIhcbrG783Dghaaa3WPzGc+4Emza6EbVUUGA=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
+github.com/palomachain/paloma v1.4.0 h1:fF0Kfa6WMILic71lANk+ByX2mFpi95zeaa3Bwb5wEPQ=
+github.com/palomachain/paloma v1.4.0/go.mod h1:E2hK4s85dOPwPl9z/bk9VmXgN34jrgtLyBj79eoWDDY=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
@@ -1045,8 +1047,6 @@ github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa h1:5SqCsI/2Qya2bCzK15ozrqo2sZxkh0FHynJZOTVoV6Q=
 github.com/volumefi/lens-1 v0.5.5 h1:OmSZOXRn7gsVuQ2ucjoEObIgPRD8D/RYPzcCHgmFclQ=
 github.com/volumefi/lens-1 v0.5.5/go.mod h1:6PdiMJFYkr4Mm3ioZ4UdidpQ1o9lspP0qX31NUsacF4=
-github.com/volumefi/paloma v1.3.2-0.20230705171534-3388a4fb3d69 h1:fee/5sHLgno1RsvhXZVKmYlMU1fk5q9y34cvjJxX8Fs=
-github.com/volumefi/paloma v1.3.2-0.20230705171534-3388a4fb3d69/go.mod h1:E2hK4s85dOPwPl9z/bk9VmXgN34jrgtLyBj79eoWDDY=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRTfdpNzjtPYqr8smhKouy9mxVdGPU=
