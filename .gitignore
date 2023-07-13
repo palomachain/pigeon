@@ -3,3 +3,5 @@ tmp
 dist/
 build/
 .idea
+.scratch/
+
