@@ -8,5 +8,9 @@ _A short paragraph about what exactly this PR solves and what is the problem._
 
 # Testing completed
 
-- [ ] _a list of actions that you've performed to ensure that this PR works as intended_
-- [ ] _99% of the times you should have an item: "wrote tests"_
+- [ ] test coverage exists or has been added/updated
+- [ ] tested in a private testnet
+
+# Breaking changes
+
+- [ ] I have checked my code for breaking changes
