@@ -10,7 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
-	github.com/palomachain/paloma v1.4.0
+	github.com/palomachain/paloma v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/strangelove-ventures/lens v0.5.1
@@ -140,7 +140,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20230317030725-371a4b8eda08 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_golang v1.15.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
