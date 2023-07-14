@@ -381,12 +381,17 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)
-				srv.On("SendMsg", mock.Anything, &valset.MsgAddExternalChainInfoForValidator{
-					ChainInfos: []*valset.ExternalChainInfo{
-						{ChainReferenceID: "chain1", Address: "addr1", ChainType: "chain-type-1", Pubkey: []byte("pk1")},
-						{ChainReferenceID: "chain2", Address: "addr2", ChainType: "chain-type-2", Pubkey: []byte("pk2")},
+				srv.On(
+					"SendMsg",
+					mock.Anything,
+					&valset.MsgAddExternalChainInfoForValidator{
+						ChainInfos: []*valset.ExternalChainInfo{
+							{ChainReferenceID: "chain1", Address: "addr1", ChainType: "chain-type-1", Pubkey: []byte("pk1")},
+							{ChainReferenceID: "chain2", Address: "addr2", ChainType: "chain-type-2", Pubkey: []byte("pk2")},
+						},
 					},
-				}).Return(nil, nil).Once()
+					"",
+				).Return(nil, nil).Once()
 				return srv
 			},
 		},
@@ -398,7 +403,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			},
 			mcksrv: func(t *testing.T) *clientmocks.MessageSender {
 				srv := clientmocks.NewMessageSender(t)
-				srv.On("SendMsg", mock.Anything, mock.Anything).Return(nil, fakeErr).Once()
+				srv.On("SendMsg", mock.Anything, mock.Anything, "").Return(nil, fakeErr).Once()
 				return srv
 			},
 			expectsAnyError: true,
@@ -424,23 +429,21 @@ func TestAddingExternalChainInfo(t *testing.T) {
 	}
 }
 
-type mockMsgSender func(context.Context, sdk.Msg, string) (*sdk.TxResponse, error)
-
-func (m mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	return m(ctx, msg, memo)
-}
-
 func TestBroadcastingMessageSignatures(t *testing.T) {
 	ctx := context.Background()
+	creator := "bob"
 	for _, tt := range []struct {
 		name       string
-		msgSender  MessageSender
+		setup      func() MessageSender
 		signatures []BroadcastMessageSignatureIn
 
 		expErr error
 	}{
 		{
 			name: "nothing happens when there are no signatures being sent",
+			setup: func() MessageSender {
+				return clientmocks.NewMessageSender(t)
+			},
 		},
 		{
 			name: "signatures are sent over",
@@ -456,28 +459,34 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 					Signature:     []byte(`sig-789`),
 				},
 			},
-			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-				addMsgSigs, ok := msg.(*consensus.MsgAddMessagesSignatures)
-				require.True(t, ok, "incorrect msg type")
-				require.Len(t, addMsgSigs.SignedMessages, 2)
-				require.Equal(t, addMsgSigs.SignedMessages[0], &consensus.ConsensusMessageSignature{
-					Id:            123,
-					QueueTypeName: "abc",
-					Signature:     []byte(`sig-123`),
-				})
-				require.Equal(t, addMsgSigs.SignedMessages[1], &consensus.ConsensusMessageSignature{
-					Id:            456,
-					QueueTypeName: "def",
-					Signature:     []byte(`sig-789`),
-				})
-				return nil, nil
-			}),
+			setup: func() MessageSender {
+				msgSender := clientmocks.NewMessageSender(t)
+				expectedSignaturesMsg := &consensus.MsgAddMessagesSignatures{
+					Creator: creator,
+					SignedMessages: []*consensus.ConsensusMessageSignature{
+						{
+							Id:            123,
+							QueueTypeName: "abc",
+							Signature:     []byte(`sig-123`),
+						},
+						{
+							Id:            456,
+							QueueTypeName: "def",
+							Signature:     []byte(`sig-789`),
+						},
+					},
+				}
+				msgSender.On("SendMsg", mock.Anything, expectedSignaturesMsg, "").Return(nil, nil)
+				return msgSender
+			},
 		},
 		{
 			name: "msg sender returns an error",
-			msgSender: mockMsgSender(func(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-				return nil, errTestErr
-			}),
+			setup: func() MessageSender {
+				msgSender := clientmocks.NewMessageSender(t)
+				msgSender.On("SendMsg", mock.Anything, mock.Anything, "").Return(nil, errTestErr)
+				return msgSender
+			},
 			signatures: []BroadcastMessageSignatureIn{
 				{},
 			},
@@ -485,13 +494,14 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+			msgSender := tt.setup()
 			err := broadcastMessageSignatures(
 				ctx,
-				tt.msgSender,
-				"bob",
+				msgSender,
+				creator,
 				tt.signatures...,
 			)
-			require.ErrorIs(t, tt.expErr, err)
+			require.ErrorIs(t, err, tt.expErr)
 		})
 	}
 }
