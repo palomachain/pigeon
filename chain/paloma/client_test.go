@@ -429,6 +429,57 @@ func TestAddingExternalChainInfo(t *testing.T) {
 	}
 }
 
+func TestKeepValidatorAlive(t *testing.T) {
+	creator := "bob"
+
+	testcases := []struct {
+		name        string
+		appVersion  string
+		setup       func() MessageSender
+		expectedErr error
+	}{
+		{
+			name:       "sends keepalive message formatted as expected",
+			appVersion: "v1.3.0",
+			setup: func() MessageSender {
+				msgSender := clientmocks.NewMessageSender(t)
+				msgSender.On("SendMsg",
+					mock.Anything, &valset.MsgKeepAlive{
+						Creator:       creator,
+						PigeonVersion: "v1.3.0",
+					},
+					"",
+				).Return(nil, nil)
+				return msgSender
+			},
+		},
+		{
+			name: "returns error when message sender has an error",
+			setup: func() MessageSender {
+				msgSender := clientmocks.NewMessageSender(t)
+				msgSender.On("SendMsg", mock.Anything, mock.Anything, "").Return(nil, errTestErr)
+				return msgSender
+			},
+			expectedErr: errTestErr,
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			msgSender := tt.setup()
+			ctx := context.Background()
+
+			client := Client{
+				creator:       creator,
+				MessageSender: msgSender,
+			}
+
+			err := client.KeepValidatorAlive(ctx, tt.appVersion)
+			require.ErrorIs(t, err, tt.expectedErr)
+		})
+	}
+}
+
 func TestBroadcastingMessageSignatures(t *testing.T) {
 	ctx := context.Background()
 	creator := "bob"

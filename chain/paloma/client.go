@@ -411,9 +411,10 @@ func (c Client) QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, err
 	return aliveUntilRes.AliveUntil.UTC(), nil
 }
 
-func (c Client) KeepValidatorAlive(ctx context.Context) error {
+func (c Client) KeepValidatorAlive(ctx context.Context, appVersion string) error {
 	msg := &valset.MsgKeepAlive{
-		Creator: c.creator,
+		Creator:       c.creator,
+		PigeonVersion: appVersion,
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "")

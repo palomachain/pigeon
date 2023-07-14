@@ -151,13 +151,13 @@ func (_m *PalomaClienter) GetValidatorAddress() cosmos_sdktypes.ValAddress {
 	return r0
 }
 
-// KeepValidatorAlive provides a mock function with given fields: ctx
-func (_m *PalomaClienter) KeepValidatorAlive(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// KeepValidatorAlive provides a mock function with given fields: ctx, appVersion
+func (_m *PalomaClienter) KeepValidatorAlive(ctx context.Context, appVersion string) error {
+	ret := _m.Called(ctx, appVersion)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, appVersion)
 	} else {
 		r0 = ret.Error(0)
 	}

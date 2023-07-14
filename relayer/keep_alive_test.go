@@ -44,7 +44,7 @@ func TestKeepAlive(t *testing.T) {
 				ctx, cancel := context.WithCancel(ctx)
 				tm.On("Now").Return(time.Unix(50, 0)).Times(1)
 				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Unix(60, 0), nil).Times(1)
-				paloma.On("KeepValidatorAlive", mock.Anything).Return(nil).Run(func(_ mock.Arguments) {
+				paloma.On("KeepValidatorAlive", mock.Anything, "v1.4.0").Return(nil).Run(func(_ mock.Arguments) {
 					cancel()
 				})
 				return paloma, tm, ctx
@@ -59,7 +59,7 @@ func TestKeepAlive(t *testing.T) {
 				ctx, cancel := context.WithCancel(ctx)
 				tm.On("Now").Return(time.Unix(50, 0)).Times(1)
 				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Unix(60, 0), nil).Times(1)
-				paloma.On("KeepValidatorAlive", mock.Anything).Return(randErr).Run(func(_ mock.Arguments) {
+				paloma.On("KeepValidatorAlive", mock.Anything, "v1.4.0").Return(randErr).Run(func(_ mock.Arguments) {
 					cancel()
 				})
 				return paloma, tm, ctx
@@ -100,6 +100,7 @@ func TestKeepAlive(t *testing.T) {
 				},
 				time:         tm,
 				palomaClient: paloma,
+				appVersion:   "v1.4.0",
 			}
 
 			var locker testutil.FakeMutex
