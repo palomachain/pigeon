@@ -28,7 +28,7 @@ func (r *Relayer) keepAlive(ctx context.Context, locker sync.Locker) error {
 	}).Debug("checking keep alive")
 	if sendKeepAlive {
 		locker.Lock()
-		err := r.palomaClient.KeepValidatorAlive(ctx)
+		err := r.palomaClient.KeepValidatorAlive(ctx, r.appVersion)
 		locker.Unlock()
 		if err != nil {
 			log.WithError(err).Error("error while trying to keep pigeon alive")

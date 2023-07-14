@@ -53,7 +53,9 @@ var startCmd = &cobra.Command{
 		// build a context that will get canceled if paloma ever goes offline
 		ctx = health.CancelContextIfPalomaIsDown(ctx, app.PalomaClient())
 
-		err = app.Relayer().Start(ctx)
+		relayer := app.Relayer()
+		relayer.SetAppVersion(app.Version())
+		err = relayer.Start(ctx)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil
 		}

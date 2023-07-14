@@ -37,7 +37,7 @@ type PalomaClienter interface {
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 
 	QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error)
-	KeepValidatorAlive(ctx context.Context) error
+	KeepValidatorAlive(ctx context.Context, appVersion string) error
 }
 
 //go:generate mockery --name=EvmFactorier
@@ -70,6 +70,8 @@ type Relayer struct {
 	processors  []chain.Processor
 
 	staking bool
+
+	appVersion string
 }
 
 type Config struct {
@@ -86,4 +88,8 @@ func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorie
 		relayerConfig: cfg,
 		staking:       false,
 	}
+}
+
+func (r *Relayer) SetAppVersion(appVersion string) {
+	r.appVersion = appVersion
 }
