@@ -1,6 +1,6 @@
 module github.com/palomachain/pigeon
 
-go 1.18
+go 1.20
 
 require (
 	github.com/VolumeFi/whoops v0.7.2
