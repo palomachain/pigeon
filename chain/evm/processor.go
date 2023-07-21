@@ -148,6 +148,10 @@ func (p Processor) IsRightChain(ctx context.Context) error {
 		return err
 	}
 
+	if p.chainReferenceID == "kava-main" {
+		return p.isRightChain(common.HexToHash("0x76966b1d12b21d3ff22578948b05a42b3da5766fcc4b17ea48da5a154c80f08b"))
+	}
+
 	return p.isRightChain(block.Hash())
 }
 
