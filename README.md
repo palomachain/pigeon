@@ -92,6 +92,14 @@ Polygon Mainnet (matic-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/matic-main
 ```
+Optimism Mainnet (op-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/op-main
+```
+Kava Mainnet (kava-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/kava-main
+```
 
 or import existing you existing Ethereum evm private keys
 
@@ -106,6 +114,14 @@ pigeon evm keys import ~/.pigeon/keys/evm/bnb-main
 Polygon Mainnet (matic-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/matic-main
+```
+Optimism Mainnet (op-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/op-main
+```
+Kava Mainnet (kava-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/kava-main
 ```
 
 
@@ -164,6 +180,25 @@ evm:
     keyring-dir: ~/.pigeon/keys/evm/matic-main
     gas-adjustment: 2
     tx-type: 2
+  
+  op-main:
+    chain-id: 10
+    base-rpc-url: ${OP_RPC_URL}
+    keyring-pass-env-name: OP_PASSWORD
+    signing-key: ${OP_SIGNING_KEY}
+    keyring-dir: /root/.pigeon/keys/evm/op-main
+    gas-adjustment: 1
+    tx-type: 2
+
+  kava-main:
+    chain-id: 2222
+    base-rpc-url: ${KAVA_RPC_URL}
+    keyring-pass-env-name: KAVA_PASSWORD
+    signing-key: ${KAVA_SIGNING_KEY}
+    keyring-dir: /root/.pigeon/keys/evm/kava-main
+    gas-adjustment: 1.2
+    tx-type: 2
+
 ```
 
 
