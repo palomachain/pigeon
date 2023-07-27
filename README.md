@@ -127,6 +127,8 @@ pigeon evm keys import ~/.pigeon/keys/evm/kava-main
 
 ### Config setup
 
+**IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type: 2`, `gas-adjustment` is set to `2` except for `bnb-main` chain. However, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
+
 Make sure your Paloma Cosmos-SDK keys are stored and available on your environment.
 
 `palomad keys add "$VALIDATOR" --recover`
@@ -187,7 +189,7 @@ evm:
     keyring-pass-env-name: OP_PASSWORD
     signing-key: ${OP_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/op-main
-    gas-adjustment: 1
+    gas-adjustment: 2
     tx-type: 2
 
   kava-main:
@@ -196,7 +198,7 @@ evm:
     keyring-pass-env-name: KAVA_PASSWORD
     signing-key: ${KAVA_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/kava-main
-    gas-adjustment: 1.2
+    gas-adjustment: 2
     tx-type: 2
 
 ```
