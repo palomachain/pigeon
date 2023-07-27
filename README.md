@@ -127,7 +127,7 @@ pigeon evm keys import ~/.pigeon/keys/evm/kava-main
 
 ### Config setup
 
-**IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type` `gas-adjustment` is set to 2. tHowever, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
+**IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type: 2`, `gas-adjustment` is set to `2`. However, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
 
 Make sure your Paloma Cosmos-SDK keys are stored and available on your environment.
 
