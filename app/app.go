@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	gotime "time"
@@ -47,7 +48,13 @@ var (
 	commit  = ""
 )
 
-func Version() string { return version }
+func Version() string {
+	if !strings.HasPrefix(version, "v") {
+		version = fmt.Sprintf("v%s", version)
+	}
+
+	return version
+}
 
 func Commit() string { return commit }
 
