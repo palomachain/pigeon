@@ -148,8 +148,12 @@ func (p Processor) IsRightChain(ctx context.Context) error {
 		return err
 	}
 
-	if p.chainReferenceID == "kava-main" {
+	if p.chainReferenceID == "kava-main" && p.blockHeight == 5690000 {
 		return p.isRightChain(common.HexToHash("0x76966b1d12b21d3ff22578948b05a42b3da5766fcc4b17ea48da5a154c80f08b"))
+	}
+
+	if p.chainReferenceID == "kava-main" && p.blockHeight == 5874963 {
+		return p.isRightChain(common.HexToHash("0xd91fdced0e798342f47fd503d376f9665fb29bf468d7d4cc73bf9f470a9b0d76"))
 	}
 
 	return p.isRightChain(block.Hash())
