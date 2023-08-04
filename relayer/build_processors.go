@@ -20,9 +20,9 @@ func (r *Relayer) buildProcessors(ctx context.Context, locker sync.Locker) error
 	if err != nil {
 		return err
 	}
-	logger := log.WithField("chains-infos", queriedChainsInfos)
+	logger := log.WithFields(log.Fields{})
 
-	logger.Trace("got chain infos")
+	logger.WithField("chains-infos", queriedChainsInfos).Trace("got chain infos")
 
 	// See if we need to update
 	if (r.processors != nil) && (r.chainsInfos != nil) && (len(r.chainsInfos) == len(queriedChainsInfos)) {
