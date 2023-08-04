@@ -20,7 +20,9 @@ func (r *Relayer) buildProcessors(ctx context.Context, locker sync.Locker) error
 	if err != nil {
 		return err
 	}
-	log.WithField("chains-infos", queriedChainsInfos).Trace("got chain infos")
+	logger := log.WithFields(log.Fields{})
+
+	logger.WithField("chains-infos", queriedChainsInfos).Trace("got chain infos")
 
 	// See if we need to update
 	if (r.processors != nil) && (r.chainsInfos != nil) && (len(r.chainsInfos) == len(queriedChainsInfos)) {
@@ -43,22 +45,27 @@ func (r *Relayer) buildProcessors(ctx context.Context, locker sync.Locker) error
 			}
 		}
 		if !chainsChanged {
-			log.Debug("chain infos unchanged since last tick")
+			logger.Debug("chain infos unchanged since last tick")
 			return nil
 		}
 	}
 
-	log.Debug("chain infos changed.  building processors")
+	logger.Debug("chain infos changed.  building processors")
 
 	r.processors = []chain.Processor{}
 	r.chainsInfos = []evmtypes.ChainInfo{}
 	for _, chainInfo := range queriedChainsInfos {
+		logger = logger.WithFields(log.Fields{
+			"chain-reference-id": chainInfo.GetChainReferenceID(),
+		})
 		processor, err := r.processorFactory(chainInfo)
 		if errors.IsUnrecoverable(err) {
+			logger.WithError(err).Error("unable to build processor")
 			return err
 		}
 
 		if err := processor.IsRightChain(ctx); err != nil {
+			logger.WithError(err).Error("incorrect chain")
 			return err
 		}
 
