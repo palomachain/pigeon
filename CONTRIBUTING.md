@@ -23,7 +23,7 @@ contributing has been established:
       and accepted.
    2. Ensure that nobody else has already begun working on this issue. If they
       have, make sure to contact them to potentially collaborate.
-   3. If nobody has been assigned for the issue and you would like to work on it,
+   3. If nobody has been assigned to the issue and you would like to work on it,
       make a comment on the issue to inform the community of your intentions to
       begin work.
    4. Follow standard GitHub best practices, i.e. fork the repo, branch from the
@@ -84,7 +84,7 @@ Note, when the major version is 0, we adopt a 0-based versioning scheme:
 All major changes related to major version update are first released for testnet.
 We use `-betaX` (eg `2.0.0-beta1`, `2.0.0-beta2` ...) releases for testnet.
 Once the code is stabilized we create a release candidate (eg `2.0.0-rc1`).
-If no issues are found the latest release candidate become the major release.
+If no issues are found the latest release candidate becomes the major release.
 
 When a major release is ready to be made, perform the following:
 

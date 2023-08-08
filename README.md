@@ -5,7 +5,7 @@
 > A Golang cross-chain message relayer system
 > for Paloma validators to deliver messages to any blockchain.
 
-For Crosschain software engineers that want simultaneous control of mulitiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scaleable, crosschain, smart contract execution with any data source.
+For Crosschain software engineers that want simultaneous control of multiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scalable, crosschain, smart contract execution with any data source.
 
 ## Table of Contents
 
@@ -271,7 +271,7 @@ journalctl -u pigeond.service -f -n 100
 ### Definitions and Descriptions of Pigeons Variables
   - for paloma key:
 	- keyring-dir
-      - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using it's validator (operator) key!
+      - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using its validator (operator) key!
 	  - it's best to leave it as is
 	- keyring-pass-env-name
 	  - this one is super important!
@@ -287,7 +287,7 @@ journalctl -u pigeond.service -f -n 100
 	- gas-adustment:
 	  - gas multiplier. The pigeon will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
  - for evm -> eth-main:
-	- keyring-pass-env-name: as as above for paloma.
+	- keyring-pass-env-name: same as above for paloma.
 	- signing-key
 	  - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `pigeon evm keys generate-new` from the install section)
 	- keyring-dir:
