@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/palomachain/paloma/util/libvalid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -68,6 +69,10 @@ func (r *Relayer) Start(ctx context.Context) error {
 	go r.startProcess(ctx, &locker, signMessagesLoopInterval, true, r.SignMessages)
 	go r.startProcess(ctx, &locker, relayMessagesLoopInterval, true, r.RelayMessages)
 	go r.startProcess(ctx, &locker, attestMessagesLoopInterval, true, r.AttestMessages)
+
+	if !libvalid.IsNil(r.mevClient) {
+		go r.startProcess(ctx, &locker, r.mevClient.GetHealthprobeInterval(), false, r.mevClient.KeepAlive)
+	}
 
 	// Start the foreground process
 	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)

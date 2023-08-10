@@ -330,6 +330,7 @@ type ChainInfoIn struct {
 	ChainReferenceID string
 	AccAddress       string
 	PubKey           []byte
+	Traits           []string
 }
 
 // AddExternalChainInfo adds info about the external chain. It adds the chain's
@@ -351,6 +352,7 @@ func (c Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainInf
 				ChainReferenceID: in.ChainReferenceID,
 				Address:          in.AccAddress,
 				Pubkey:           in.PubKey,
+				Traits:           in.Traits,
 			}
 		},
 	)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/palomachain/pigeon/app"
 	"github.com/palomachain/pigeon/health"
+	"github.com/palomachain/pigeon/internal/mev"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -55,6 +56,8 @@ var startCmd = &cobra.Command{
 
 		relayer := app.Relayer()
 		relayer.SetAppVersion(app.Version())
+		relayer.SetMevClient(mev.New(app.Config()))
+
 		err = relayer.Start(ctx)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil

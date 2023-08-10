@@ -6,6 +6,7 @@ import (
 
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
+	"github.com/palomachain/pigeon/internal/traits"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,17 +28,21 @@ func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Lock
 			return p.ExternalAccount()
 		},
 	)
+
 	chainInfos := slice.Map(externalAccounts, func(acc chain.ExternalAccount) paloma.ChainInfoIn {
+		traits := traits.Build(acc.ChainReferenceID, r.mevClient)
 		info := paloma.ChainInfoIn{
 			ChainReferenceID: acc.ChainReferenceID,
 			AccAddress:       acc.Address,
 			ChainType:        acc.ChainType,
 			PubKey:           acc.PubKey,
+			Traits:           traits,
 		}
 		log.WithFields(log.Fields{
 			"chain-reference-id": acc.ChainReferenceID,
 			"acc-address":        acc.Address,
 			"chain-type":         acc.ChainType,
+			"chain-traits":       traits,
 		}).Info("sending account info to paloma")
 		return info
 	})
