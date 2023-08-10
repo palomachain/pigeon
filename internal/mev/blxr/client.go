@@ -7,8 +7,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-const cHealthprobeQueryInterval = time.Second
-const cBloXRouteCloudAPIURL = "https://api.blxrbdn.com"
+const (
+	cHealthprobeQueryInterval = time.Second
+	cBloXRouteCloudAPIURL     = "https://api.blxrbdn.com"
+)
 
 var chainIDLookup = map[string]string{
 	"eth-main":   "Mainnet",
