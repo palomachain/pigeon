@@ -8,6 +8,8 @@ require (
 	github.com/cosmos/cosmos-sdk v0.47.3
 	github.com/cosmos/gogoproto v1.4.10
 	github.com/ethereum/go-ethereum v1.11.6
+	github.com/go-resty/resty/v2 v2.7.0
+	github.com/jarcoal/httpmock v1.3.0
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
 	github.com/palomachain/paloma v1.6.1
@@ -198,5 +200,6 @@ require (
 replace (
 	// Link to op-geth, which is built on top of go-ethereum
 	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
+	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20230809143041-f87d7e38d87a
 	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
 )

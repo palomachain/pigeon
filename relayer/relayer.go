@@ -14,6 +14,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/internal/mev"
 	utiltime "github.com/palomachain/pigeon/util/time"
 )
 
@@ -61,6 +62,7 @@ type Relayer struct {
 	palomaClient PalomaClienter
 
 	evmFactory EvmFactorier
+	mevClient  mev.Client
 
 	relayerConfig Config
 
@@ -92,4 +94,8 @@ func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorie
 
 func (r *Relayer) SetAppVersion(appVersion string) {
 	r.appVersion = appVersion
+}
+
+func (r *Relayer) SetMevClient(c mev.Client) {
+	r.mevClient = c
 }

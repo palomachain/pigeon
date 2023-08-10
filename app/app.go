@@ -60,7 +60,6 @@ func Commit() string { return commit }
 
 func Relayer() *relayer.Relayer {
 	if _relayer == nil {
-		// do something
 		_relayer = relayer.New(
 			*Config(),
 			*PalomaClient(),

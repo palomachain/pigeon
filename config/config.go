@@ -23,7 +23,8 @@ type CosmosSpecificClientConfig struct {
 }
 
 type EVMSpecificClientConfig struct {
-	TxType uint8 `yaml:"tx-type"`
+	TxType                      uint8 `yaml:"tx-type"`
+	BloxrouteIntegrationEnabled bool  `yaml:"bloxroute-mev-enabled"`
 }
 
 type ChainClientConfig struct {
@@ -46,6 +47,8 @@ func (f Filepath) Path() string {
 
 type Root struct {
 	HealthCheckPortRaw int `yaml:"health-check-port"`
+
+	BloxrouteAuthorizationHeader string `yaml:"bloxroute-auth-header"`
 
 	Paloma Paloma `yaml:"paloma"`
 
