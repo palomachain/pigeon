@@ -10,9 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (c *Client) KeepAlive(ctx context.Context, locker sync.Locker) error {
-	locker.Lock()
-	defer locker.Unlock()
+func (c *Client) KeepAlive(ctx context.Context, _ sync.Locker) error {
 	return c.runHealthCheck(ctx)
 }
 
