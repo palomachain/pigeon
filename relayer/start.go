@@ -11,9 +11,9 @@ import (
 
 const (
 	updateExternalChainsLoopInterval = 1 * time.Minute
-	signMessagesLoopInterval         = 1 * time.Second
-	relayMessagesLoopInterval        = 1 * time.Second
-	attestMessagesLoopInterval       = 1 * time.Second
+	signMessagesLoopInterval         = 500 * time.Millisecond
+	relayMessagesLoopInterval        = 500 * time.Millisecond
+	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 )
 
