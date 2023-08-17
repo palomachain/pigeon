@@ -33,6 +33,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/util/slice"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -325,6 +326,7 @@ func callSmartContract(
 
 		// In case we want to relay, don't actually send the constructed TX
 		if args.mevClient != nil {
+			logger.Info("MEV Client set - setting TX to not execute")
 			txOpts.NoSend = true
 		}
 		tx, err := boundContract.RawTransact(txOpts, packedBytes)
@@ -337,6 +339,7 @@ func callSmartContract(
 
 		if args.mevClient != nil {
 			hash, err := args.mevClient.Relay(ctx, args.chainID, tx)
+			logger.WithField("relay-hash", hash).Info("Attempted to MEV relay")
 			if err != nil || hash != tx.Hash() {
 				if err == nil {
 					err = fmt.Errorf("hash mismatch, expected %s, got %s", tx.Hash(), hash)
@@ -347,6 +350,7 @@ func callSmartContract(
 		}
 
 		msg := "executed"
+		logger.WithField("txOps-nosend", txOpts.NoSend).Info("Checking for no send")
 		if txOpts.NoSend {
 			msg = "relayed"
 		}
@@ -535,6 +539,7 @@ func (c *Client) ExecuteSmartContract(
 ) (*etherumtypes.Transaction, error) {
 	var mevClient mevClient = nil
 	if useMevRelay {
+		logrus.WithContext(ctx).Info("Using MEV relay")
 		mevClient = c.mevClient
 	}
 
