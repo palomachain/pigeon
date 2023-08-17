@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/palomachain/pigeon/health"
+	"github.com/palomachain/pigeon/internal/queue"
 )
 
 type QueuedMessage struct {
@@ -56,21 +57,24 @@ type ChainInfo interface {
 //go:generate mockery --name=Processor
 type Processor interface {
 	health.Checker
+	// GetChainReferenceID returns the chain reference ID against which the processor is running.
+	GetChainReferenceID() string
+
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
 	SupportedQueues() []string
 
 	ExternalAccount() ExternalAccount
 
 	// SignMessages takes a list of messages and signs them via their key.
-	SignMessages(ctx context.Context, queueTypeName string, messages ...QueuedMessage) ([]SignedQueuedMessage, error)
+	SignMessages(ctx context.Context, messages ...QueuedMessage) ([]SignedQueuedMessage, error)
 
 	// ProcessMessages will receive messages from the current queues and it's on the implementation
 	// to ensure that there are enough signatures for consensus.
-	ProcessMessages(context.Context, string, []MessageWithSignatures) error
+	ProcessMessages(context.Context, queue.TypeName, []MessageWithSignatures) error
 
 	// ProvideEvidence takes a queue name and a list of messages that have already been executed. This
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
-	ProvideEvidence(context.Context, string, []MessageWithSignatures) error
+	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error

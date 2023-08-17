@@ -32,7 +32,7 @@ const (
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, method string, arguments []any) (*etherumtypes.Transaction, error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*etherumtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 
@@ -140,7 +140,7 @@ func (t compass) updateValset(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		tx, err := t.callCompass(ctx, "update_valset", []any{
+		tx, err := t.callCompass(ctx, false, "update_valset", []any{
 			BuildCompassConsensus(ctx, currentValset, origMessage.Signatures),
 			TransformValsetToCompassValset(newValset),
 		})
@@ -198,12 +198,14 @@ func (t compass) submitLogicCall(
 			Payload:              msg.GetPayload(),
 		}
 
-		tx, err := t.callCompass(ctx, "submit_logic_call", []any{
+		args := []any{
 			con,
 			compassArgs,
 			new(big.Int).SetInt64(int64(origMessage.ID)),
 			new(big.Int).SetInt64(msg.GetDeadline()),
-		})
+		}
+
+		tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
 		if err != nil {
 			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
@@ -639,11 +641,12 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 
 func (c compass) callCompass(
 	ctx context.Context,
+	useMevRelay bool,
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
 	if c.compassAbi == nil {
 		return nil, ErrABINotInitialized
 	}
-	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, method, arguments)
+	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
 }

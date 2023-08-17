@@ -119,6 +119,28 @@ func TestExecutingSmartContract(t *testing.T) {
 				args.ethClient = ethMock
 			},
 		},
+		{
+			name: "MEV relaying setup, should not send transaction, but relay instead",
+			setup: func(t *testing.T, args *executeSmartContractIn) {
+				ethMock := newMockEthClienter(t)
+
+				ethMock.On("PendingNonceAt", mock.Anything, mock.Anything).Return(uint64(333), nil)
+
+				ethMock.On("SuggestGasPrice", mock.Anything).Return(big.NewInt(444), nil)
+
+				ethMock.On("SuggestGasTipCap", mock.Anything).Return(big.NewInt(4), nil)
+
+				ethMock.On("PendingCodeAt", mock.Anything, args.contract).Return([]byte("a"), nil)
+
+				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
+
+				mevMock := newMockMevClient(t)
+				mevMock.On("Relay", mock.Anything, mock.Anything, mock.Anything).Return(common.HexToHash("0xb19cc052f5066cb445ea09461d99df913f6938fc825676e645f40d5d24abddda"), nil)
+
+				args.ethClient = ethMock
+				args.mevClient = mevMock
+			},
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			ks := keystore.NewKeyStore(t.TempDir(), keystore.StandardScryptN, keystore.StandardScryptP)

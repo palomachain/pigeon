@@ -5,8 +5,8 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"math"
 	"math/big"
 	"path/filepath"
@@ -72,7 +72,7 @@ func StoredContracts() map[string]StoredContract {
 
 			// we need to store body locally, so reading it here first and
 			// using bytes.NewBuffer few lines down.
-			body := whoops.Must(ioutil.ReadAll(file))
+			body := whoops.Must(io.ReadAll(file))
 
 			evmabi, err := abi.JSON(bytes.NewBuffer(body))
 			if err != nil {
@@ -110,10 +110,16 @@ type Client struct {
 
 	conn ethClientConn
 
-	paloma PalomaClienter
+	paloma    PalomaClienter
+	mevClient mevClient
 }
 
 var _ ethClientConn = &ethclient.Client{}
+
+//go:generate mockery --name=mevClient --inpackage --testonly
+type mevClient interface {
+	Relay(context.Context, *big.Int, *ethtypes.Transaction) (common.Hash, error)
+}
 
 //go:generate mockery --name=ethClientConn --inpackage --testonly
 type ethClientConn interface {
@@ -189,6 +195,7 @@ type ethClienter interface {
 
 type executeSmartContractIn struct {
 	ethClient ethClienter
+	mevClient mevClient
 
 	chainID       *big.Int
 	gasAdjustment float64
@@ -316,6 +323,10 @@ func callSmartContract(
 			}).Debug("executing legacy tx")
 		}
 
+		// In case we want to relay, don't actually send the constructed TX
+		if args.mevClient != nil {
+			txOpts.NoSend = true
+		}
 		tx, err := boundContract.RawTransact(txOpts, packedBytes)
 		if err != nil {
 			logger.
@@ -324,6 +335,21 @@ func callSmartContract(
 		}
 		whoops.Assert(err)
 
+		if args.mevClient != nil {
+			hash, err := args.mevClient.Relay(ctx, args.chainID, tx)
+			if err != nil || hash != tx.Hash() {
+				if err == nil {
+					err = fmt.Errorf("hash mismatch, expected %s, got %s", tx.Hash(), hash)
+				}
+				logger.WithField("error", err).Error("callSmartContract: error calling mevClient.Relay")
+				whoops.Assert(err)
+			}
+		}
+
+		msg := "executed"
+		if txOpts.NoSend {
+			msg = "relayed"
+		}
 		if args.txType == 2 {
 			logger.WithFields(log.Fields{
 				"tx-hash":          tx.Hash(),
@@ -331,17 +357,18 @@ func callSmartContract(
 				"tx-gas-max-price": tx.GasFeeCap(),
 				"tx-gas-max-tip":   tx.GasTipCap(),
 				"tx-cost":          tx.Cost(),
-			}).Debug("eip-1559 tx executed")
+			}).Debugf("eip-1559 tx %s", msg)
 		} else {
 			logger.WithFields(log.Fields{
 				"tx-hash":      tx.Hash(),
 				"tx-gas-limit": tx.Gas(),
 				"tx-gas-price": tx.GasPrice(),
 				"tx-cost":      tx.Cost(),
-			}).Debug("legacy tx executed")
+			}).Debugf("legacy tx %s", msg)
 		}
 
 		return tx
+
 	})
 }
 
@@ -502,13 +529,20 @@ func (c *Client) ExecuteSmartContract(
 	chainID *big.Int,
 	contractAbi abi.ABI,
 	addr common.Address,
+	useMevRelay bool,
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
+	var mevClient mevClient = nil
+	if useMevRelay {
+		mevClient = c.mevClient
+	}
+
 	return callSmartContract(
 		ctx,
 		executeSmartContractIn{
 			ethClient:     c.conn,
+			mevClient:     mevClient,
 			chainID:       chainID,
 			gasAdjustment: c.config.GasAdjustment,
 			txType:        c.config.TxType,

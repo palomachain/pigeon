@@ -12,23 +12,23 @@ const (
 	cBloXRouteCloudAPIURL     = "https://api.blxrbdn.com"
 )
 
-var chainIDLookup = map[string]string{
-	"eth-main":   "Mainnet",
-	"bnb-main":   "BSC-Mainnet",
-	"matic-main": "Polygon-Mainnet",
+var methodLookup = map[string]string{
+	"eth-main":   "blxr_private_tx",
+	"bnb-main":   "bsc_private_tx",
+	"matic-main": "polygon_private_tx",
 }
 
 type Client struct {
 	authHeader string
 	isHealthy  bool
-	chains     map[string]struct{}
+	chains     map[string]string
 	rs         *resty.Client
 }
 
 func New(authHeader string) *Client {
 	return &Client{
 		authHeader: authHeader,
-		chains:     make(map[string]struct{}),
+		chains:     make(map[string]string),
 		rs:         resty.New(),
 	}
 }
@@ -37,23 +37,23 @@ func (c *Client) IsHealthy() bool {
 	return c.isHealthy
 }
 
-func (c *Client) RegisterChain(referenceChainID string) {
-	blxrID, fnd := chainIDLookup[referenceChainID]
+func (c *Client) RegisterChain(chainReferenceID string) {
+	method, fnd := methodLookup[chainReferenceID]
 	if !fnd {
-		panic(fmt.Errorf("chain %s not supported for bloXroute MEV support", referenceChainID))
+		panic(fmt.Errorf("chain %s not supported for bloXroute MEV support", chainReferenceID))
 	}
-	if _, fnd := c.chains[blxrID]; fnd {
-		panic(fmt.Errorf("chain %s already has an MEV RPC endpoint registered", blxrID))
+	if v, fnd := c.chains[chainReferenceID]; fnd {
+		panic(fmt.Errorf("chain %s already has an MEV RPC method %s registered", chainReferenceID, v))
 	}
-	c.chains[blxrID] = struct{}{}
+	c.chains[chainReferenceID] = method
 }
 
-func (c *Client) IsChainRegistered(referenceChainID string) bool {
-	blxrID, fnd := chainIDLookup[referenceChainID]
+func (c *Client) IsChainRegistered(chainReferenceID string) bool {
+	_, fnd := methodLookup[chainReferenceID]
 	if !fnd {
-		panic(fmt.Errorf("chain %s not supported for bloXroute MEV support", referenceChainID))
+		panic(fmt.Errorf("chain %s not supported for bloXroute MEV support", chainReferenceID))
 	}
 
-	_, fnd = c.chains[blxrID]
+	_, fnd = c.chains[chainReferenceID]
 	return fnd
 }

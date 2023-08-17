@@ -20,6 +20,7 @@ require (
 	golang.org/x/term v0.11.0
 	google.golang.org/grpc v1.57.0
 	gopkg.in/yaml.v2 v2.4.0
+	moul.io/http2curl v1.0.0
 )
 
 require (
@@ -197,8 +198,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace (
-	// Link to op-geth, which is built on top of go-ethereum
-	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
-	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
-)
+// Link to op-geth, which is built on top of go-ethereum
+replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
+
+replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
@@ -63,7 +64,7 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 					}),
 				})
 				logger.Info("attesting ", len(messagesInQueue), " messages")
-				err := p.ProvideEvidence(ctx, queueName, messagesInQueue)
+				err := p.ProvideEvidence(ctx, queue.FromString(queueName), messagesInQueue)
 				if err != nil {
 					logger.WithError(err).Error("error attesting messages")
 					return err

@@ -9,6 +9,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +43,7 @@ func TestEvmSigning(t *testing.T) {
 		},
 	}
 
-	signed, err := p.SignMessages(context.Background(), "does not matter", msgsToSign...)
+	signed, err := p.SignMessages(context.Background(), msgsToSign...)
 	require.NoError(t, err)
 	for i := range msgsToSign {
 		orig, signed := msgsToSign[i], signed[i]
@@ -81,7 +82,7 @@ func TestProcessingMessages(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			processor := tt.setup(t)
-			err := processor.ProcessMessages(ctx, tt.queueName, tt.msgs)
+			err := processor.ProcessMessages(ctx, queue.FromString(tt.queueName), tt.msgs)
 
 			require.ErrorIs(t, err, tt.expErr)
 		})

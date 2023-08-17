@@ -11,6 +11,7 @@ import (
 	"github.com/palomachain/pigeon/chain/evm"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/relayer/mocks"
 	"github.com/palomachain/pigeon/testutil"
 	timemocks "github.com/palomachain/pigeon/util/time/mocks"
@@ -57,7 +58,7 @@ func TestRelayMessages(t *testing.T) {
 				p.On(
 					"ProcessMessages",
 					mock.Anything,
-					"a",
+					queue.FromString("a"),
 					[]chain.MessageWithSignatures{
 						{QueuedMessage: chain.QueuedMessage{ID: 1}},
 						{QueuedMessage: chain.QueuedMessage{ID: 2}},
