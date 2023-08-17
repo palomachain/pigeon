@@ -539,8 +539,8 @@ func (c *Client) ExecuteSmartContract(
 ) (*etherumtypes.Transaction, error) {
 	var mevClient mevClient = nil
 	if useMevRelay {
-		logrus.WithContext(ctx).Info("Using MEV relay")
 		mevClient = c.mevClient
+		logrus.WithContext(ctx).WithField("mevClient", mevClient).WithField("c.mevClient", c.mevClient).Info("Using MEV relay")
 	}
 
 	return callSmartContract(

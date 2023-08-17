@@ -53,6 +53,7 @@ type EvmFactorier interface {
 		blockHeight int64,
 		blockHeightHash common.Hash,
 		minOnChainBalance *big.Int,
+		mevClient mev.Client,
 	) (chain.Processor, error)
 }
 

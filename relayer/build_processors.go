@@ -102,6 +102,7 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 		int64(chainInfo.GetReferenceBlockHeight()),
 		common.HexToHash(chainInfo.GetReferenceBlockHash()),
 		minOnChainBalance,
+		r.mevClient,
 	)
 	if err != nil {
 		return nil, whoops.Wrap(err, retErr)

@@ -9,6 +9,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/mev"
 )
 
 type Factory struct {
@@ -31,6 +32,7 @@ func (f *Factory) Build(
 	blockHeight int64,
 	blockHeightHash common.Hash,
 	minOnChainBalance *big.Int,
+	mevClient mev.Client,
 ) (chain.Processor, error) {
 	var smartContractABI *abi.ABI
 	if len(smartContractABIJson) > 0 {
@@ -42,17 +44,14 @@ func (f *Factory) Build(
 	}
 
 	client := &Client{
-		config: cfg,
-		paloma: f.palomaClienter,
+		config:    cfg,
+		paloma:    f.palomaClienter,
+		mevClient: mevClient,
 	}
 
 	if err := client.init(); err != nil {
 		return Processor{}, err
 	}
-
-	// if !ethcommon.IsHexAddress(smartContractAddress) {
-	// 	return Processor{}, errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddress))
-	// }
 
 	return Processor{
 		compass: compass{
