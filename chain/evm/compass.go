@@ -20,6 +20,7 @@ import (
 	"github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/util/slice"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -205,6 +206,7 @@ func (t compass) submitLogicCall(
 			new(big.Int).SetInt64(msg.GetDeadline()),
 		}
 
+		logrus.WithContext(ctx).WithField("msg", msg).WithField("req", msg.ExecutionRequirements).WithField("enforce", msg.ExecutionRequirements.EnforceMEVRelay).WithField("msg-id", origMessage.ID).Info("Beep boop")
 		tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
 		if err != nil {
 			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
