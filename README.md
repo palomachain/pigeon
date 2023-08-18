@@ -100,7 +100,7 @@ Kava Mainnet (kava-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/kava-main
 ```
-BAse Mainnet (base-main)
+Base Mainnet (base-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/base-main
 ```
