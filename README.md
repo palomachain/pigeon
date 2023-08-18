@@ -35,7 +35,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 * Polygon Mainnet (relay)
-
+* Base Mainnet (relay)
 
 ## ISSUES
 
@@ -100,7 +100,10 @@ Kava Mainnet (kava-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/kava-main
 ```
-
+Base Mainnet (base-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/base-main
+```
 or import existing you existing Ethereum evm private keys
 
 Ethereum Mainnet (eth-main)
@@ -123,7 +126,10 @@ Kava Mainnet (kava-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/kava-main
 ```
-
+Base Mainnet (base-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/base-main
+```
 
 ### Config setup
 
@@ -201,6 +207,15 @@ evm:
     gas-adjustment: 2
     tx-type: 2
 
+  base-main:
+    chain-id: 8453
+    base-rpc-url: ${BASE_RPC_URL}
+    keyring-pass-env-name: BASE_PASSWORD
+    signing-key: ${BASE_SIGNING_KEY}
+    keyring-dir: /root/.pigeon/keys/evm/base-main
+    gas-adjustment: 1
+    tx-type: 2
+
 ```
 
 
@@ -220,6 +235,9 @@ BNB_SIGNING_KEY=<Your BNB SIGNING KEY>
 MATIC_RPC_URL=<Your Binance mainnet RPC URL>
 MATIC_PASSWORD=<Your BNB Key Password>
 MATIC_SIGNING_KEY=<Your BNB SIGNING KEY>
+BASE_RPC_URL=<Your Base mainnet RPC URL>
+BASE_PASSWORD=<Your Base Key Password>
+BASE_SIGNING_KEY=<Your Base SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
