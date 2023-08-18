@@ -19,8 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -115,7 +115,7 @@ func (t compass) updateValset(
 	return whoops.TryVal(func() *ethtypes.Transaction {
 		currentValsetID, err := t.findLastValsetMessageID(ctx)
 		whoops.Assert(err)
-		logger := log.WithFields(log.Fields{
+		logger := liblog.WithContext(ctx).WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"current-valset-id":  currentValsetID,
 		})
@@ -125,19 +125,13 @@ func (t compass) updateValset(
 		whoops.Assert(err)
 
 		if currentValset == nil {
-			logger := log.WithFields(log.Fields{
-				"current-valset-id": currentValsetID,
-			})
-			logger.Debug("current valset is empty")
-			whoops.Assert(fmt.Errorf("oh no"))
+			logger.Error("current valset is empty")
+			whoops.Assert(fmt.Errorf("current valset is empty"))
 		}
 
-		consensusReached := isConsensusReached(currentValset, origMessage)
+		consensusReached := isConsensusReached(ctx, currentValset, origMessage)
 		if !consensusReached {
-			logger := log.WithFields(log.Fields{
-				"current-valset-id": currentValsetID,
-			})
-			logger.Debug("no consensus")
+			logger.Error("no consensus")
 			whoops.Assert(ErrNoConsensus)
 		}
 
@@ -146,24 +140,15 @@ func (t compass) updateValset(
 			TransformValsetToCompassValset(newValset),
 		})
 		if err != nil {
-			logger := log.WithFields(log.Fields{
-				"current-valset-id": currentValsetID,
-			})
-			logger.Debug("call_compass error")
+			logger.WithError(err).Error("call_compass error")
 			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
 			if isSmartContractError {
-				logger := log.WithFields(log.Fields{
-					"current-valset-id": currentValsetID,
-				})
-				logger.Debug("smart contract error")
+				logger.Debug("smart contract error. recovering...")
 				return nil
 			}
 			whoops.Assert(err)
 		}
-		logger0 := log.WithFields(log.Fields{
-			"current-valset-id": currentValsetID,
-		})
-		logger0.Debug("success")
+		logger.Debug("success")
 
 		return tx
 	})
@@ -188,7 +173,7 @@ func (t compass) submitLogicCall(
 		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 		whoops.Assert(err)
 
-		consensusReached := isConsensusReached(valset, origMessage)
+		consensusReached := isConsensusReached(ctx, valset, origMessage)
 		if !consensusReached {
 			whoops.Assert(ErrNoConsensus)
 		}
@@ -206,10 +191,6 @@ func (t compass) submitLogicCall(
 			new(big.Int).SetInt64(msg.GetDeadline()),
 		}
 
-		logrus.WithContext(ctx).
-			WithField("execution_requirements", msg.ExecutionRequirements).
-			WithField("msg-id", origMessage.ID).
-			Info("Beep boop")
 		tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
 		if err != nil {
 			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
@@ -231,7 +212,7 @@ func (t compass) uploadSmartContract(
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *etherumtypes.Transaction {
 		constructorInput := msg.GetConstructorInput()
-		logger := log.WithFields(log.Fields{
+		logger := liblog.WithContext(ctx).WithFields(log.Fields{
 			"chain-id":          t.ChainReferenceID,
 			"constructor-input": constructorInput,
 		})
@@ -239,9 +220,7 @@ func (t compass) uploadSmartContract(
 
 		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
 		if err != nil {
-			logger.
-				WithField("error", err.Error()).
-				Error("uploadSmartContract: error parsing ABI")
+			logger.WithError(err).Error("uploadSmartContract: error parsing ABI")
 		}
 		// todo refactor that "assert" usage. Go way is returning error, rather than panic/recover as try/catch equivalent (it is not equivalent)
 		whoops.Assert(err)
@@ -249,24 +228,20 @@ func (t compass) uploadSmartContract(
 		// 0 means to get the latest valset
 		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
 		if err != nil {
-			logger.
-				WithField("error", err.Error()).
-				Error("uploadSmartContract: error querying valset from Paloma")
+			logger.WithError(err).Error("uploadSmartContract: error querying valset from Paloma")
 		}
 		whoops.Assert(err)
 
-		consensusReached := isConsensusReached(latestValset, origMessage)
+		consensusReached := isConsensusReached(ctx, latestValset, origMessage)
 		if !consensusReached {
 			whoops.Assert(ErrNoConsensus)
 		}
 
 		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(constructorInput)
-		logger.
-			WithField("args", constructorArgs).
-			Info("uploadSmartContract: ABI contract constructor inputs unpack")
+		logger.WithField("args", constructorArgs).Info("uploadSmartContract: ABI contract constructor inputs unpack")
 		if err != nil {
 			logger.
-				WithField("error", err.Error()).
+				WithError(err).
 				WithField("input", constructorInput).
 				Error("uploadSmartContract: error unpacking ABI contract constructor inputs")
 		}
@@ -280,7 +255,7 @@ func (t compass) uploadSmartContract(
 		)
 		if err != nil {
 			logger.
-				WithField("error", err.Error()).
+				WithError(err).
 				WithField("input", constructorInput).
 				Error("uploadSmartContract: error calling DeployContract")
 
@@ -302,7 +277,7 @@ func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID u
 		err := t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(errToProcess.Error()))
 		return false, err
 	} else {
-		log.WithFields(
+		liblog.WithContext(ctx).WithFields(
 			log.Fields{
 				"queue-type-name": queueTypeName,
 				"message-id":      msgID,
@@ -320,13 +295,11 @@ func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID u
 }
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
-	log.Debug("fetching last valset message id")
+	logger := liblog.WithContext(ctx)
+	logger.Debug("fetching last valset message id")
 	id, err := t.evm.LastValsetID(ctx, t.smartContractAddr)
 	if err != nil {
-		log.
-			WithField("error", err.Error()).
-			WithField("addr", t.smartContractAddr.String()).
-			Error("error getting LastValsetID")
+		logger.WithError(err).WithField("addr", t.smartContractAddr.String()).Error("error getting LastValsetID")
 		return 0, fmt.Errorf("error getting LastValsetID")
 	}
 
@@ -409,7 +382,7 @@ func BuildCompassConsensus(
 
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
-	logger := log.WithField("queue-type-name", queueTypeName)
+	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
 	for _, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
@@ -421,7 +394,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		var processingErr error
 		var tx *ethtypes.Transaction
 		msg := rawMsg.Msg.(*types.Message)
-		logger := log.WithFields(log.Fields{
+		logger := logger.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
 			"msg-id":             rawMsg.ID,
@@ -438,7 +411,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UpdateValset:
-			logger := log.WithFields(log.Fields{
+			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
 				"msg-id":                 rawMsg.ID,
@@ -456,7 +429,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *types.Message_UploadSmartContract:
-			logger := log.WithFields(log.Fields{
+			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
 				"msg-id":                 rawMsg.ID,
@@ -505,7 +478,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var g whoops.Group
-	logger := log.WithField("queue-type-name", queueTypeName)
+	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
 	logger.Debug("start processing validator balance request")
 	for _, msg := range msgs {
 		g.Add(
@@ -513,13 +486,13 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 				vb := msg.Msg.(*types.ValidatorBalancesAttestation)
 				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
 
-				logger1 := logger.WithFields(
+				logger := logger.WithFields(
 					log.Fields{
 						"height":          height,
 						"nearest-to-time": vb.FromBlockTime,
 					},
 				)
-				logger1.Debug("got height for time")
+				logger.Debug("got height for time")
 
 				res := &types.ValidatorBalancesAttestationRes{
 					BlockHeight: height,
@@ -529,7 +502,7 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 				for _, addrHex := range vb.HexAddresses {
 					addr := common.HexToAddress(addrHex)
 					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
-					logger1.WithFields(log.Fields{
+					logger.WithFields(log.Fields{
 						"evm-address": addr,
 						"balance":     balance,
 					}).Info("got balance")
@@ -546,7 +519,7 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 
 // provideTxProof provides a very simple proof which is a transaction object
 func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
-	log.WithFields(log.Fields{
+	liblog.WithContext(ctx).WithFields(log.Fields{
 		"queue-type-name":    queueTypeName,
 		"msg-id":             rawMsg.ID,
 		"public-access-data": rawMsg.PublicAccessData,
@@ -569,7 +542,7 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 
 // provideErrorProof provides a pass-through proof for an error during relaying
 func (t compass) provideErrorProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
-	log.WithFields(log.Fields{
+	liblog.WithContext(ctx).WithFields(log.Fields{
 		"queue-type-name":    queueTypeName,
 		"msg-id":             rawMsg.ID,
 		"public-access-data": rawMsg.PublicAccessData,
@@ -592,19 +565,21 @@ func TransformValsetToCompassValset(val *types.Valset) CompassValset {
 	}
 }
 
-func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool {
+func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.MessageWithSignatures) bool {
 	signaturesMap := make(map[string]chain.ValidatorSignature)
 	for _, sig := range msg.Signatures {
 		signaturesMap[sig.SignedByAddress] = sig
 	}
-	log.WithFields(log.Fields{
-		"validators-size": len(val.Validators),
-	}).Debug("confirming consensus reached")
+	logger := liblog.WithContext(ctx).WithFields(
+		log.Fields{
+			"validators-size": len(val.Validators),
+		})
+	logger.Debug("confirming consensus reached")
 	var s uint64
 	for i := range val.Validators {
 		val, pow := val.Validators[i], val.Powers[i]
 		sig, ok := signaturesMap[val]
-		log.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"i":         i,
 			"validator": val,
 			"power":     pow,
@@ -620,21 +595,21 @@ func isConsensusReached(val *types.Valset, msg chain.MessageWithSignatures) bool
 		if err != nil {
 			continue
 		}
-		log.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"i": i,
 		}).Debug("good ecrecover")
 		pk, err := crypto.UnmarshalPubkey(recoveredPK)
 		if err != nil {
 			continue
 		}
-		log.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"i": i,
 		}).Debug("good unmarshal")
 		recoveredAddr := crypto.PubkeyToAddress(*pk)
 		if val == recoveredAddr.Hex() {
 			s += pow
 		}
-		log.WithFields(log.Fields{
+		logger.WithFields(log.Fields{
 			"i": i,
 		}).Debug("good consensus")
 	}

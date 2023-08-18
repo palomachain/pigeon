@@ -9,9 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/go-resty/resty/v2"
-	"github.com/sirupsen/logrus"
-	"moul.io/http2curl"
+	"github.com/palomachain/pigeon/internal/liblog"
 )
 
 var chainIdLkup = map[string]string{
@@ -25,14 +23,14 @@ type requestParams struct {
 }
 
 type result struct {
-	ID    string `json:"id"`
+	ID    string
 	Error struct {
 		Code    int
 		Message string
-	} `json:"error"`
+	}
 	Result struct {
-		Txhash string `json:"txHash"`
-	} `json:"result"`
+		Txhash string
+	}
 }
 
 func (c *Client) Relay(ctx context.Context, chainID *big.Int, tx *types.Transaction) (common.Hash, error) {
@@ -60,12 +58,10 @@ func (c *Client) Relay(ctx context.Context, chainID *big.Int, tx *types.Transact
 		Transaction: hex.EncodeToString(bz),
 	}
 
+	liblog.WithContext(ctx).WithField("raw-tx-hash", params.Transaction).Debug("Relaying raw tx.")
+
 	var r result
-	res, err := c.rs.SetPreRequestHook(func(c *resty.Client, r *http.Request) error {
-		command, _ := http2curl.GetCurlCommand(r)
-		logrus.WithContext(ctx).WithField("blxr-relay-curl", command).Info("blxr-relay")
-		return nil
-	}).
+	res, err := c.rs.
 		R().SetContext(ctx).
 		SetHeader("Authorization", c.authHeader).
 		SetBody(map[string]interface{}{"method": c.chains[chainReferenceID], "id": "1", "params": params}).

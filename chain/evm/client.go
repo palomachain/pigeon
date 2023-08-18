@@ -32,6 +32,7 @@ import (
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -216,7 +217,7 @@ func callSmartContract(
 	ctx context.Context,
 	args executeSmartContractIn,
 ) (*etherumtypes.Transaction, error) {
-	logger := log.WithFields(log.Fields{
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
 		"chain-id":        args.chainID,
 		"contract-addr":   args.contract,
 		"method":          args.method,

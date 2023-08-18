@@ -1009,7 +1009,7 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			res := isConsensusReached(tt.valset, tt.msgWithSig)
+			res := isConsensusReached(context.Background(), tt.valset, tt.msgWithSig)
 			require.Equal(t, tt.expRes, res)
 		})
 	}
