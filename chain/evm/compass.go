@@ -25,9 +25,7 @@ import (
 )
 
 const (
-	maxPower            uint64 = 1 << 32
-	powerThreshold      uint64 = 2_863_311_530
-	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
+	SignedMessagePrefix = "\x19Ethereum Signed Message:\n32"
 )
 
 //go:generate mockery --name=evmClienter --inpackage --testonly
@@ -575,6 +573,12 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Messag
 			"validators-size": len(val.Validators),
 		})
 	logger.Debug("confirming consensus reached")
+	var totalPower uint64
+	for _, pow := range val.Powers {
+		totalPower += pow
+	}
+	powerThreshold := totalPower * 2 / 3
+
 	var s uint64
 	for i := range val.Validators {
 		val, pow := val.Validators[i], val.Powers[i]
