@@ -85,7 +85,7 @@ func TestSignMessages(t *testing.T) {
 
 				factory := mocks.NewEvmFactorier(t)
 
-				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
+				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
 					config.Root{
@@ -134,7 +134,7 @@ func TestSignMessages(t *testing.T) {
 
 				factory := mocks.NewEvmFactorier(t)
 
-				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
+				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
 					config.Root{

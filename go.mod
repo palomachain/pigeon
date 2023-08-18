@@ -13,6 +13,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
 	github.com/palomachain/paloma v1.7.1
+	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/strangelove-ventures/lens v0.5.1
@@ -197,8 +198,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace (
-	// Link to op-geth, which is built on top of go-ethereum
-	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
-	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
-)
+// Link to op-geth, which is built on top of go-ethereum
+replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
+
+replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/palomachain/paloma/util/libvalid"
+	"github.com/palomachain/pigeon/internal/liblog"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,7 +47,7 @@ func (r *Relayer) startProcess(ctx context.Context, locker sync.Locker, tickerIn
 			return
 		case <-ticker.C:
 			if !requiresStaking || r.staking {
-				err := process(ctx, locker)
+				err := process(liblog.MustEnrichContext(ctx), locker)
 				if err != nil {
 					logger.Error(err)
 				}

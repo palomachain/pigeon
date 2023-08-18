@@ -2,9 +2,12 @@ package mev
 
 import (
 	"context"
+	"math/big"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/internal/mev/blxr"
 	log "github.com/sirupsen/logrus"
@@ -16,6 +19,7 @@ type Client interface {
 	GetHealthprobeInterval() time.Duration
 	KeepAlive(context.Context, sync.Locker) error
 	RegisterChain(string)
+	Relay(context.Context, *big.Int, *types.Transaction) (common.Hash, error)
 }
 
 func New(cfg *config.Root) Client {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -18,6 +18,7 @@ import (
 	"github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ var (
 	frankPK, _ = crypto.GenerateKey()
 
 	sampleTx1 = func() *ethtypes.Transaction {
-		sampleTx1RawBytes := common.FromHex(string(whoops.Must(ioutil.ReadFile("testdata/sample-tx-raw.hex"))))
+		sampleTx1RawBytes := common.FromHex(string(whoops.Must(os.ReadFile("testdata/sample-tx-raw.hex"))))
 		tx := new(ethtypes.Transaction)
 		whoops.Assert(tx.UnmarshalBinary(sampleTx1RawBytes))
 		return tx
@@ -179,9 +180,6 @@ func TestMessageProcessing(t *testing.T) {
 		[]byte("data"),
 	)
 
-	// txbz, err := tx.MarshalBinary()
-	// require.NoError(t, err)
-
 	for _, tt := range []struct {
 		name   string
 		msgs   []chain.MessageWithSignatures
@@ -271,7 +269,71 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, false, "submit_logic_call", mock.Anything).Return(
+					tx,
+					nil,
+				)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
+
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
+				return evm, paloma
+			},
+		},
+		{
+			name: "submit_logic_call/happy path with mev relaying",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+									ExecutionRequirements: types.SubmitLogicCall_ExecutionRequirements{
+										EnforceMEVRelay: true,
+									},
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
+					fn := args.Get(3).(func([]etherumtypes.Log) bool)
+					fn([]etherumtypes.Log{})
+				})
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{powerThreshold + 1},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, true, "submit_logic_call", mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -401,7 +463,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, "update_valset", mock.Anything).Return(tx, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, false, "update_valset", mock.Anything).Return(tx, nil)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
@@ -723,7 +785,7 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
 
-				paloma.On("AddMessageEvidence", mock.Anything, queueTurnstoneMessage, uint64(555),
+				paloma.On("AddMessageEvidence", mock.Anything, queue.QueueSuffixTurnstone, uint64(555),
 					&types.TxExecutedProof{SerializedTX: whoops.Must(sampleTx1.MarshalBinary())},
 				).Return(
 					nil,
@@ -774,7 +836,7 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 				compass: comp,
 			}
 
-			err := p.ProvideEvidence(ctx, queueTurnstoneMessage, tt.msgs)
+			err := p.ProvideEvidence(ctx, queue.QueueSuffixTurnstone, tt.msgs)
 			require.ErrorIs(t, err, tt.expErr)
 		})
 	}
@@ -947,7 +1009,7 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			res := isConsensusReached(tt.valset, tt.msgWithSig)
+			res := isConsensusReached(context.Background(), tt.valset, tt.msgWithSig)
 			require.Equal(t, tt.expRes, res)
 		})
 	}

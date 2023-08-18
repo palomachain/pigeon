@@ -5,14 +5,17 @@ import (
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/internal/liblog"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 
 func (r *Relayer) AttestMessages(ctx context.Context, locker sync.Locker) error {
-	log.Info("attester loop")
+	logger := liblog.WithContext(ctx)
+	logger.Info("attester loop")
 	if ctx.Err() != nil {
-		log.Info("exiting attester loop as context has ended")
+		logger.Info("exiting attester loop as context has ended")
 		return ctx.Err()
 	}
 
@@ -37,7 +40,7 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 	for _, p := range processors {
 		// todo randomise
 		for _, queueName := range p.SupportedQueues() {
-			logger := log.WithFields(log.Fields{
+			logger := liblog.WithContext(ctx).WithFields(log.Fields{
 				"queue-name": queueName,
 				"action":     "attest",
 			})
@@ -63,7 +66,7 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 					}),
 				})
 				logger.Info("attesting ", len(messagesInQueue), " messages")
-				err := p.ProvideEvidence(ctx, queueName, messagesInQueue)
+				err := p.ProvideEvidence(ctx, queue.FromString(queueName), messagesInQueue)
 				if err != nil {
 					logger.WithError(err).Error("error attesting messages")
 					return err

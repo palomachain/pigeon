@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 
@@ -147,7 +146,7 @@ var (
 				return err
 			}
 			fmt.Println("Writing the private key in JSON format in: ", args[2])
-			return ioutil.WriteFile(args[2], bz, 0o600)
+			return os.WriteFile(args[2], bz, 0o600)
 		},
 	}
 

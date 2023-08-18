@@ -4,20 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	queueTurnstoneMessage   = "evm-turnstone-message"
-	queueValidatorsBalances = "validators-balances"
 )
 
 type Processor struct {
@@ -33,11 +28,15 @@ type Processor struct {
 	minOnChainBalance *big.Int
 }
 
+func (p Processor) GetChainReferenceID() string {
+	return p.chainReferenceID
+}
+
 func (p Processor) SupportedQueues() []string {
 	return slice.Map(
 		[]string{
-			queueTurnstoneMessage,
-			queueValidatorsBalances,
+			queue.QueueSuffixTurnstone,
+			queue.QueueSuffixValidatorsBalances,
 		},
 		func(q string) string {
 			return fmt.Sprintf("%s/%s/%s", p.chainType, p.chainReferenceID, q)
@@ -45,7 +44,7 @@ func (p Processor) SupportedQueues() []string {
 	)
 }
 
-func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
+func (p Processor) SignMessages(ctx context.Context, messages ...chain.QueuedMessage) ([]chain.SignedQueuedMessage, error) {
 	return slice.MapErr(messages, func(msg chain.QueuedMessage) (chain.SignedQueuedMessage, error) {
 		msgBytes := crypto.Keccak256(
 			append(
@@ -78,30 +77,28 @@ func (p Processor) SignMessages(ctx context.Context, queueTypeName string, messa
 	)
 }
 
-func (p Processor) ProcessMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
-	switch {
-	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
-		return p.compass.processMessages(
-			ctx,
-			queueTypeName,
-			msgs,
-		)
-	default:
+func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
+	if !queueTypeName.IsTurnstoneQueue() {
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
+
+	return p.compass.processMessages(
+		ctx,
+		queueTypeName.String(),
+		msgs,
+	)
 }
 
-func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
-	switch {
-	case strings.HasSuffix(queueTypeName, queueTurnstoneMessage):
-		break
-	case strings.HasSuffix(queueTypeName, queueValidatorsBalances):
+func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
+	if queueTypeName.IsValidatorsValancesQueue() {
 		return p.compass.provideEvidenceForValidatorBalance(
 			ctx,
-			queueTypeName,
+			queueTypeName.String(),
 			msgs,
 		)
-	default:
+	}
+
+	if !queueTypeName.IsTurnstoneQueue() {
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
 
@@ -118,12 +115,12 @@ func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName string, ms
 		case len(rawMsg.ErrorData) > 0:
 			logger.Debug("providing error proof for message")
 			gErr.Add(
-				p.compass.provideErrorProof(ctx, queueTypeName, rawMsg),
+				p.compass.provideErrorProof(ctx, queueTypeName.String(), rawMsg),
 			)
 		case len(rawMsg.PublicAccessData) > 0:
 			logger.Debug("providing tx proof for message")
 			gErr.Add(
-				p.compass.provideTxProof(ctx, queueTypeName, rawMsg),
+				p.compass.provideTxProof(ctx, queueTypeName.String(), rawMsg),
 			)
 		default:
 			logger.Debug("skipping message as there is no proof")

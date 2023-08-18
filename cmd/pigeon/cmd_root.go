@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/palomachain/pigeon/app"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +26,9 @@ var rootCmd = &cobra.Command{
 		if found {
 			app.SetConfigPath(flagConfigPath)
 		}
+
+		ctx := liblog.EnrichContext(cmd.Context())
+		cmd.SetContext(ctx)
 	},
 }
 

@@ -64,7 +64,7 @@ func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor
 				})
 
 				logger.Info("signing ", len(messagesForSigning), " messages")
-				signedMessages, err := p.SignMessages(ctx, queueName, messagesForSigning...)
+				signedMessages, err := p.SignMessages(ctx, messagesForSigning...)
 				if err != nil {
 					logger.WithError(err).Error("unable to sign messages")
 					return err
