@@ -16,7 +16,7 @@ import (
 func TestClientRelay(t *testing.T) {
 	authHeader := "foo"
 	ctx := context.Background()
-	chainID := big.NewInt(1) //eth-main
+	chainID := big.NewInt(1) // eth-main
 	chainReferenceID := "eth-main"
 
 	newClient := func(h bool, chains ...string) *Client {

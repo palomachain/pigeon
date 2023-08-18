@@ -65,7 +65,6 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 				})
 				logger.Info("relaying ", len(messagesInQueue), " messages")
 				err := p.ProcessMessages(ctx, queue.FromString(queueName), messagesInQueue)
-
 				if err != nil {
 					logger.WithFields(log.Fields{
 						"err":        err,

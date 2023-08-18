@@ -373,7 +373,6 @@ func callSmartContract(
 		}
 
 		return tx
-
 	})
 }
 

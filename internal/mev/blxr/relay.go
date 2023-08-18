@@ -67,7 +67,6 @@ func (c *Client) Relay(ctx context.Context, chainID *big.Int, tx *types.Transact
 		SetBody(map[string]interface{}{"method": c.chains[chainReferenceID], "id": "1", "params": params}).
 		SetResult(&r).
 		Post(cBloXRouteCloudAPIURL)
-
 	if err != nil {
 		return nilHash, fmt.Errorf("failed to send request: %w", err)
 	}
