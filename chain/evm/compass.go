@@ -217,6 +217,7 @@ func (t compass) uploadSmartContract(
 		logger.Info("upload smart contract")
 
 		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
+		ctx = context.WithValue(ctx, "abi", msg.GetAbi())
 		if err != nil {
 			logger.WithError(err).Error("uploadSmartContract: error parsing ABI")
 		}
