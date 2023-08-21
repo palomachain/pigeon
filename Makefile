@@ -25,6 +25,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=pigeon \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X github.com/palomachain/pigeon/app.version=$(VERSION) \
 		  -X github.com/palomachain/pigeon/app.commit=$(COMMIT) \
+		  -extldflags "-Wl,--allow-multiple-definition"
 
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
