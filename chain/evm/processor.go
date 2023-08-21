@@ -140,6 +140,10 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 }
 
 func (p Processor) IsRightChain(ctx context.Context) error {
+	if p.chainReferenceID == "arb-main" {
+		return nil
+	}
+
 	block, err := p.evmClient.BlockByHash(ctx, p.blockHeightHash)
 	if err != nil {
 		return err
