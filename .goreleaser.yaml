@@ -11,6 +11,7 @@ builds:
       - -s -w
       - -X github.com/palomachain/pigeon/app.version={{ .Tag }}
       - -X github.com/palomachain/pigeon/app.commit={{ .FullCommit }}
+      - -extldflags "-Wl,--allow-multiple-definition"
     goos:
       - linux
     goarch:
