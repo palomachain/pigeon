@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/liblog"
 	log "github.com/sirupsen/logrus"
 
@@ -56,9 +58,19 @@ func (c *Client) DeployContract(
 		}
 
 		keystore := arbkeystore.NewKeyStore(c.config.KeyringDirectory.Path(), arbkeystore.StandardScryptN, arbkeystore.StandardScryptP)
+		if !c.keystore.HasAddress(c.addr) {
+			err = errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path()))
+			if err != nil {
+				logger.WithError(err).Error("failed to unlock keystore")
+				return
+			}
+		}
 
 		addr := &arbcommon.Address{}
 		addr.SetBytes(c.addr.Bytes())
+		acc := arbaccounts.Account{Address: *addr}
+
+		whoops.Assert(keystore.Unlock(acc, config.KeyringPassword(c.config.KeyringPassEnvName)))
 
 		_, atx, xerr := deployContractArbitrum(
 			ctx,
