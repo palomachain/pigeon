@@ -490,9 +490,8 @@ func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientC
 
 	// Get batches
 	// TODO : Scope to chainReferenceID and Pigeon
+	// TODO : Just get batches that paloma says have enough signatures
 	batches, err := qc.OutgoingTxBatches(ctx, &gravity.QueryOutgoingTxBatchesRequest{})
-
-	// Check to make sure there are enough signatures
 	if err != nil {
 		return nil, err
 	}

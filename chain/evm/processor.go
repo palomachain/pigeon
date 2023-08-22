@@ -87,7 +87,7 @@ func (p Processor) GravitySignBatches(ctx context.Context, batches ...gravity.Ou
 		msgBytes := crypto.Keccak256(
 			append(
 				[]byte(SignedMessagePrefix),
-				batch.GetCheckpoint(p.compass.CompassID)...,
+				batch.GetBytesToSign()...,
 			),
 		)
 		sig, err := p.evmClient.sign(ctx, msgBytes)

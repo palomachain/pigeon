@@ -70,7 +70,7 @@ func (gb GravityBatchWithSignatures) GetSignatures() []ValidatorSignature {
 }
 
 func (gb GravityBatchWithSignatures) GetBytes() []byte {
-	return gb.GetCheckpoint("palomagravity")
+	return gb.GetBytesToSign()
 }
 
 type ExternalAccount struct {

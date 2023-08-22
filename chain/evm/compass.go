@@ -616,11 +616,11 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Signed
 	logger.Debug("confirming consensus reached")
 	var s uint64
 	for i := range val.Validators {
-		val, pow := val.Validators[i], val.Powers[i]
-		sig, ok := signaturesMap[val]
+		valHex, pow := val.Validators[i], val.Powers[i]
+		sig, ok := signaturesMap[valHex]
 		logger.WithFields(log.Fields{
 			"i":         i,
-			"validator": val,
+			"validator": valHex,
 			"power":     pow,
 		}).Debug("checking consensus")
 		if !ok {
@@ -645,9 +645,11 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Signed
 			"i": i,
 		}).Debug("good unmarshal")
 		recoveredAddr := crypto.PubkeyToAddress(*pk)
-		if val == recoveredAddr.Hex() {
-			s += pow
+		recoveredAddrHex := recoveredAddr.Hex()
+		if valHex != recoveredAddrHex {
+			continue
 		}
+		s += pow
 		logger.WithFields(log.Fields{
 			"i": i,
 		}).Debug("good consensus")
@@ -753,15 +755,18 @@ func (t compass) gravityRelayBatch(
 			Amount:   amounts,
 		}
 
-		tx, err := t.callCompass( // TOOD : Breaking here
-			ctx, false,
-			"submit_batch", []any{
+		tx, err := t.callCompass(
+			ctx,
+			false,
+			"submit_batch",
+			[]any{
 				con,
 				common.HexToAddress(batch.TokenContract),
 				compassArgs,
 				new(big.Int).SetInt64(int64(batch.BatchNonce)),
-				new(big.Int).SetInt64(1722526388), // TODO : Deadline
-			})
+				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())), // TODO : Deadline
+			},
+		)
 		if err != nil {
 			// TODO : Where to store data on error?
 			//isSmartContractError := whoops.Must(t.SetErrorData(ctx, batch.BatchNonce, err))

@@ -19,7 +19,7 @@ const (
 
 	gravityCreateBatchesLoopInterval = 5 * time.Second
 	gravitySignBatchesLoopInterval   = 5 * time.Second
-	gravityRelayBatchesLoopInterval  = 1 * time.Second
+	gravityRelayBatchesLoopInterval  = 5 * time.Second
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
