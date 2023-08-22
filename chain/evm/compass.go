@@ -102,6 +102,11 @@ type CompassLogicCallArgs struct {
 	Payload              []byte
 }
 
+type CompassTokenSendArgs struct {
+	Receiver []common.Address
+	Amount   []*big.Int
+}
+
 func (c CompassConsensus) OriginalSignatures() [][]byte {
 	return c.originalSignatures
 }
@@ -321,6 +326,40 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 			{
 				crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256)")),
 				common.Hash{},
+				common.Hash{},
+				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
+			},
+		},
+		FromBlock: blockNumber,
+	}
+
+	var found bool
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+		found = len(logs) > 0
+		return found
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
+}
+
+func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, messageID uint64) (bool, error) {
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	if err != nil {
+		return false, err
+	}
+	fromBlock := *big.NewInt(0)
+	fromBlock.Sub(blockNumber, big.NewInt(9999))
+	filter := etherum.FilterQuery{
+		Addresses: []common.Address{
+			t.smartContractAddr,
+		},
+		Topics: [][]common.Hash{
+			{
+				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
 				common.Hash{},
 				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
 			},
@@ -565,9 +604,9 @@ func TransformValsetToCompassValset(val *types.Valset) CompassValset {
 	}
 }
 
-func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.MessageWithSignatures) bool {
+func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.SignedEntity) bool {
 	signaturesMap := make(map[string]chain.ValidatorSignature)
-	for _, sig := range msg.Signatures {
+	for _, sig := range msg.GetSignatures() {
 		signaturesMap[sig.SignedByAddress] = sig
 	}
 	logger := liblog.WithContext(ctx).WithFields(
@@ -589,7 +628,7 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Messag
 		}
 		bytesToVerify := crypto.Keccak256(append(
 			[]byte(SignedMessagePrefix),
-			msg.BytesToSign...,
+			msg.GetBytes()...,
 		))
 		recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
 		if err != nil {
@@ -629,4 +668,109 @@ func (c compass) callCompass(
 		return nil, ErrABINotInitialized
 	}
 	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
+}
+
+func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
+	var gErr whoops.Group
+	logger := log.WithField("chainReferenceID", t.ChainReferenceID)
+	for _, batch := range batches {
+		logger = logger.WithField("batch-nonce", batch.BatchNonce)
+
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing batch context")
+			break
+		}
+
+		var processingErr error
+		var tx *ethtypes.Transaction
+		logger := logger.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+		logger.Debug("relaying")
+
+		tx, processingErr = t.gravityRelayBatch(ctx, batch)
+
+		processingErr = whoops.Enrich(
+			processingErr,
+			FieldMessageID.Val(batch.BatchNonce),
+		)
+
+		switch {
+		case processingErr == nil:
+			if tx != nil {
+				logger.Debug("sending claim")
+				// TODO : Claim
+				//if err := t.paloma.SetPublicAccessData(ctx, t.ChainReferenceID, batch.BatchNonce, tx.Hash().Bytes()); err != nil {
+				//	gErr.Add(err)
+				//	return gErr
+				//}
+			}
+		case goerrors.Is(processingErr, ErrNoConsensus):
+			// does nothing
+		default:
+			logger.WithError(processingErr).Error("relay error")
+			gErr.Add(processingErr)
+		}
+	}
+
+	return gErr.Return()
+}
+
+func (t compass) gravityRelayBatch(
+	ctx context.Context,
+	batch chain.GravityBatchWithSignatures,
+) (*ethtypes.Transaction, error) {
+	return whoops.TryVal(func() *ethtypes.Transaction {
+		executed, err := t.gravityIsBatchAlreadyRelayed(ctx, batch.BatchNonce)
+		whoops.Assert(err)
+		if executed {
+			return nil
+		}
+
+		valsetID, err := t.findLastValsetMessageID(ctx)
+		whoops.Assert(err)
+
+		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+		whoops.Assert(err)
+
+		consensusReached := isConsensusReached(ctx, valset, batch)
+		if !consensusReached {
+			whoops.Assert(ErrNoConsensus)
+		}
+
+		con := BuildCompassConsensus(ctx, valset, batch.Signatures)
+
+		receivers := make([]common.Address, len(batch.Transactions))
+		amounts := make([]*big.Int, len(batch.Transactions))
+
+		for i, transaction := range batch.Transactions {
+			receivers[i] = common.HexToAddress(transaction.DestAddress)
+			amounts[i] = transaction.Erc20Token.Amount.BigInt()
+		}
+
+		compassArgs := CompassTokenSendArgs{
+			Receiver: receivers,
+			Amount:   amounts,
+		}
+
+		tx, err := t.callCompass( // TOOD : Breaking here
+			ctx, false,
+			"submit_batch", []any{
+				con,
+				common.HexToAddress(batch.TokenContract),
+				compassArgs,
+				new(big.Int).SetInt64(int64(batch.BatchNonce)),
+				new(big.Int).SetInt64(1722526388), // TODO : Deadline
+			})
+		if err != nil {
+			// TODO : Where to store data on error?
+			//isSmartContractError := whoops.Must(t.SetErrorData(ctx, batch.BatchNonce, err))
+			//if isSmartContractError {
+			//	return nil
+			//}
+			whoops.Assert(err)
+		}
+
+		return tx
+	})
 }

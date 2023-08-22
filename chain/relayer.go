@@ -2,8 +2,9 @@ package chain
 
 import (
 	"context"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
+
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/internal/queue"
 )
@@ -23,6 +24,12 @@ type SignedQueuedMessage struct {
 	SignedByAddress string
 }
 
+type SignedGravityOutgoingTxBatch struct {
+	gravity.OutgoingTxBatch
+	Signature       []byte
+	SignedByAddress string
+}
+
 type MessageToProcess struct {
 	QueueTypeName string
 	Msg           QueuedMessage
@@ -35,9 +42,35 @@ type ValidatorSignature struct {
 	PublicKey       []byte
 }
 
+type SignedEntity interface {
+	GetSignatures() []ValidatorSignature
+	GetBytes() []byte
+}
+
 type MessageWithSignatures struct {
 	QueuedMessage
 	Signatures []ValidatorSignature
+}
+
+func (msg MessageWithSignatures) GetSignatures() []ValidatorSignature {
+	return msg.Signatures
+}
+
+func (msg MessageWithSignatures) GetBytes() []byte {
+	return msg.BytesToSign
+}
+
+type GravityBatchWithSignatures struct {
+	gravity.OutgoingTxBatch
+	Signatures []ValidatorSignature
+}
+
+func (gb GravityBatchWithSignatures) GetSignatures() []ValidatorSignature {
+	return gb.Signatures
+}
+
+func (gb GravityBatchWithSignatures) GetBytes() []byte {
+	return gb.GetCheckpoint("palomagravity")
 }
 
 type ExternalAccount struct {
@@ -78,6 +111,9 @@ type Processor interface {
 
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
+
+	GravitySignBatches(ctx context.Context, batches ...gravity.OutgoingTxBatch) ([]SignedGravityOutgoingTxBatch, error)
+	GravityRelayBatches(ctx context.Context, batches []GravityBatchWithSignatures) error
 }
 
 type ProcessorBuilder interface {

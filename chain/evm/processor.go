@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
 
 	"github.com/VolumeFi/whoops"
@@ -77,6 +78,39 @@ func (p Processor) SignMessages(ctx context.Context, messages ...chain.QueuedMes
 	)
 }
 
+func (p Processor) GravitySignBatches(ctx context.Context, batches ...gravity.OutgoingTxBatch) ([]chain.SignedGravityOutgoingTxBatch, error) {
+	return slice.MapErr(batches, func(batch gravity.OutgoingTxBatch) (chain.SignedGravityOutgoingTxBatch, error) {
+		logger := log.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+
+		msgBytes := crypto.Keccak256(
+			append(
+				[]byte(SignedMessagePrefix),
+				batch.GetCheckpoint(p.compass.CompassID)...,
+			),
+		)
+		sig, err := p.evmClient.sign(ctx, msgBytes)
+		if err != nil {
+			logger.WithError(err).Error("signing a batch failed")
+			return chain.SignedGravityOutgoingTxBatch{}, err
+		}
+
+		logger.Info("signed a batch")
+
+		if err != nil {
+			return chain.SignedGravityOutgoingTxBatch{}, err
+		}
+
+		return chain.SignedGravityOutgoingTxBatch{
+			OutgoingTxBatch: batch,
+			Signature:       sig,
+			SignedByAddress: p.evmClient.addr.Hex(),
+		}, nil
+	},
+	)
+}
+
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
 	if !queueTypeName.IsTurnstoneQueue() {
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
@@ -86,6 +120,13 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.Type
 		ctx,
 		queueTypeName.String(),
 		msgs,
+	)
+}
+
+func (p Processor) GravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
+	return p.compass.gravityRelayBatches(
+		ctx,
+		batches,
 	)
 }
 

@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+	"encoding/hex"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensus "github.com/palomachain/paloma/x/consensus/types"
 	evm "github.com/palomachain/paloma/x/evm/types"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
@@ -141,10 +143,10 @@ func queryMessagesForRelaying(
 		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
 		for j, vs := range msg.SignData {
 			valSigs[j] = chain.ValidatorSignature{
-				ValAddress:      vs.GetValAddress(),
+				//ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
-				PublicKey:       vs.GetPublicKey(),
+				//PublicKey:       vs.GetPublicKey(),
 			}
 		}
 		var ptr consensus.ConsensusMsg
@@ -188,10 +190,10 @@ func queryMessagesForAttesting(
 		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
 		for j, vs := range msg.SignData {
 			valSigs[j] = chain.ValidatorSignature{
-				ValAddress:      vs.GetValAddress(),
+				//ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
-				PublicKey:       vs.GetPublicKey(),
+				//PublicKey:       vs.GetPublicKey(),
 			}
 		}
 		var ptr consensus.ConsensusMsg
@@ -421,6 +423,111 @@ func (c Client) KeepValidatorAlive(ctx context.Context, appVersion string) error
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "")
 	return err
+}
+
+func (c Client) GravityRequestBatch(ctx context.Context, chainReferenceId string) error {
+	msg := &gravity.MsgRequestBatch{
+		Sender:           c.creator,
+		ChainReferenceId: chainReferenceId,
+	}
+
+	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	return err
+}
+
+func (c Client) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
+	return gravityQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
+}
+
+func gravityQueryLastUnsignedBatch(ctx context.Context, grpcClient grpc.ClientConn, address string, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
+	qc := gravity.NewQueryClient(grpcClient)
+	// TODO : Scope to chainReferenceID
+	batches, err := qc.LastPendingBatchRequestByAddr(ctx, &gravity.QueryLastPendingBatchRequestByAddrRequest{
+		Address: address,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return batches.Batch, nil
+}
+
+func (c Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
+	return gravityConfirmBatch(ctx, c.MessageSender, c.creator, signatures...)
+}
+
+func gravityConfirmBatch(
+	ctx context.Context,
+	ms MessageSender,
+	creator string,
+	signedBatches ...chain.SignedGravityOutgoingTxBatch,
+) error {
+	// TODO : Work in progress
+	if len(signedBatches) == 0 {
+		return nil
+	}
+	for _, signedBatch := range signedBatches {
+		msg := &gravity.MsgConfirmBatch{
+			Nonce:         signedBatch.BatchNonce,
+			TokenContract: signedBatch.TokenContract,
+			EthSigner:     signedBatch.SignedByAddress,
+			Orchestrator:  creator,
+			Signature:     hex.EncodeToString(signedBatch.Signature),
+		}
+		_, err := ms.SendMsg(ctx, msg, "")
+		return err
+
+	}
+	return nil
+}
+
+func (c Client) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
+	return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.creator, chainReferenceID)
+}
+
+func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientConn, address string, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
+	qc := gravity.NewQueryClient(grpcClient)
+
+	// Get batches
+	// TODO : Scope to chainReferenceID and Pigeon
+	batches, err := qc.OutgoingTxBatches(ctx, &gravity.QueryOutgoingTxBatchesRequest{})
+
+	// Check to make sure there are enough signatures
+	if err != nil {
+		return nil, err
+	}
+
+	batchesWithSignatures := make([]chain.GravityBatchWithSignatures, len(batches.Batches))
+	for i, batch := range batches.Batches {
+		confirms, err := qc.BatchConfirms(ctx, &gravity.QueryBatchConfirmsRequest{
+			Nonce:           batch.BatchNonce,
+			ContractAddress: batch.TokenContract,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		var signatures []chain.ValidatorSignature
+		for _, confirm := range confirms.Confirms {
+			signature, err := hex.DecodeString(confirm.Signature)
+			if err != nil {
+				return nil, err
+			}
+			signatures = append(signatures, chain.ValidatorSignature{
+				//ValAddress: confirm.,//      sdk.ValAddress // TODO??
+				Signature:       signature,
+				SignedByAddress: confirm.EthSigner,
+				//PublicKey: []byte(``), //       []byte // TODO??
+			})
+		}
+		batchesWithSignatures[i] = chain.GravityBatchWithSignatures{
+			OutgoingTxBatch: batch,
+			Signatures:      signatures,
+		}
+
+	}
+
+	return batchesWithSignatures, nil
 }
 
 func (c Client) lensQuery() *query.Query {
