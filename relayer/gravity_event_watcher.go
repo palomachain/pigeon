@@ -60,7 +60,7 @@ func (r *Relayer) handleEvents(ctx context.Context, processors []chain.Processor
 			// Walk through the different batchSendEvents and do different things for different batchSendEvents
 
 			logger.Info("claiming for ", len(batchSendEvents), " events")
-			err := p.SubmitBatchSendToEVMClaims(ctx, batchSendEvents, r.palomaClient.GetCreator())
+			err := p.SubmitBatchSendToEthClaims(ctx, batchSendEvents, r.palomaClient.GetCreator())
 			if err != nil {
 				logger.WithError(err).Error("error submitting claim for events")
 				return err

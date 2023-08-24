@@ -56,7 +56,8 @@ type compass struct {
 
 	startingBlockHeight int64
 
-	chainID *big.Int
+	chainID                 *big.Int
+	lastObservedBlockHeight int64
 }
 
 func newCompassClient(
@@ -558,15 +559,17 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 	return g.Return()
 }
 
-func (t compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
+func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
 
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
 	if err != nil {
 		return nil, err
 	}
-	fromBlock := *big.NewInt(0)
-	// TODO : Store the last block we saw in compass.  Only default to 9999 on a restart where we don't have a last block
-	fromBlock.Sub(blockNumber, big.NewInt(9999))
+	if t.lastObservedBlockHeight == 0 {
+		t.lastObservedBlockHeight = blockNumber.Int64() - 10000
+	}
+
+	fromBlock := *big.NewInt(t.lastObservedBlockHeight + 1)
 
 	filter := ethereum.FilterQuery{
 		Addresses: []common.Address{
@@ -605,16 +608,6 @@ func (t compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([
 			return nil, fmt.Errorf("invalid token contract")
 		}
 
-		// Check if we've already claimed this event
-		//prevBatch, err := t.paloma.QueryBatchRequestByNonce(ctx, lastEventNonce, tokenContract.String())
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//if prevBatch.BatchNonce == batchNonce.Uint64() {
-		//	continue
-		//}
-
 		events = append(events, chain.BatchSendEvent{
 			EthBlockHeight: ethLog.BlockNumber,
 			EventNonce:     lastEventNonce + 1,
@@ -622,6 +615,8 @@ func (t compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([
 			TokenContract:  tokenContract.String(),
 		})
 	}
+
+	t.lastObservedBlockHeight = blockNumber.Int64()
 
 	return events, err
 }

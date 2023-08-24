@@ -17,7 +17,7 @@ import (
 )
 
 type Processor struct {
-	compass          compass
+	compass          *compass
 	evmClient        *Client
 	chainType        string
 	chainReferenceID string
@@ -215,7 +215,7 @@ func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) 
 	return p.compass.GetBatchSendEvents(ctx, orchestrator)
 }
 
-func (p Processor) SubmitBatchSendToEVMClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
+func (p Processor) SubmitBatchSendToEthClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
 	for _, batchSendEvent := range batchSendEvents {
 		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
 			return err
