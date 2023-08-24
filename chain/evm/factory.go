@@ -10,6 +10,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/mev"
+	arbclient "github.com/roodeag/arbitrum/ethclient"
 )
 
 type Factory struct {
@@ -51,6 +52,14 @@ func (f *Factory) Build(
 
 	if err := client.init(); err != nil {
 		return Processor{}, err
+	}
+
+	if chainReferenceID == "arb-main" {
+		ac, err := arbclient.Dial(cfg.BaseRPCURL)
+		if err != nil {
+			return Processor{}, err
+		}
+		client.arbcon = ac
 	}
 
 	return Processor{

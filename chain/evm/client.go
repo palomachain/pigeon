@@ -34,6 +34,8 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
+	arbcommon "github.com/roodeag/arbitrum/common"
+	arbclient "github.com/roodeag/arbitrum/ethclient"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -110,7 +112,8 @@ type Client struct {
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
-	conn ethClientConn
+	conn   ethClientConn
+	arbcon *arbclient.Client
 
 	paloma    PalomaClienter
 	mevClient mevClient
@@ -401,6 +404,34 @@ func (c *Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*et
 }
 
 func (c *Client) BlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
+	if c.arbcon != nil {
+		b, err := c.arbcon.BlockByHash(ctx, arbcommon.BytesToHash(blockHash.Bytes()))
+		if err != nil {
+			return nil, err
+		}
+
+		hdr := &ethtypes.Header{
+			ParentHash:      ethcommon.Hash(b.Header().ParentHash),
+			UncleHash:       ethcommon.Hash(b.Header().UncleHash),
+			Coinbase:        ethcommon.Address(b.Header().Coinbase),
+			Root:            ethcommon.Hash(b.Header().Root),
+			TxHash:          ethcommon.Hash(b.Header().TxHash),
+			ReceiptHash:     ethcommon.Hash(b.Header().ReceiptHash),
+			Bloom:           ethtypes.Bloom(b.Header().Bloom),
+			Difficulty:      b.Header().Difficulty,
+			Number:          b.Header().Number,
+			GasLimit:        b.Header().GasLimit,
+			GasUsed:         b.Header().GasUsed,
+			Time:            b.Header().Time,
+			Extra:           b.Header().Extra,
+			MixDigest:       ethcommon.Hash(b.Header().MixDigest),
+			Nonce:           ethtypes.BlockNonce(b.Header().Nonce),
+			BaseFee:         b.Header().BaseFee,
+			WithdrawalsHash: (*ethcommon.Hash)(b.Header().WithdrawalsHash),
+			ExcessDataGas:   nil,
+		}
+		return ethtypes.NewBlockWithHeader(hdr), nil
+	}
 	return c.conn.BlockByHash(ctx, blockHash)
 }
 
