@@ -24,7 +24,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=pigeon \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X github.com/palomachain/pigeon/app.version=$(VERSION) \
-		  -X github.com/palomachain/pigeon/app.commit=$(COMMIT)
+		  -X github.com/palomachain/pigeon/app.commit=$(COMMIT) \
 
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))

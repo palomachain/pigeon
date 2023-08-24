@@ -133,9 +133,6 @@ type ethClientConn interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
 	BlockByHash(ctx context.Context, hash common.Hash) (*etherumtypes.Block, error)
 	BlockNumber(ctx context.Context) (uint64, error)
-	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
-	SuggestGasPrice(ctx context.Context) (*big.Int, error)
-	SuggestGasTipCap(ctx context.Context) (*big.Int, error)
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
@@ -187,6 +184,16 @@ func (c *Client) init() error {
 
 		c.conn = whoops.Must(ethclient.Dial(c.config.BaseRPCURL))
 	})
+}
+
+func (c *Client) injectArbClient() error {
+	ac, err := arbclient.Dial(c.config.BaseRPCURL)
+	if err != nil {
+		return err
+	}
+
+	c.arbcon = ac
+	return nil
 }
 
 func (c *Client) newCompass(addr common.Address) (CompassBinding, error) {

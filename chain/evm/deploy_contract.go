@@ -15,6 +15,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	log "github.com/sirupsen/logrus"
 
@@ -24,7 +25,6 @@ import (
 	arbkeystore "github.com/roodeag/arbitrum/accounts/keystore"
 	arbcommon "github.com/roodeag/arbitrum/common"
 	arbtypes "github.com/roodeag/arbitrum/core/types"
-	arbclient "github.com/roodeag/arbitrum/ethclient"
 )
 
 func (c *Client) DeployContract(
@@ -34,82 +34,10 @@ func (c *Client) DeployContract(
 	bytecode,
 	constructorInput []byte,
 ) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
-	logger := liblog.WithContext(ctx).WithField("caller", "deploy-contract-log")
-	if chainID.Int64() == int64(42161) {
-		rawABI, ok := (ctx.Value("abi")).(string)
-		if !ok {
-			logger.Error("failed to parse ABI from context")
-			err = fmt.Errorf("failed to parse raw ABI from context")
-			return
-		}
-
-		arbContractABI, xerr := arbabi.JSON(strings.NewReader(rawABI))
-		if xerr != nil {
-			err = xerr
-			logger.WithError(err).Error("failed to parse ABI JSON")
-			return
-		}
-
-		client, xerr := arbclient.Dial(c.config.BaseRPCURL)
-		if xerr != nil {
-			err = xerr
-			logger.WithError(err).Error("failed to create arb client")
-			return
-		}
-
-		keystore := arbkeystore.NewKeyStore(c.config.KeyringDirectory.Path(), arbkeystore.StandardScryptN, arbkeystore.StandardScryptP)
-		if !c.keystore.HasAddress(c.addr) {
-			err = errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path()))
-			if err != nil {
-				logger.WithError(err).Error("failed to unlock keystore")
-				return
-			}
-		}
-
-		addr := &arbcommon.Address{}
-		addr.SetBytes(c.addr.Bytes())
-		acc := arbaccounts.Account{Address: *addr}
-
-		whoops.Assert(keystore.Unlock(acc, config.KeyringPassword(c.config.KeyringPassEnvName)))
-
-		_, atx, xerr := deployContractArbitrum(
-			ctx,
-			client,
-			keystore,
-			*addr,
-			chainID,
-			arbContractABI,
-			bytecode,
-			constructorInput,
-			c.config.GasAdjustment,
-			c.config.TxType,
-		)
-
-		if xerr != nil {
-			err = xerr
-			logger.WithError(err).Error("failed to deploy contract to arbitrum")
-			return
-		}
-
-		v, r, s := atx.RawSignatureValues()
-		tx = ethtypes.NewTx(&ethtypes.DynamicFeeTx{
-			ChainID:   chainID,
-			Nonce:     atx.Nonce(),
-			GasTipCap: atx.GasTipCap(),
-			GasFeeCap: atx.GasFeeCap(),
-			Gas:       atx.Gas(),
-			To:        (*common.Address)(atx.To()),
-			Value:     atx.Value(),
-			Data:      atx.Data(),
-			V:         v,
-			R:         r,
-			S:         s,
-		})
-
-		logger.WithField("tx", tx).Info("Looks like it went alright?")
-
-		return
-
+	// HACK HACK HACK
+	// Logic branching to switch to Arbitrum go-ethereum types
+	if libchain.IsArbitrum(chainID) {
+		return c.wrapArbitrumDeployment(ctx, chainID, contractAbi, bytecode, constructorInput)
 	}
 
 	return deployContract(
@@ -348,6 +276,79 @@ func deployContractArbitrum(
 				"tx-type":      tx.Type(),
 			}).Info("legacy tx executed")
 		}
+	})
+	return
+}
+
+func (c *Client) wrapArbitrumDeployment(
+	ctx context.Context,
+	chainID *big.Int,
+	contractAbi abi.ABI,
+	bytecode,
+	constructorInput []byte,
+) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
+	logger := liblog.WithContext(ctx).WithField("caller", "deploy-contract-log")
+	rawABI, ok := (ctx.Value("abi")).(string)
+	if !ok {
+		logger.Error("failed to parse ABI from context")
+		err = fmt.Errorf("failed to parse raw ABI from context")
+		return
+	}
+
+	var arbContractABI arbabi.ABI
+	arbContractABI, err = arbabi.JSON(strings.NewReader(rawABI))
+	if err != nil {
+		logger.WithError(err).Error("failed to parse ABI JSON")
+		return
+	}
+
+	keystore := arbkeystore.NewKeyStore(c.config.KeyringDirectory.Path(), arbkeystore.StandardScryptN, arbkeystore.StandardScryptP)
+	if !keystore.HasAddress(arbcommon.Address(c.addr)) {
+		err = errors.Unrecoverable(ErrAddressNotFoundInKeyStore.Format(c.config.SigningKey, c.config.KeyringDirectory.Path()))
+		if err != nil {
+			logger.WithError(err).Error("failed to unlock keystore")
+			return
+		}
+	}
+
+	var addr *arbcommon.Address
+	addr.SetBytes(c.addr.Bytes())
+	acc := arbaccounts.Account{Address: *addr}
+
+	whoops.Assert(keystore.Unlock(acc, config.KeyringPassword(c.config.KeyringPassEnvName)))
+
+	var atx *arbtypes.Transaction
+	_, atx, err = deployContractArbitrum(
+		ctx,
+		c.arbcon,
+		keystore,
+		*addr,
+		chainID,
+		arbContractABI,
+		bytecode,
+		constructorInput,
+		c.config.GasAdjustment,
+		c.config.TxType,
+	)
+
+	if err != nil {
+		logger.WithError(err).Error("failed to deploy contract to arbitrum")
+		return
+	}
+
+	v, r, s := atx.RawSignatureValues()
+	tx = ethtypes.NewTx(&ethtypes.DynamicFeeTx{
+		ChainID:   chainID,
+		Nonce:     atx.Nonce(),
+		GasTipCap: atx.GasTipCap(),
+		GasFeeCap: atx.GasFeeCap(),
+		Gas:       atx.Gas(),
+		To:        (*common.Address)(atx.To()),
+		Value:     atx.Value(),
+		Data:      atx.Data(),
+		V:         v,
+		R:         r,
+		S:         s,
 	})
 	return
 }

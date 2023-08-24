@@ -9,8 +9,8 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/mev"
-	arbclient "github.com/roodeag/arbitrum/ethclient"
 )
 
 type Factory struct {
@@ -54,12 +54,10 @@ func (f *Factory) Build(
 		return Processor{}, err
 	}
 
-	if chainReferenceID == "arb-main" {
-		ac, err := arbclient.Dial(cfg.BaseRPCURL)
-		if err != nil {
+	if libchain.IsArbitrum(chainID) {
+		if err := client.injectArbClient(); err != nil {
 			return Processor{}, err
 		}
-		client.arbcon = ac
 	}
 
 	return Processor{
