@@ -517,10 +517,11 @@ func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientC
 	qc := gravity.NewQueryClient(grpcClient)
 
 	// Get batches
-	batches, err := qc.OutgoingTxBatches(ctx, &gravity.QueryOutgoingTxBatchesRequest{
+	req := &gravity.QueryOutgoingTxBatchesRequest{
 		ChainReferenceId: chainReferenceID,
 		Assignee:         address.String(),
-	})
+	}
+	batches, err := qc.OutgoingTxBatches(ctx, req)
 	if err != nil {
 		return nil, err
 	}

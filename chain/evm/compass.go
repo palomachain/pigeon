@@ -349,7 +349,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	return found, nil
 }
 
-func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, messageID uint64) (bool, error) {
+func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
 	if err != nil {
 		return false, err
@@ -363,8 +363,6 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, messageID uin
 		Topics: [][]common.Hash{
 			{
 				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
-				common.Hash{},
-				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
 			},
 		},
 		FromBlock: &fromBlock,
@@ -372,7 +370,20 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, messageID uin
 
 	var found bool
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
-		found = len(logs) > 0
+
+		for _, ethLog := range logs {
+			event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
+			if err != nil {
+				found = true
+			}
+
+			logBatchNonce, ok := event[1].(*big.Int)
+			if !ok {
+				found = true
+			}
+			found = batchNonce == logBatchNonce.Uint64()
+		}
+
 		return found
 	})
 
