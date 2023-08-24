@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
@@ -36,7 +37,7 @@ func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Pr
 	for _, p := range processors {
 		chainReferenceID := p.GetChainReferenceID()
 
-		logger := log.WithFields(log.Fields{
+		logger := liblog.WithContext(ctx).WithFields(log.Fields{
 			"chain-reference-id": chainReferenceID,
 			"action":             "relay-gravity-batches",
 		})
@@ -49,7 +50,7 @@ func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Pr
 			}),
 		})
 
-		logger.Debug("got ", len(batchesForRelaying), " batches from ", chainReferenceID)
+		logger.Debug("got ", len(batchesForRelaying), " batches")
 		if err != nil {
 			logger.WithError(err).Error("couldn't get batches to relay")
 			return err

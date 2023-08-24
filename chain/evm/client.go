@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"io"
 	"io/fs"
 	"math"
@@ -102,6 +103,9 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
+	SendBatchSendToEVMClaim(ctx context.Context, claim gravitytypes.MsgBatchSendToEthClaim) error
+	QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error)
+	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravitytypes.OutgoingTxBatch, error)
 }
 
 type Client struct {
@@ -110,13 +114,17 @@ type Client struct {
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
-	conn ethClientConn
+	conn EthClientConn
 
 	paloma    PalomaClienter
 	mevClient mevClient
 }
 
-var _ ethClientConn = &ethclient.Client{}
+func (c Client) GetEthClient() EthClientConn {
+	return c.conn
+}
+
+var _ EthClientConn = &ethclient.Client{}
 
 //go:generate mockery --name=mevClient --inpackage --testonly
 type mevClient interface {
@@ -124,7 +132,7 @@ type mevClient interface {
 }
 
 //go:generate mockery --name=ethClientConn --inpackage --testonly
-type ethClientConn interface {
+type EthClientConn interface {
 	bind.ContractBackend
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *etherumtypes.Transaction, isPending bool, err error)
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)

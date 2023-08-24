@@ -210,3 +210,16 @@ func (p Processor) isRightChain(blockHash common.Hash) error {
 
 	return nil
 }
+
+func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
+	return p.compass.GetBatchSendEvents(ctx, orchestrator)
+}
+
+func (p Processor) SubmitBatchSendToEVMClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
+	for _, batchSendEvent := range batchSendEvents {
+		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
+			return err
+		}
+	}
+	return nil
+}

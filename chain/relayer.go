@@ -81,6 +81,13 @@ type ExternalAccount struct {
 	PubKey  []byte
 }
 
+type BatchSendEvent struct {
+	EthBlockHeight uint64
+	EventNonce     uint64
+	BatchNonce     uint64
+	TokenContract  string
+}
+
 type ChainInfo interface {
 	ChainReferenceID() string
 	ChainID() string
@@ -90,7 +97,7 @@ type ChainInfo interface {
 //go:generate mockery --name=Processor
 type Processor interface {
 	health.Checker
-	// GetChainReferenceID returns the chain reference ID against which the processor is running.
+	// GetChainReferenceID returns the chain reference EventNonce against which the processor is running.
 	GetChainReferenceID() string
 
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
@@ -109,11 +116,15 @@ type Processor interface {
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
+	SubmitBatchSendToEVMClaims(context.Context, []BatchSendEvent, string) error
+
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
 
-	GravitySignBatches(ctx context.Context, batches ...gravity.OutgoingTxBatch) ([]SignedGravityOutgoingTxBatch, error)
-	GravityRelayBatches(ctx context.Context, batches []GravityBatchWithSignatures) error
+	GravitySignBatches(context.Context, ...gravity.OutgoingTxBatch) ([]SignedGravityOutgoingTxBatch, error)
+	GravityRelayBatches(context.Context, []GravityBatchWithSignatures) error
+
+	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
 }
 
 type ProcessorBuilder interface {

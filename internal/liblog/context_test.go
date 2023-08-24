@@ -13,7 +13,7 @@ func TestEnrichContext(t *testing.T) {
 		ctx := EnrichContext(context.Background())
 		id := getCorrelationID(ctx)
 		r := EnrichContext(ctx)
-		require.Equal(t, id, getCorrelationID(r), "should not override existing correlation ID")
+		require.Equal(t, id, getCorrelationID(r), "should not override existing correlation EventNonce")
 	})
 
 	t.Run("with empty context", func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestMustEnrichContext(t *testing.T) {
 		ctx := EnrichContext(context.Background())
 		id := getCorrelationID(ctx)
 		r := MustEnrichContext(ctx)
-		require.NotEqual(t, id, getCorrelationID(r), "should override existing correlation ID")
+		require.NotEqual(t, id, getCorrelationID(r), "should override existing correlation EventNonce")
 	})
 
 	t.Run("with empty context", func(t *testing.T) {

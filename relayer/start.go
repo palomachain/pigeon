@@ -20,6 +20,7 @@ const (
 	gravityCreateBatchesLoopInterval = 5 * time.Second
 	gravitySignBatchesLoopInterval   = 5 * time.Second
 	gravityRelayBatchesLoopInterval  = 5 * time.Second
+	eventWatcherLoopInterval         = 5 * time.Second
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
@@ -83,7 +84,8 @@ func (r *Relayer) Start(ctx context.Context) error {
 	// 	go r.startProcess(ctx, &locker, updateGravityOrchestratorAddress, true, r.UpdateGravityOrchestratorAddress)
 	//go r.startProcess(ctx, &locker, gravityCreateBatchesLoopInterval, true, r.GravityCreateBatches)
 	go r.startProcess(ctx, &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
-	//go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
+	go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
+	go r.startProcess(ctx, &locker, eventWatcherLoopInterval, true, r.HandleEvents)
 
 	// Start the foreground process
 	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)

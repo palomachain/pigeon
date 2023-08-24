@@ -34,7 +34,7 @@ type PalomaClienter interface {
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
 	GetValidator(ctx context.Context) (*stakingtypes.Validator, error)
-
+	GetCreator() string
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 

@@ -245,7 +245,7 @@ func (c Client) QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChain
 	return valInfoRes.ChainInfos, nil
 }
 
-// QueryGetSnapshotByID returns the snapshot by id. If the ID is zero, then it returns the last snapshot.
+// QueryGetSnapshotByID returns the snapshot by id. If the EventNonce is zero, then it returns the last snapshot.
 func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	snapshotRes, err := qc.GetSnapshotByID(ctx, &valset.QueryGetSnapshotByIDRequest{
@@ -276,6 +276,34 @@ func (c Client) BlockHeight(ctx context.Context) (int64, error) {
 	}
 
 	return res.SyncInfo.LatestBlockHeight, nil
+}
+
+func (c Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBatchSendToEthClaim) error {
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "")
+	return err
+}
+
+func (c Client) QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error) {
+	qc := gravity.NewQueryClient(c.GRPCClient)
+	res, err := qc.LastEventNonceByAddr(ctx, &gravity.QueryLastEventNonceByAddrRequest{
+		Address: orchestrator,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return res.EventNonce, nil
+}
+
+func (c Client) QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravity.OutgoingTxBatch, error) {
+	qc := gravity.NewQueryClient(c.GRPCClient)
+	res, err := qc.BatchRequestByNonce(ctx, &gravity.QueryBatchRequestByNonceRequest{
+		Nonce:           nonce,
+		ContractAddress: contract,
+	})
+	if err != nil {
+		return gravity.OutgoingTxBatch{}, err
+	}
+	return res.Batch, nil
 }
 
 func (c Client) QueryGetEVMValsetByID(ctx context.Context, id uint64, chainReferenceID string) (*evm.Valset, error) {
@@ -591,6 +619,10 @@ func (c Client) Keyring() keyring.Keyring {
 
 func (c Client) GetValidatorAddress() sdk.ValAddress {
 	return c.valAddr
+}
+
+func (c Client) GetCreator() string {
+	return c.creator
 }
 
 func getMainAddress(c Client) sdk.Address {
