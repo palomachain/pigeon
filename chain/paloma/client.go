@@ -510,16 +510,17 @@ func gravityConfirmBatch(
 }
 
 func (c Client) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
-	return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.creator, chainReferenceID)
+	return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.valAddr, chainReferenceID)
 }
 
-func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientConn, address string, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
+func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientConn, address sdk.ValAddress, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
 	qc := gravity.NewQueryClient(grpcClient)
 
 	// Get batches
-	// TODO : Scope to chainReferenceID and Pigeon
-	// TODO : Just get batches that paloma says have enough signatures
-	batches, err := qc.OutgoingTxBatches(ctx, &gravity.QueryOutgoingTxBatchesRequest{})
+	batches, err := qc.OutgoingTxBatches(ctx, &gravity.QueryOutgoingTxBatchesRequest{
+		ChainReferenceId: chainReferenceID,
+		Assignee:         address.String(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -541,10 +542,8 @@ func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientC
 				return nil, err
 			}
 			signatures = append(signatures, chain.ValidatorSignature{
-				//ValAddress: confirm.,//      sdk.ValAddress // TODO??
 				Signature:       signature,
 				SignedByAddress: confirm.EthSigner,
-				//PublicKey: []byte(``), //       []byte // TODO??
 			})
 		}
 		batchesWithSignatures[i] = chain.GravityBatchWithSignatures{
