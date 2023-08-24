@@ -204,3 +204,5 @@ require (
 replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
 
 replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
+
+replace github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
