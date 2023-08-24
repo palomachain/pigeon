@@ -51,34 +51,34 @@ func (_m *mockEvmClienter) BalanceAt(ctx context.Context, address common.Address
 	return r0, r1
 }
 
-// DeployContract provides a mock function with given fields: ctx, chainID, contractAbi, bytecode, constructorInput
-func (_m *mockEvmClienter) DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode []byte, constructorInput []byte) (common.Address, *types.Transaction, error) {
-	ret := _m.Called(ctx, chainID, contractAbi, bytecode, constructorInput)
+// DeployContract provides a mock function with given fields: ctx, chainID, rawABI, bytecode, constructorInput
+func (_m *mockEvmClienter) DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode []byte, constructorInput []byte) (common.Address, *types.Transaction, error) {
+	ret := _m.Called(ctx, chainID, rawABI, bytecode, constructorInput)
 
 	var r0 common.Address
 	var r1 *types.Transaction
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, abi.ABI, []byte, []byte) (common.Address, *types.Transaction, error)); ok {
-		return rf(ctx, chainID, contractAbi, bytecode, constructorInput)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, string, []byte, []byte) (common.Address, *types.Transaction, error)); ok {
+		return rf(ctx, chainID, rawABI, bytecode, constructorInput)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, abi.ABI, []byte, []byte) common.Address); ok {
-		r0 = rf(ctx, chainID, contractAbi, bytecode, constructorInput)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, string, []byte, []byte) common.Address); ok {
+		r0 = rf(ctx, chainID, rawABI, bytecode, constructorInput)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(common.Address)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *big.Int, abi.ABI, []byte, []byte) *types.Transaction); ok {
-		r1 = rf(ctx, chainID, contractAbi, bytecode, constructorInput)
+	if rf, ok := ret.Get(1).(func(context.Context, *big.Int, string, []byte, []byte) *types.Transaction); ok {
+		r1 = rf(ctx, chainID, rawABI, bytecode, constructorInput)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*types.Transaction)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, *big.Int, abi.ABI, []byte, []byte) error); ok {
-		r2 = rf(ctx, chainID, contractAbi, bytecode, constructorInput)
+	if rf, ok := ret.Get(2).(func(context.Context, *big.Int, string, []byte, []byte) error); ok {
+		r2 = rf(ctx, chainID, rawABI, bytecode, constructorInput)
 	} else {
 		r2 = ret.Error(2)
 	}

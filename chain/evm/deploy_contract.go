@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -30,14 +29,14 @@ import (
 func (c *Client) DeployContract(
 	ctx context.Context,
 	chainID *big.Int,
-	contractAbi abi.ABI,
+	rawABI string,
 	bytecode,
 	constructorInput []byte,
 ) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
 	// HACK HACK HACK
 	// Logic branching to switch to Arbitrum go-ethereum types
 	if libchain.IsArbitrum(chainID) {
-		return c.wrapArbitrumDeployment(ctx, chainID, contractAbi, bytecode, constructorInput)
+		return c.wrapArbitrumDeployment(ctx, chainID, rawABI, bytecode, constructorInput)
 	}
 
 	return deployContract(
@@ -46,7 +45,7 @@ func (c *Client) DeployContract(
 		c.keystore,
 		c.addr,
 		chainID,
-		contractAbi,
+		rawABI,
 		bytecode,
 		constructorInput,
 		c.config.GasAdjustment,
@@ -60,7 +59,7 @@ func deployContract(
 	ks *keystore.KeyStore,
 	signingAddr common.Address,
 	chainID *big.Int,
-	contractAbi abi.ABI,
+	rawABI string,
 	bytecode []byte,
 	constructorInput []byte,
 	gasAdjustment float64,
@@ -125,11 +124,18 @@ func deployContract(
 			})
 		}
 
+		var contractABI abi.ABI
+		contractABI, err = abi.JSON(strings.NewReader(rawABI))
+		if err != nil {
+			logger.WithError(err).Error("failed to parse raw JSON")
+			return
+		}
+
 		// hack begins here:
 		// constructor input arguments are already properly encoded, but
 		// we need to unpack them here because bind.DeployContract function
 		// expects arguments to come in "go" form
-		constructorArgs, err := contractAbi.Constructor.Inputs.Unpack(constructorInput)
+		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(constructorInput)
 		whoops.Assert(err)
 		// hack ends here
 
@@ -137,12 +143,12 @@ func deployContract(
 
 		contractAddr, tx, _, err = bind.DeployContract(
 			txOpts,
-			contractAbi,
+			contractABI,
 			bytecode,
 			ethClient,
 			constructorArgs...,
 		)
-		constructorArgs, _ = contractAbi.Constructor.Inputs.Unpack(constructorInput)
+		constructorArgs, _ = contractABI.Constructor.Inputs.Unpack(constructorInput)
 
 		whoops.Assert(err)
 		if tx.Type() == 2 {
@@ -283,17 +289,11 @@ func deployContractArbitrum(
 func (c *Client) wrapArbitrumDeployment(
 	ctx context.Context,
 	chainID *big.Int,
-	contractAbi abi.ABI,
+	rawABI string,
 	bytecode,
 	constructorInput []byte,
 ) (contractAddr common.Address, tx *ethtypes.Transaction, err error) {
 	logger := liblog.WithContext(ctx).WithField("caller", "deploy-contract-log")
-	rawABI, ok := (ctx.Value("abi")).(string)
-	if !ok {
-		logger.Error("failed to parse ABI from context")
-		err = fmt.Errorf("failed to parse raw ABI from context")
-		return
-	}
 
 	var arbContractABI arbabi.ABI
 	arbContractABI, err = arbabi.JSON(strings.NewReader(rawABI))
