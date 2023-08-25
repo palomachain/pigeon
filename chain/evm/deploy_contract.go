@@ -16,14 +16,13 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/liblog"
-	log "github.com/sirupsen/logrus"
-
 	arbaccounts "github.com/roodeag/arbitrum/accounts"
 	arbabi "github.com/roodeag/arbitrum/accounts/abi"
 	arbbind "github.com/roodeag/arbitrum/accounts/abi/bind"
 	arbkeystore "github.com/roodeag/arbitrum/accounts/keystore"
 	arbcommon "github.com/roodeag/arbitrum/common"
 	arbtypes "github.com/roodeag/arbitrum/core/types"
+	log "github.com/sirupsen/logrus"
 )
 
 func (c *Client) DeployContract(
