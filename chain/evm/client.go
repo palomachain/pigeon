@@ -34,6 +34,8 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
+	arbcommon "github.com/roodeag/arbitrum/common"
+	arbclient "github.com/roodeag/arbitrum/ethclient"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -110,7 +112,8 @@ type Client struct {
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
-	conn ethClientConn
+	conn   ethClientConn
+	arbcon *arbclient.Client
 
 	paloma    PalomaClienter
 	mevClient mevClient
@@ -130,9 +133,6 @@ type ethClientConn interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
 	BlockByHash(ctx context.Context, hash common.Hash) (*etherumtypes.Block, error)
 	BlockNumber(ctx context.Context) (uint64, error)
-	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
-	SuggestGasPrice(ctx context.Context) (*big.Int, error)
-	SuggestGasTipCap(ctx context.Context) (*big.Int, error)
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
@@ -184,6 +184,20 @@ func (c *Client) init() error {
 
 		c.conn = whoops.Must(ethclient.Dial(c.config.BaseRPCURL))
 	})
+}
+
+func (c *Client) injectArbClient() error {
+	ac, err := arbclient.Dial(c.config.BaseRPCURL)
+	if err != nil {
+		return err
+	}
+
+	c.arbcon = ac
+	return nil
+}
+
+func (c *Client) isArbitrumClient() bool {
+	return c.arbcon != nil
 }
 
 func (c *Client) newCompass(addr common.Address) (CompassBinding, error) {
@@ -401,7 +415,39 @@ func (c *Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*et
 }
 
 func (c *Client) BlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
+	if c.isArbitrumClient() {
+		return c.wrapArbitrumBlockByHash(ctx, blockHash)
+	}
 	return c.conn.BlockByHash(ctx, blockHash)
+}
+
+func (c *Client) wrapArbitrumBlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
+	b, err := c.arbcon.BlockByHash(ctx, arbcommon.BytesToHash(blockHash.Bytes()))
+	if err != nil {
+		return nil, err
+	}
+
+	hdr := &ethtypes.Header{
+		ParentHash:      ethcommon.Hash(b.Header().ParentHash),
+		UncleHash:       ethcommon.Hash(b.Header().UncleHash),
+		Coinbase:        ethcommon.Address(b.Header().Coinbase),
+		Root:            ethcommon.Hash(b.Header().Root),
+		TxHash:          ethcommon.Hash(b.Header().TxHash),
+		ReceiptHash:     ethcommon.Hash(b.Header().ReceiptHash),
+		Bloom:           ethtypes.Bloom(b.Header().Bloom),
+		Difficulty:      b.Header().Difficulty,
+		Number:          b.Header().Number,
+		GasLimit:        b.Header().GasLimit,
+		GasUsed:         b.Header().GasUsed,
+		Time:            b.Header().Time,
+		Extra:           b.Header().Extra,
+		MixDigest:       ethcommon.Hash(b.Header().MixDigest),
+		Nonce:           ethtypes.BlockNonce(b.Header().Nonce),
+		BaseFee:         b.Header().BaseFee,
+		WithdrawalsHash: (*ethcommon.Hash)(b.Header().WithdrawalsHash),
+		ExcessDataGas:   nil,
+	}
+	return ethtypes.NewBlockWithHeader(hdr), nil
 }
 
 //go:generate mockery --name=ethClientToFilterLogs --inpackage --testonly

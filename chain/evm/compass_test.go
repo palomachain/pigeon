@@ -577,7 +577,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("DeployContract", mock.Anything, chainID, StoredContracts()["simple"].ABI, []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
+				evm.On("DeployContract", mock.Anything, chainID, string(StoredContracts()["simple"].Source), []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
