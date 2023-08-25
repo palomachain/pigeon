@@ -311,7 +311,7 @@ func (c *Client) wrapArbitrumDeployment(
 		}
 	}
 
-	var addr *arbcommon.Address
+	var addr *arbcommon.Address = &arbcommon.Address{}
 	addr.SetBytes(c.addr.Bytes())
 	acc := arbaccounts.Account{Address: *addr}
 
