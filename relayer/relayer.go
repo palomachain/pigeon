@@ -37,7 +37,7 @@ type PalomaClienter interface {
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 
-	QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error)
+	QueryGetValidatorAliveUntilBlockHeight(ctx context.Context) (int64, error)
 	KeepValidatorAlive(ctx context.Context, appVersion string) error
 }
 
@@ -78,8 +78,8 @@ type Relayer struct {
 }
 
 type Config struct {
-	KeepAliveLoopTimeout time.Duration
-	KeepAliveThreshold   time.Duration
+	KeepAliveLoopTimeout    time.Duration
+	KeepAliveBlockThreshold int64
 }
 
 func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorier, customTime utiltime.Time, cfg Config) *Relayer {

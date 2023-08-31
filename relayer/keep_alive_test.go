@@ -28,7 +28,7 @@ func TestKeepAlive(t *testing.T) {
 				tm := timemock.NewTime(t)
 				ctx := context.Background()
 				ctx, cancel := context.WithCancel(ctx)
-				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Time{}, randErr).Times(1).Run(func(_ mock.Arguments) {
+				paloma.On("QueryGetValidatorAliveUntilBlockHeight", mock.Anything).Return(int64(0), randErr).Times(1).Run(func(_ mock.Arguments) {
 					cancel()
 				})
 				return paloma, tm, ctx
@@ -42,8 +42,8 @@ func TestKeepAlive(t *testing.T) {
 				tm := timemock.NewTime(t)
 				ctx := context.Background()
 				ctx, cancel := context.WithCancel(ctx)
-				tm.On("Now").Return(time.Unix(50, 0)).Times(1)
-				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Unix(60, 0), nil).Times(1)
+				paloma.On("QueryGetValidatorAliveUntilBlockHeight", mock.Anything).Return(int64(100), nil).Times(1)
+				paloma.On("BlockHeight", mock.Anything).Return(int64(90), nil).Times(1)
 				paloma.On("KeepValidatorAlive", mock.Anything, "v1.4.0").Return(nil).Run(func(_ mock.Arguments) {
 					cancel()
 				})
@@ -57,8 +57,8 @@ func TestKeepAlive(t *testing.T) {
 				tm := timemock.NewTime(t)
 				ctx := context.Background()
 				ctx, cancel := context.WithCancel(ctx)
-				tm.On("Now").Return(time.Unix(50, 0)).Times(1)
-				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Unix(60, 0), nil).Times(1)
+				paloma.On("QueryGetValidatorAliveUntilBlockHeight", mock.Anything).Return(int64(100), nil).Times(1)
+				paloma.On("BlockHeight", mock.Anything).Return(int64(90), nil).Times(1)
 				paloma.On("KeepValidatorAlive", mock.Anything, "v1.4.0").Return(randErr).Run(func(_ mock.Arguments) {
 					cancel()
 				})
@@ -73,8 +73,8 @@ func TestKeepAlive(t *testing.T) {
 				tm := timemock.NewTime(t)
 				ctx := context.Background()
 				ctx, cancel := context.WithCancel(ctx)
-				tm.On("Now").Return(time.Unix(50, 0)).Times(1)
-				paloma.On("QueryGetValidatorAliveUntil", mock.Anything).Return(time.Unix(600, 0), nil).Times(1).Run(func(_ mock.Arguments) {
+				paloma.On("BlockHeight", mock.Anything).Return(int64(30), nil).Times(1)
+				paloma.On("QueryGetValidatorAliveUntilBlockHeight", mock.Anything).Return(int64(100), nil).Times(1).Run(func(_ mock.Arguments) {
 					cancel()
 				})
 				return paloma, tm, ctx
@@ -95,8 +95,8 @@ func TestKeepAlive(t *testing.T) {
 			t.Cleanup(cancel)
 			r := Relayer{
 				relayerConfig: Config{
-					KeepAliveLoopTimeout: 50 * time.Millisecond,
-					KeepAliveThreshold:   1 * time.Minute,
+					KeepAliveLoopTimeout:    50 * time.Millisecond,
+					KeepAliveBlockThreshold: 30,
 				},
 				time:         tm,
 				palomaClient: paloma,
