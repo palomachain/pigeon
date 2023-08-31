@@ -201,7 +201,6 @@ require (
 replace (
 	// Link to op-geth, which is built on top of go-ethereum
 	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
-	//github.com/palomachain/paloma => /root/host-machine/paloma
-	github.com/palomachain/paloma => /home/truppert/volume/paloma
+	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20230831200238-6046c149ce33
 	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
 )

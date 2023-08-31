@@ -1049,6 +1049,8 @@ github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa h1:5SqCsI/2Qya2bCzK15ozrqo2sZxkh0FHynJZOTVoV6Q=
 github.com/volumefi/lens-1 v0.5.5 h1:OmSZOXRn7gsVuQ2ucjoEObIgPRD8D/RYPzcCHgmFclQ=
 github.com/volumefi/lens-1 v0.5.5/go.mod h1:6PdiMJFYkr4Mm3ioZ4UdidpQ1o9lspP0qX31NUsacF4=
+github.com/volumefi/paloma v1.5.0-next.0.20230831200238-6046c149ce33 h1:4owJ09RMJOiekK6x9sLKrP8zOzCUVMpduEspD50vXg0=
+github.com/volumefi/paloma v1.5.0-next.0.20230831200238-6046c149ce33/go.mod h1:efjtygpE1SiDaQu0V6dDfrDiv70FRJoK15GG0M9yVwE=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRTfdpNzjtPYqr8smhKouy9mxVdGPU=
