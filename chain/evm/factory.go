@@ -9,6 +9,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/mev"
 )
 
@@ -51,6 +52,12 @@ func (f *Factory) Build(
 
 	if err := client.init(); err != nil {
 		return Processor{}, err
+	}
+
+	if libchain.IsArbitrum(chainID) {
+		if err := client.injectArbClient(); err != nil {
+			return Processor{}, err
+		}
 	}
 
 	return Processor{

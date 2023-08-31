@@ -9,10 +9,11 @@ require (
 	github.com/cosmos/gogoproto v1.4.10
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/jarcoal/httpmock v1.3.0
+	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
-	github.com/palomachain/paloma v1.7.1
+	github.com/palomachain/paloma v1.7.2
+	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
@@ -80,6 +81,7 @@ require (
 	github.com/dvsekhvalnov/jose2go v1.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/gammazero/deque v0.2.1 // indirect
 	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
@@ -202,5 +204,6 @@ replace (
 	// Link to op-geth, which is built on top of go-ethereum
 	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
 	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20230831200238-6046c149ce33
+	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
 	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
 )

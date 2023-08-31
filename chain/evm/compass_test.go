@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	errSample = whoops.String("oh no")
+	errSample                 = whoops.String("oh no")
+	testPowerThreshold uint64 = 2_863_311_530
 )
 
 type fakeJsonRpcError string
@@ -63,6 +64,8 @@ func signMessage(bz []byte, pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 }
 
 func powerFromPercentage(p float64) uint64 {
+	const maxPower uint64 = 1 << 32
+
 	if p > 1 || p < 0 {
 		panic("invalid value for percentage")
 	}
@@ -263,7 +266,7 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerThreshold + 1},
+						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
 					},
 					nil,
@@ -327,7 +330,7 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerThreshold + 1},
+						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
 					},
 					nil,
@@ -392,9 +395,15 @@ func TestMessageProcessing(t *testing.T) {
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
-						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerFromPercentage(0.1)},
-						ValsetID:   uint64(currentValsetID),
+						Validators: []string{
+							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+						},
+						Powers: []uint64{
+							powerFromPercentage(0.65),
+							powerFromPercentage(0.35),
+						},
+						ValsetID: uint64(currentValsetID),
 					},
 					nil,
 				)
@@ -499,9 +508,6 @@ func TestMessageProcessing(t *testing.T) {
 					Signatures: []chain.ValidatorSignature{
 						addValidSignature(bobPK),
 						addValidSignature(alicePK),
-						// frank's signature is getting ignored but putting it
-						// here just in case if there is a bug in the code
-						addValidSignature(frankPK),
 					},
 				},
 			},
@@ -520,10 +526,12 @@ func TestMessageProcessing(t *testing.T) {
 						Validators: []string{
 							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
 							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
 						},
 						Powers: []uint64{
 							powerFromPercentage(0.3),
 							powerFromPercentage(0.3),
+							powerFromPercentage(0.4),
 						},
 						ValsetID: uint64(currentValsetID),
 					},
@@ -563,13 +571,13 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerThreshold + 1},
+						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
 					},
 					nil,
 				)
 
-				evm.On("DeployContract", mock.Anything, chainID, StoredContracts()["simple"].ABI, []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
+				evm.On("DeployContract", mock.Anything, chainID, string(StoredContracts()["simple"].Source), []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
@@ -594,6 +602,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					Signatures: []chain.ValidatorSignature{
 						addValidSignature(bobPK),
+						addValidSignature(alicePK),
 					},
 				},
 			},
@@ -604,9 +613,17 @@ func TestMessageProcessing(t *testing.T) {
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
-						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{5},
-						ValsetID:   uint64(currentValsetID),
+						Validators: []string{
+							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+						},
+						Powers: []uint64{
+							powerFromPercentage(0.3),
+							powerFromPercentage(0.3),
+							powerFromPercentage(0.4),
+						},
+						ValsetID: uint64(currentValsetID),
 					},
 					nil,
 				)
@@ -642,7 +659,7 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerThreshold + 1},
+						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(55),
 					},
 					nil,
@@ -682,7 +699,7 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
-						Powers:     []uint64{powerThreshold + 1},
+						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(55),
 					},
 					nil,
@@ -900,9 +917,9 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 					crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
 				},
 				Powers: []uint64{
-					powerFromPercentage(0.1),
-					powerFromPercentage(0.2),
-					powerFromPercentage(0.1),
+					powerFromPercentage(0.3),
+					powerFromPercentage(0.3),
+					powerFromPercentage(0.4),
 				},
 			},
 			msgWithSig: chain.MessageWithSignatures{
@@ -923,7 +940,6 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 				Signatures: []chain.ValidatorSignature{
 					addValidSignature(bobPK),
 					addValidSignature(alicePK),
-					addValidSignature(frankPK),
 				},
 			},
 		},

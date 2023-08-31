@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/VolumeFi/whoops"
@@ -27,16 +26,14 @@ import (
 )
 
 const (
-	maxPower            uint64 = 1 << 32
-	powerThreshold      uint64 = 2_863_311_530
-	SignedMessagePrefix        = "\x19Ethereum Signed Message:\n32"
+	SignedMessagePrefix = "\x19Ethereum Signed Message:\n32"
 )
 
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*etherumtypes.Transaction, error)
-	DeployContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
+	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 
 	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
@@ -232,13 +229,6 @@ func (t compass) uploadSmartContract(
 		})
 		logger.Info("upload smart contract")
 
-		contractABI, err := abi.JSON(strings.NewReader(msg.GetAbi()))
-		if err != nil {
-			logger.WithError(err).Error("uploadSmartContract: error parsing ABI")
-		}
-		// todo refactor that "assert" usage. Go way is returning error, rather than panic/recover as try/catch equivalent (it is not equivalent)
-		whoops.Assert(err)
-
 		// 0 means to get the latest valset
 		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
 		if err != nil {
@@ -251,19 +241,10 @@ func (t compass) uploadSmartContract(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		constructorArgs, err := contractABI.Constructor.Inputs.Unpack(constructorInput)
-		logger.WithField("args", constructorArgs).Info("uploadSmartContract: ABI contract constructor inputs unpack")
-		if err != nil {
-			logger.
-				WithError(err).
-				WithField("input", constructorInput).
-				Error("uploadSmartContract: error unpacking ABI contract constructor inputs")
-		}
-
 		_, tx, err := t.evm.DeployContract(
 			ctx,
 			t.chainID,
-			contractABI,
+			msg.GetAbi(),
 			msg.GetBytecode(),
 			constructorInput,
 		)
@@ -796,6 +777,12 @@ func isConsensusReached(ctx context.Context, val *evmtypes.Valset, msg chain.Sig
 			"validators-size": len(val.Validators),
 		})
 	logger.Debug("confirming consensus reached")
+	var totalPower uint64
+	for _, pow := range val.Powers {
+		totalPower += pow
+	}
+	powerThreshold := totalPower * 2 / 3
+
 	var s uint64
 	for i := range val.Validators {
 		valHex, pow := val.Validators[i], val.Powers[i]
