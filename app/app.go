@@ -66,8 +66,8 @@ func Relayer() *relayer.Relayer {
 			EvmFactory(),
 			Time(),
 			relayer.Config{
-				KeepAliveLoopTimeout: 30 * gotime.Second,
-				KeepAliveThreshold:   1 * gotime.Minute,
+				KeepAliveLoopTimeout:    30 * gotime.Second,
+				KeepAliveBlockThreshold: 30,
 			},
 		)
 	}
