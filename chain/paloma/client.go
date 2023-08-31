@@ -283,6 +283,11 @@ func (c Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBa
 	return err
 }
 
+func (c Client) SendSendToPalomaClaim(ctx context.Context, claim gravity.MsgSendToPalomaClaim) error {
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "")
+	return err
+}
+
 func (c Client) QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error) {
 	qc := gravity.NewQueryClient(c.GRPCClient)
 	res, err := qc.LastEventNonceByAddr(ctx, &gravity.QueryLastEventNonceByAddrRequest{
@@ -453,23 +458,12 @@ func (c Client) KeepValidatorAlive(ctx context.Context, appVersion string) error
 	return err
 }
 
-func (c Client) GravityRequestBatch(ctx context.Context, chainReferenceId string) error {
-	msg := &gravity.MsgRequestBatch{
-		Sender:           c.creator,
-		ChainReferenceId: chainReferenceId,
-	}
-
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
-	return err
-}
-
 func (c Client) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
 	return gravityQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
 }
 
 func gravityQueryLastUnsignedBatch(ctx context.Context, grpcClient grpc.ClientConn, address string, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
 	qc := gravity.NewQueryClient(grpcClient)
-	// TODO : Scope to chainReferenceID
 	batches, err := qc.LastPendingBatchRequestByAddr(ctx, &gravity.QueryLastPendingBatchRequestByAddrRequest{
 		Address: address,
 	})

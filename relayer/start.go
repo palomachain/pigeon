@@ -17,10 +17,11 @@ const (
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	gravityCreateBatchesLoopInterval = 5 * time.Second
-	gravitySignBatchesLoopInterval   = 5 * time.Second
-	gravityRelayBatchesLoopInterval  = 5 * time.Second
-	eventWatcherLoopInterval         = 5 * time.Second
+	updateGravityOrchestratorAddressInterval = 1 * time.Minute
+	gravitySignBatchesLoopInterval           = 5 * time.Second
+	gravityRelayBatchesLoopInterval          = 5 * time.Second
+	batchSendEventWatcherLoopInterval        = 5 * time.Second
+	sendToPalomaEventWatcherLoopInterval     = 5 * time.Second
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
@@ -81,11 +82,11 @@ func (r *Relayer) Start(ctx context.Context) error {
 	}
 
 	// Start gravity background goroutines to run separately from each other
-	// 	go r.startProcess(ctx, &locker, updateGravityOrchestratorAddress, true, r.UpdateGravityOrchestratorAddress)
-	//go r.startProcess(ctx, &locker, gravityCreateBatchesLoopInterval, true, r.GravityCreateBatches)
+	//go r.startProcess(ctx, &locker, updateGravityOrchestratorAddressInterval, true, r.UpdateGravityOrchestratorAddress)
 	go r.startProcess(ctx, &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
 	go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
-	go r.startProcess(ctx, &locker, eventWatcherLoopInterval, true, r.HandleEvents)
+	go r.startProcess(ctx, &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
+	go r.startProcess(ctx, &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
 
 	// Start the foreground process
 	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)

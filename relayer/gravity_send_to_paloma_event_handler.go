@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) HandleEvents(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) GravityHandleSendToPalomaEvent(ctx context.Context, locker sync.Locker) error {
 	logger := liblog.WithContext(ctx)
 	logger.Info("event watcher loop")
 	if ctx.Err() != nil {
@@ -24,13 +24,13 @@ func (r *Relayer) HandleEvents(ctx context.Context, locker sync.Locker) error {
 	}
 
 	locker.Lock()
-	err = r.handleEvents(ctx, r.processors)
+	err = r.handleSendToPalomaEvents(ctx, r.processors)
 	locker.Unlock()
 
 	return handleProcessError(err)
 }
 
-func (r *Relayer) handleEvents(ctx context.Context, processors []chain.Processor) error {
+func (r *Relayer) handleSendToPalomaEvents(ctx context.Context, processors []chain.Processor) error {
 	if len(processors) == 0 {
 		return nil
 	}
@@ -40,17 +40,17 @@ func (r *Relayer) handleEvents(ctx context.Context, processors []chain.Processor
 
 		logger := liblog.WithContext(ctx).WithFields(log.Fields{
 			"chain-reference-id": chainReferenceID,
-			"action":             "handle-gravity-batch-send-events",
+			"action":             "handle-gravity-send-to-paloma-events",
 		})
 
-		batchSendEvents, err := p.GetBatchSendEvents(ctx, r.palomaClient.GetCreator())
+		batchSendEvents, err := p.GetSendToPalomaEvents(ctx, r.palomaClient.GetCreator())
 		if err != nil {
 			logger.WithError(err).Error("couldn't get events")
 			return err
 		}
 
 		logger = logger.WithFields(log.Fields{
-			"event-ids": slice.Map(batchSendEvents, func(event chain.BatchSendEvent) uint64 {
+			"event-ids": slice.Map(batchSendEvents, func(event chain.SendToPalomaEvent) uint64 {
 				return event.EventNonce
 			}),
 		})
@@ -60,7 +60,7 @@ func (r *Relayer) handleEvents(ctx context.Context, processors []chain.Processor
 			// Walk through the different batchSendEvents and do different things for different batchSendEvents
 
 			logger.Info("claiming for ", len(batchSendEvents), " events")
-			err := p.SubmitBatchSendToEthClaims(ctx, batchSendEvents, r.palomaClient.GetCreator())
+			err := p.SubmitSendToPalomaClaims(ctx, batchSendEvents, r.palomaClient.GetCreator())
 			if err != nil {
 				logger.WithError(err).Error("error submitting claim for events")
 				return err

@@ -5,6 +5,7 @@ import (
 	"errors"
 	goerrors "errors"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
 	"strings"
@@ -45,6 +46,11 @@ type evmClienter interface {
 	GetEthClient() EthClientConn
 }
 
+type observedHeights struct {
+	batchSendEvent    int64
+	sendToPalomaEvent int64
+}
+
 type compass struct {
 	CompassID        string
 	ChainReferenceID string
@@ -56,8 +62,8 @@ type compass struct {
 
 	startingBlockHeight int64
 
-	chainID                 *big.Int
-	lastObservedBlockHeight int64
+	chainID                  *big.Int
+	lastObservedBlockHeights observedHeights
 }
 
 func newCompassClient(
@@ -576,11 +582,11 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	if err != nil {
 		return nil, err
 	}
-	if t.lastObservedBlockHeight == 0 {
-		t.lastObservedBlockHeight = blockNumber.Int64() - 10000
+	if t.lastObservedBlockHeights.batchSendEvent == 0 {
+		t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64() - 10000
 	}
 
-	fromBlock := *big.NewInt(t.lastObservedBlockHeight + 1)
+	fromBlock := *big.NewInt(t.lastObservedBlockHeights.batchSendEvent + 1)
 
 	filter := ethereum.FilterQuery{
 		Addresses: []common.Address{
@@ -627,7 +633,81 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		})
 	}
 
-	t.lastObservedBlockHeight = blockNumber.Int64()
+	t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64()
+
+	return events, err
+}
+
+func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
+
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if t.lastObservedBlockHeights.sendToPalomaEvent == 0 {
+		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64() - 1
+	}
+
+	fromBlock := *big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent + 1)
+
+	filter := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			t.smartContractAddr,
+		},
+		Topics: [][]common.Hash{
+			{
+				crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256)")),
+			},
+		},
+		FromBlock: &fromBlock,
+	}
+
+	var events []chain.SendToPalomaEvent
+
+	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+
+	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ethLog := range logs {
+		event, err := t.compassAbi.Unpack("SendToPalomaEvent", ethLog.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		tokenContract, ok := event[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid token contract")
+		}
+
+		ethSender, ok := event[1].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid sender address")
+		}
+
+		palomaReceiver := event[2].(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid paloma receiver")
+		}
+
+		amount, ok := event[3].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		events = append(events, chain.SendToPalomaEvent{
+			EthBlockHeight: ethLog.BlockNumber,
+			EventNonce:     lastEventNonce + 1,
+			Amount:         amount.Uint64(),
+			EthereumSender: ethSender.String(),
+			PalomaReceiver: palomaReceiver,
+			TokenContract:  tokenContract.String(),
+		})
+	}
+
+	t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64()
 
 	return events, err
 }
@@ -656,7 +736,6 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 }
 
 func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.BatchSendEvent, orchestrator string) error {
-
 	msg := gravitytypes.MsgBatchSendToEthClaim{
 		EventNonce:       event.EventNonce,
 		EthBlockHeight:   event.EthBlockHeight,
@@ -666,6 +745,20 @@ func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.Batc
 		Orchestrator:     orchestrator,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
+}
+
+func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendToPalomaEvent, orchestrator string) error {
+	msg := gravitytypes.MsgSendToPalomaClaim{
+		EventNonce:       event.EventNonce,
+		EthBlockHeight:   event.EthBlockHeight,
+		TokenContract:    event.TokenContract,
+		Amount:           sdk.NewInt(int64(event.Amount)),
+		EthereumSender:   event.EthereumSender,
+		PalomaReceiver:   event.PalomaReceiver,
+		ChainReferenceId: t.ChainReferenceID,
+		Orchestrator:     orchestrator,
+	}
+	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }
 
 // provideErrorProof provides a pass-through proof for an error during relaying

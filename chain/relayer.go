@@ -88,6 +88,15 @@ type BatchSendEvent struct {
 	TokenContract  string
 }
 
+type SendToPalomaEvent struct {
+	EthBlockHeight uint64
+	EventNonce     uint64
+	Amount         uint64
+	EthereumSender string
+	PalomaReceiver string
+	TokenContract  string
+}
+
 type ChainInfo interface {
 	ChainReferenceID() string
 	ChainID() string
@@ -117,6 +126,7 @@ type Processor interface {
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
 	SubmitBatchSendToEthClaims(context.Context, []BatchSendEvent, string) error
+	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
 
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
@@ -125,6 +135,7 @@ type Processor interface {
 	GravityRelayBatches(context.Context, []GravityBatchWithSignatures) error
 
 	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
+	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)
 }
 
 type ProcessorBuilder interface {

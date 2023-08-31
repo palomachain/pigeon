@@ -215,9 +215,22 @@ func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) 
 	return p.compass.GetBatchSendEvents(ctx, orchestrator)
 }
 
+func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
+	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
+}
+
 func (p Processor) SubmitBatchSendToEthClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
 	for _, batchSendEvent := range batchSendEvents {
 		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p Processor) SubmitSendToPalomaClaims(ctx context.Context, batchSendEvents []chain.SendToPalomaEvent, orchestrator string) error {
+	for _, batchSendEvent := range batchSendEvents {
+		if err := p.compass.submitSendToPalomaClaim(ctx, batchSendEvent, orchestrator); err != nil {
 			return err
 		}
 	}

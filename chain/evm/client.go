@@ -104,6 +104,7 @@ type PalomaClienter interface {
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 	SendBatchSendToEVMClaim(ctx context.Context, claim gravitytypes.MsgBatchSendToEthClaim) error
+	SendSendToPalomaClaim(ctx context.Context, claim gravitytypes.MsgSendToPalomaClaim) error
 	QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error)
 	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravitytypes.OutgoingTxBatch, error)
 }

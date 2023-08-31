@@ -41,7 +41,6 @@ type PalomaClienter interface {
 	QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error)
 	KeepValidatorAlive(ctx context.Context, appVersion string) error
 
-	GravityRequestBatch(ctx context.Context, chainReferenceId string) error
 	GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error)
 	GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error
 	GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error)
