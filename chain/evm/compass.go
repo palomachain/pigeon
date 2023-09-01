@@ -840,7 +840,7 @@ func (c compass) callCompass(
 
 func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
 	var gErr whoops.Group
-	logger := log.WithField("chainReferenceID", t.ChainReferenceID)
+	logger := liblog.WithContext(ctx).WithField("chainReferenceID", t.ChainReferenceID)
 	for _, batch := range batches {
 		logger = logger.WithField("batch-nonce", batch.BatchNonce)
 
@@ -850,13 +850,12 @@ func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.Gravit
 		}
 
 		var processingErr error
-		var tx *ethtypes.Transaction
 		logger := logger.WithFields(log.Fields{
 			"batch-nonce": batch.BatchNonce,
 		})
 		logger.Debug("relaying")
 
-		tx, processingErr = t.gravityRelayBatch(ctx, batch)
+		_, processingErr = t.gravityRelayBatch(ctx, batch)
 
 		processingErr = whoops.Enrich(
 			processingErr,
@@ -865,14 +864,7 @@ func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.Gravit
 
 		switch {
 		case processingErr == nil:
-			if tx != nil {
-				logger.Debug("sending claim")
-				// TODO : Claim
-				//if err := t.paloma.SetPublicAccessData(ctx, t.ChainReferenceID, batch.BatchNonce, tx.Hash().Bytes()); err != nil {
-				//	gErr.Add(err)
-				//	return gErr
-				//}
-			}
+			// do nothing.  claiming happens in a different goroutine
 		case goerrors.Is(processingErr, ErrNoConsensus):
 			// does nothing
 		default:

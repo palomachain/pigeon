@@ -11,9 +11,10 @@ import (
 )
 
 func (r *Relayer) GravityRelayBatches(ctx context.Context, locker sync.Locker) error {
-	log.Info("relayer loop")
+	logger := liblog.WithContext(ctx)
+	logger.Info("relayer loop")
 	if ctx.Err() != nil {
-		log.Info("exiting relayer loop as context has ended")
+		logger.Info("exiting relayer loop as context has ended")
 		return ctx.Err()
 	}
 

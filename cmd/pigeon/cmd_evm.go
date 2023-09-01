@@ -193,12 +193,6 @@ var (
 			for _, msg := range msgs {
 				logger = logger.WithField("msg-id", msg.ID)
 				for _, signature := range msg.Signatures {
-					//logger = logger.WithFields(
-					//	logrus.Fields{
-					//		"pub-key":   signature.PublicKey,
-					//		"validator": signature.ValAddress.String(),
-					//	},
-					//)
 					foundPK, err := crypto.Ecrecover(
 						crypto.Keccak256(
 							append(

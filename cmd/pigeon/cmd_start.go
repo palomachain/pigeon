@@ -55,8 +55,7 @@ var startCmd = &cobra.Command{
 		ctx = health.CancelContextIfPalomaIsDown(ctx, app.PalomaClient())
 
 		relayer := app.Relayer()
-		// relayer.SetAppVersion(app.Version())
-		relayer.SetAppVersion("v1.5.4")
+		relayer.SetAppVersion(app.Version())
 		relayer.SetMevClient(mev.New(app.Config()))
 
 		err = relayer.Start(ctx)
