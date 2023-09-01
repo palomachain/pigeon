@@ -926,12 +926,7 @@ func (t compass) gravityRelayBatch(
 			},
 		)
 		if err != nil {
-			// TODO : Where to store data on error?
-			//isSmartContractError := whoops.Must(t.SetErrorData(ctx, batch.BatchNonce, err))
-			//if isSmartContractError {
-			//	return nil
-			//}
-			whoops.Assert(err)
+			liblog.WithContext(ctx).WithError(err).Error("failed to relay batch")
 		}
 
 		return tx
