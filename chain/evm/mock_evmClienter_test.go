@@ -181,15 +181,15 @@ func (_m *mockEvmClienter) FindCurrentBlockNumber(ctx context.Context) (*big.Int
 }
 
 // GetEthClient provides a mock function with given fields:
-func (_m *mockEvmClienter) GetEthClient() EthClientConn {
+func (_m *mockEvmClienter) GetEthClient() ethClientConn {
 	ret := _m.Called()
 
-	var r0 EthClientConn
-	if rf, ok := ret.Get(0).(func() EthClientConn); ok {
+	var r0 ethClientConn
+	if rf, ok := ret.Get(0).(func() ethClientConn); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(EthClientConn)
+			r0 = ret.Get(0).(ethClientConn)
 		}
 	}
 

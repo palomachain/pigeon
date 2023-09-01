@@ -117,18 +117,18 @@ type Client struct {
 	addr     ethcommon.Address
 	keystore *keystore.KeyStore
 
-	conn   EthClientConn
+	conn   ethClientConn
 	arbcon *arbclient.Client
 
 	paloma    PalomaClienter
 	mevClient mevClient
 }
 
-func (c Client) GetEthClient() EthClientConn {
+func (c Client) GetEthClient() ethClientConn {
 	return c.conn
 }
 
-var _ EthClientConn = &ethclient.Client{}
+var _ ethClientConn = &ethclient.Client{}
 
 //go:generate mockery --name=mevClient --inpackage --testonly
 type mevClient interface {
@@ -136,7 +136,7 @@ type mevClient interface {
 }
 
 //go:generate mockery --name=ethClientConn --inpackage --testonly
-type EthClientConn interface {
+type ethClientConn interface {
 	bind.ContractBackend
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *etherumtypes.Transaction, isPending bool, err error)
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)

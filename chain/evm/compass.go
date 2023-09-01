@@ -40,7 +40,7 @@ type evmClienter interface {
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
 	LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error)
-	GetEthClient() EthClientConn
+	GetEthClient() ethClientConn
 }
 
 type observedHeights struct {
