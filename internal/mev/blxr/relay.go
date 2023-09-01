@@ -42,7 +42,7 @@ func (c *Client) Relay(ctx context.Context, chainID *big.Int, tx *types.Transact
 
 	chainReferenceID, fnd := chainIdLkup[chainID.String()]
 	if !fnd {
-		return nilHash, fmt.Errorf("chain ID %s not supported", chainID.String())
+		return nilHash, fmt.Errorf("chain EventNonce %s not supported", chainID.String())
 	}
 
 	if !c.IsChainRegistered(chainReferenceID) {

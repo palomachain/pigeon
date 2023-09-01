@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palomachain/paloma/x/evm/types"
+	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
@@ -104,6 +105,10 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
+	SendBatchSendToEVMClaim(ctx context.Context, claim gravitytypes.MsgBatchSendToEthClaim) error
+	SendSendToPalomaClaim(ctx context.Context, claim gravitytypes.MsgSendToPalomaClaim) error
+	QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error)
+	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravitytypes.OutgoingTxBatch, error)
 }
 
 type Client struct {
@@ -117,6 +122,10 @@ type Client struct {
 
 	paloma    PalomaClienter
 	mevClient mevClient
+}
+
+func (c Client) GetEthClient() ethClientConn {
+	return c.conn
 }
 
 var _ ethClientConn = &ethclient.Client{}

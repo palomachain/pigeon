@@ -64,21 +64,21 @@ func TestClientRelay(t *testing.T) {
 		require.EqualError(t, err, "client unhealthy")
 	})
 
-	t.Run("with invalid chain ID", func(t *testing.T) {
+	t.Run("with invalid chain EventNonce", func(t *testing.T) {
 		c := newClient(true)
 		_, err := c.Relay(ctx, big.NewInt(42), nil)
 		require.Error(t, err, "should return error")
-		require.EqualError(t, err, "chain ID 42 not supported")
+		require.EqualError(t, err, "chain EventNonce 42 not supported")
 	})
 
-	t.Run("with unregistered chain ID", func(t *testing.T) {
+	t.Run("with unregistered chain EventNonce", func(t *testing.T) {
 		c := newClient(true)
 		_, err := c.Relay(ctx, chainID, nil)
 		require.Error(t, err, "should return error")
 		require.EqualError(t, err, "chain eth-main not registered")
 	})
 
-	t.Run("with unregistered chain ID", func(t *testing.T) {
+	t.Run("with unregistered chain EventNonce", func(t *testing.T) {
 		c := newClient(true)
 		_, err := c.Relay(ctx, chainID, nil)
 		require.Error(t, err, "should return error")

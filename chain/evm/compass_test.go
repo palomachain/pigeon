@@ -850,7 +850,7 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 				ethClienter,
 			)
 			p := Processor{
-				compass: comp,
+				compass: &comp,
 			}
 
 			err := p.ProvideEvidence(ctx, queue.QueueSuffixTurnstone, tt.msgs)

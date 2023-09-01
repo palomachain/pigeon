@@ -237,7 +237,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 //				{
 //					QueuedMessage: chain.QueuedMessage{
 //						Nonce: []byte("hello"),
-//						ID:    123,
+//						EventNonce:    123,
 //						Msg: &testdata.SimpleMessage{
 //							Hello: "bob",
 //						},
@@ -256,7 +256,7 @@ func TestQueryingMessagesForSigning(t *testing.T) {
 //				{
 //					QueuedMessage: chain.QueuedMessage{
 //						Nonce: []byte("hello2"),
-//						ID:    456,
+//						EventNonce:    456,
 //						Msg: &testdata.SimpleMessage{
 //							Hello: "alice",
 //						},

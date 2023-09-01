@@ -9,14 +9,16 @@ import (
 	"time"
 
 	"github.com/VolumeFi/whoops"
-	etherum "github.com/ethereum/go-ethereum"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/palomachain/paloma/x/evm/types"
+	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
@@ -29,7 +31,7 @@ const (
 
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
-	FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
+	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*etherumtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
@@ -38,6 +40,12 @@ type evmClienter interface {
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
 	LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error)
+	GetEthClient() ethClientConn
+}
+
+type observedHeights struct {
+	batchSendEvent    int64
+	sendToPalomaEvent int64
 }
 
 type compass struct {
@@ -51,7 +59,8 @@ type compass struct {
 
 	startingBlockHeight int64
 
-	chainID *big.Int
+	chainID                  *big.Int
+	lastObservedBlockHeights observedHeights
 }
 
 func newCompassClient(
@@ -99,6 +108,11 @@ type CompassLogicCallArgs struct {
 	Payload              []byte
 }
 
+type CompassTokenSendArgs struct {
+	Receiver []common.Address
+	Amount   []*big.Int
+}
+
 func (c CompassConsensus) OriginalSignatures() [][]byte {
 	return c.originalSignatures
 }
@@ -106,7 +120,7 @@ func (c CompassConsensus) OriginalSignatures() [][]byte {
 func (t compass) updateValset(
 	ctx context.Context,
 	queueTypeName string,
-	newValset *types.Valset,
+	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
@@ -154,7 +168,7 @@ func (t compass) updateValset(
 func (t compass) submitLogicCall(
 	ctx context.Context,
 	queueTypeName string,
-	msg *types.SubmitLogicCall,
+	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
@@ -204,7 +218,7 @@ func (t compass) submitLogicCall(
 func (t compass) uploadSmartContract(
 	ctx context.Context,
 	queueTypeName string,
-	msg *types.UploadSmartContract,
+	msg *evmtypes.UploadSmartContract,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *etherumtypes.Transaction {
@@ -294,7 +308,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	}
 	fromBlock := *big.NewInt(0)
 	fromBlock.Sub(blockNumber, big.NewInt(9999))
-	filter := etherum.FilterQuery{
+	filter := ethereum.FilterQuery{
 		Addresses: []common.Address{
 			t.smartContractAddr,
 		},
@@ -306,7 +320,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
 			},
 		},
-		FromBlock: blockNumber,
+		FromBlock: &fromBlock,
 	}
 
 	var found bool
@@ -322,9 +336,53 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	return found, nil
 }
 
+func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	if err != nil {
+		return false, err
+	}
+	fromBlock := *big.NewInt(0)
+	fromBlock.Sub(blockNumber, big.NewInt(9999))
+	filter := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			t.smartContractAddr,
+		},
+		Topics: [][]common.Hash{
+			{
+				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
+			},
+		},
+		FromBlock: &fromBlock,
+	}
+
+	var found bool
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+		for _, ethLog := range logs {
+			event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
+			if err != nil {
+				found = true
+			}
+
+			logBatchNonce, ok := event[1].(*big.Int)
+			if !ok {
+				found = true
+			}
+			found = batchNonce == logBatchNonce.Uint64()
+		}
+
+		return found
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
+}
+
 func BuildCompassConsensus(
 	ctx context.Context,
-	v *types.Valset,
+	v *evmtypes.Valset,
 	signatures []chain.ValidatorSignature,
 ) CompassConsensus {
 	signatureMap := slice.MakeMapKeys(
@@ -374,7 +432,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		var processingErr error
 		var tx *ethtypes.Transaction
-		msg := rawMsg.Msg.(*types.Message)
+		msg := rawMsg.Msg.(*evmtypes.Message)
 		logger := logger.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
 			"queue-name":         queueTypeName,
@@ -384,14 +442,14 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		logger.Debug("processing")
 
 		switch action := msg.GetAction().(type) {
-		case *types.Message_SubmitLogicCall:
+		case *evmtypes.Message_SubmitLogicCall:
 			tx, processingErr = t.submitLogicCall(
 				ctx,
 				queueTypeName,
 				action.SubmitLogicCall,
 				rawMsg,
 			)
-		case *types.Message_UpdateValset:
+		case *evmtypes.Message_UpdateValset:
 			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
@@ -409,7 +467,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				action.UpdateValset.Valset,
 				rawMsg,
 			)
-		case *types.Message_UploadSmartContract:
+		case *evmtypes.Message_UploadSmartContract:
 			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
@@ -464,7 +522,7 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 	for _, msg := range msgs {
 		g.Add(
 			whoops.Try(func() {
-				vb := msg.Msg.(*types.ValidatorBalancesAttestation)
+				vb := msg.Msg.(*evmtypes.ValidatorBalancesAttestation)
 				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
 
 				logger := logger.WithFields(
@@ -475,7 +533,7 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 				)
 				logger.Debug("got height for time")
 
-				res := &types.ValidatorBalancesAttestationRes{
+				res := &evmtypes.ValidatorBalancesAttestationRes{
 					BlockHeight: height,
 					Balances:    make([]string, 0, len(vb.HexAddresses)),
 				}
@@ -498,6 +556,140 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 	return g.Return()
 }
 
+func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if t.lastObservedBlockHeights.batchSendEvent == 0 {
+		t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64() - 10000
+	}
+
+	fromBlock := *big.NewInt(t.lastObservedBlockHeights.batchSendEvent + 1)
+
+	filter := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			t.smartContractAddr,
+		},
+		Topics: [][]common.Hash{
+			{
+				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
+			},
+		},
+		FromBlock: &fromBlock,
+	}
+
+	var events []chain.BatchSendEvent
+
+	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+
+	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ethLog := range logs {
+		event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		batchNonce, ok := event[1].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid batch nonce")
+		}
+
+		tokenContract, ok := event[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid token contract")
+		}
+
+		events = append(events, chain.BatchSendEvent{
+			EthBlockHeight: ethLog.BlockNumber,
+			EventNonce:     lastEventNonce + 1,
+			BatchNonce:     batchNonce.Uint64(),
+			TokenContract:  tokenContract.String(),
+		})
+	}
+
+	t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64()
+
+	return events, err
+}
+
+func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
+	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if t.lastObservedBlockHeights.sendToPalomaEvent == 0 {
+		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64() - 1
+	}
+
+	fromBlock := *big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent + 1)
+
+	filter := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			t.smartContractAddr,
+		},
+		Topics: [][]common.Hash{
+			{
+				crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256)")),
+			},
+		},
+		FromBlock: &fromBlock,
+	}
+
+	var events []chain.SendToPalomaEvent
+
+	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+
+	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ethLog := range logs {
+		event, err := t.compassAbi.Unpack("SendToPalomaEvent", ethLog.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		tokenContract, ok := event[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid token contract")
+		}
+
+		ethSender, ok := event[1].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid sender address")
+		}
+
+		palomaReceiver := event[2].(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid paloma receiver")
+		}
+
+		amount, ok := event[3].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		events = append(events, chain.SendToPalomaEvent{
+			EthBlockHeight: ethLog.BlockNumber,
+			EventNonce:     lastEventNonce + 1,
+			Amount:         amount.Uint64(),
+			EthereumSender: ethSender.String(),
+			PalomaReceiver: palomaReceiver,
+			TokenContract:  tokenContract.String(),
+		})
+	}
+
+	t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64()
+
+	return events, err
+}
+
 // provideTxProof provides a very simple proof which is a transaction object
 func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMsg chain.MessageWithSignatures) error {
 	liblog.WithContext(ctx).WithFields(log.Fields{
@@ -516,9 +708,35 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 		return err
 	}
 
-	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &types.TxExecutedProof{
+	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &evmtypes.TxExecutedProof{
 		SerializedTX: txProof,
 	})
+}
+
+func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.BatchSendEvent, orchestrator string) error {
+	msg := gravitytypes.MsgBatchSendToEthClaim{
+		EventNonce:       event.EventNonce,
+		EthBlockHeight:   event.EthBlockHeight,
+		BatchNonce:       event.BatchNonce,
+		TokenContract:    event.TokenContract,
+		ChainReferenceId: t.ChainReferenceID,
+		Orchestrator:     orchestrator,
+	}
+	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
+}
+
+func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendToPalomaEvent, orchestrator string) error {
+	msg := gravitytypes.MsgSendToPalomaClaim{
+		EventNonce:       event.EventNonce,
+		EthBlockHeight:   event.EthBlockHeight,
+		TokenContract:    event.TokenContract,
+		Amount:           sdk.NewInt(int64(event.Amount)),
+		EthereumSender:   event.EthereumSender,
+		PalomaReceiver:   event.PalomaReceiver,
+		ChainReferenceId: t.ChainReferenceID,
+		Orchestrator:     orchestrator,
+	}
+	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }
 
 // provideErrorProof provides a pass-through proof for an error during relaying
@@ -529,12 +747,12 @@ func (t compass) provideErrorProof(ctx context.Context, queueTypeName string, ra
 		"public-access-data": rawMsg.PublicAccessData,
 	}).Debug("providing error proof")
 
-	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &types.SmartContractExecutionErrorProof{
+	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &evmtypes.SmartContractExecutionErrorProof{
 		ErrorMessage: string(rawMsg.PublicAccessData),
 	})
 }
 
-func TransformValsetToCompassValset(val *types.Valset) CompassValset {
+func TransformValsetToCompassValset(val *evmtypes.Valset) CompassValset {
 	return CompassValset{
 		Validators: slice.Map(val.GetValidators(), func(s string) common.Address {
 			return common.HexToAddress(s)
@@ -546,9 +764,9 @@ func TransformValsetToCompassValset(val *types.Valset) CompassValset {
 	}
 }
 
-func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.MessageWithSignatures) bool {
+func isConsensusReached(ctx context.Context, val *evmtypes.Valset, msg chain.SignedEntity) bool {
 	signaturesMap := make(map[string]chain.ValidatorSignature)
-	for _, sig := range msg.Signatures {
+	for _, sig := range msg.GetSignatures() {
 		signaturesMap[sig.SignedByAddress] = sig
 	}
 	logger := liblog.WithContext(ctx).WithFields(
@@ -564,11 +782,11 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Messag
 
 	var s uint64
 	for i := range val.Validators {
-		val, pow := val.Validators[i], val.Powers[i]
-		sig, ok := signaturesMap[val]
+		valHex, pow := val.Validators[i], val.Powers[i]
+		sig, ok := signaturesMap[valHex]
 		logger.WithFields(log.Fields{
 			"i":         i,
-			"validator": val,
+			"validator": valHex,
 			"power":     pow,
 		}).Debug("checking consensus")
 		if !ok {
@@ -576,7 +794,7 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Messag
 		}
 		bytesToVerify := crypto.Keccak256(append(
 			[]byte(SignedMessagePrefix),
-			msg.BytesToSign...,
+			msg.GetBytes()...,
 		))
 		recoveredPK, err := crypto.Ecrecover(bytesToVerify, sig.Signature)
 		if err != nil {
@@ -593,9 +811,11 @@ func isConsensusReached(ctx context.Context, val *types.Valset, msg chain.Messag
 			"i": i,
 		}).Debug("good unmarshal")
 		recoveredAddr := crypto.PubkeyToAddress(*pk)
-		if val == recoveredAddr.Hex() {
-			s += pow
+		recoveredAddrHex := recoveredAddr.Hex()
+		if valHex != recoveredAddrHex {
+			continue
 		}
+		s += pow
 		logger.WithFields(log.Fields{
 			"i": i,
 		}).Debug("good consensus")
@@ -616,4 +836,99 @@ func (c compass) callCompass(
 		return nil, ErrABINotInitialized
 	}
 	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
+}
+
+func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
+	var gErr whoops.Group
+	logger := liblog.WithContext(ctx).WithField("chainReferenceID", t.ChainReferenceID)
+	for _, batch := range batches {
+		logger = logger.WithField("batch-nonce", batch.BatchNonce)
+
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing batch context")
+			break
+		}
+
+		var processingErr error
+		logger := logger.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+		logger.Debug("relaying")
+
+		_, processingErr = t.gravityRelayBatch(ctx, batch)
+
+		processingErr = whoops.Enrich(
+			processingErr,
+			FieldMessageID.Val(batch.BatchNonce),
+		)
+
+		switch {
+		case processingErr == nil:
+			// do nothing.  claiming happens in a different goroutine
+		case goerrors.Is(processingErr, ErrNoConsensus):
+			// does nothing
+		default:
+			logger.WithError(processingErr).Error("relay error")
+			gErr.Add(processingErr)
+		}
+	}
+
+	return gErr.Return()
+}
+
+func (t compass) gravityRelayBatch(
+	ctx context.Context,
+	batch chain.GravityBatchWithSignatures,
+) (*ethtypes.Transaction, error) {
+	return whoops.TryVal(func() *ethtypes.Transaction {
+		executed, err := t.gravityIsBatchAlreadyRelayed(ctx, batch.BatchNonce)
+		whoops.Assert(err)
+		if executed {
+			return nil
+		}
+
+		valsetID, err := t.findLastValsetMessageID(ctx)
+		whoops.Assert(err)
+
+		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+		whoops.Assert(err)
+
+		consensusReached := isConsensusReached(ctx, valset, batch)
+		if !consensusReached {
+			whoops.Assert(ErrNoConsensus)
+		}
+
+		con := BuildCompassConsensus(ctx, valset, batch.Signatures)
+
+		receivers := make([]common.Address, len(batch.Transactions))
+		amounts := make([]*big.Int, len(batch.Transactions))
+
+		for i, transaction := range batch.Transactions {
+			receivers[i] = common.HexToAddress(transaction.DestAddress)
+			amounts[i] = transaction.Erc20Token.Amount.BigInt()
+		}
+
+		compassArgs := CompassTokenSendArgs{
+			Receiver: receivers,
+			Amount:   amounts,
+		}
+
+		tx, err := t.callCompass(
+			ctx,
+			false,
+			"submit_batch",
+			[]any{
+				con,
+				common.HexToAddress(batch.TokenContract),
+				compassArgs,
+				new(big.Int).SetInt64(int64(batch.BatchNonce)),
+				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())), // TODO : Deadline
+			},
+		)
+		if err != nil {
+			liblog.WithContext(ctx).WithError(err).Error("failed to relay batch")
+		}
+
+		return tx
+	})
 }

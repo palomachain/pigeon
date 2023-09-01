@@ -61,7 +61,7 @@ func (f *Factory) Build(
 	}
 
 	return Processor{
-		compass: compass{
+		compass: &compass{
 			CompassID:           smartContractID,
 			ChainReferenceID:    chainReferenceID,
 			smartContractAddr:   common.HexToAddress(smartContractAddress),

@@ -180,6 +180,22 @@ func (_m *mockEvmClienter) FindCurrentBlockNumber(ctx context.Context) (*big.Int
 	return r0, r1
 }
 
+// GetEthClient provides a mock function with given fields:
+func (_m *mockEvmClienter) GetEthClient() ethClientConn {
+	ret := _m.Called()
+
+	var r0 ethClientConn
+	if rf, ok := ret.Get(0).(func() ethClientConn); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ethClientConn)
+		}
+	}
+
+	return r0
+}
+
 // LastValsetID provides a mock function with given fields: ctx, addr
 func (_m *mockEvmClienter) LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error) {
 	ret := _m.Called(ctx, addr)

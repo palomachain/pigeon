@@ -16,6 +16,12 @@ const (
 	relayMessagesLoopInterval        = 500 * time.Millisecond
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
+
+	updateGravityOrchestratorAddressInterval = 1 * time.Minute
+	gravitySignBatchesLoopInterval           = 5 * time.Second
+	gravityRelayBatchesLoopInterval          = 5 * time.Second
+	batchSendEventWatcherLoopInterval        = 5 * time.Second
+	sendToPalomaEventWatcherLoopInterval     = 5 * time.Second
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
@@ -29,7 +35,7 @@ func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
 		log.Info("validator is staking")
 		r.staking = true
 	} else {
-		log.Info("validator is not staking... waiting")
+		log.Warn("validator is not staking... waiting")
 		r.staking = false
 	}
 	return nil
@@ -74,6 +80,15 @@ func (r *Relayer) Start(ctx context.Context) error {
 	if !libvalid.IsNil(r.mevClient) {
 		go r.startProcess(ctx, &locker, r.mevClient.GetHealthprobeInterval(), false, r.mevClient.KeepAlive)
 	}
+
+	// Start gravity background goroutines to run separately from each other
+	go r.startProcess(ctx, &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
+	go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
+	go r.startProcess(ctx, &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
+	go r.startProcess(ctx, &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
+
+	// Start the foreground process
+	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)
 
 	// Immediately send a keep alive to Paloma during startup
 	_ = r.keepAlive(liblog.MustEnrichContext(ctx), &locker)

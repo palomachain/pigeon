@@ -200,9 +200,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-// Link to op-geth, which is built on top of go-ethereum
-replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
-
-replace github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
-
-replace github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
+replace (
+	// Link to op-geth, which is built on top of go-ethereum
+	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
+	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20230831200238-6046c149ce33
+	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
+	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
+)

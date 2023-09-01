@@ -29,6 +29,8 @@ func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Lock
 		},
 	)
 
+	// log.Info("Updating erc20 coin contract for chain")
+
 	chainInfos := slice.Map(externalAccounts, func(acc chain.ExternalAccount) paloma.ChainInfoIn {
 		traits := traits.Build(acc.ChainReferenceID, r.mevClient)
 		info := paloma.ChainInfoIn{

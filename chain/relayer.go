@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/internal/queue"
 )
@@ -23,6 +24,12 @@ type SignedQueuedMessage struct {
 	SignedByAddress string
 }
 
+type SignedGravityOutgoingTxBatch struct {
+	gravity.OutgoingTxBatch
+	Signature       []byte
+	SignedByAddress string
+}
+
 type MessageToProcess struct {
 	QueueTypeName string
 	Msg           QueuedMessage
@@ -35,9 +42,35 @@ type ValidatorSignature struct {
 	PublicKey       []byte
 }
 
+type SignedEntity interface {
+	GetSignatures() []ValidatorSignature
+	GetBytes() []byte
+}
+
 type MessageWithSignatures struct {
 	QueuedMessage
 	Signatures []ValidatorSignature
+}
+
+func (msg MessageWithSignatures) GetSignatures() []ValidatorSignature {
+	return msg.Signatures
+}
+
+func (msg MessageWithSignatures) GetBytes() []byte {
+	return msg.BytesToSign
+}
+
+type GravityBatchWithSignatures struct {
+	gravity.OutgoingTxBatch
+	Signatures []ValidatorSignature
+}
+
+func (gb GravityBatchWithSignatures) GetSignatures() []ValidatorSignature {
+	return gb.Signatures
+}
+
+func (gb GravityBatchWithSignatures) GetBytes() []byte {
+	return gb.GetBytesToSign()
 }
 
 type ExternalAccount struct {
@@ -46,6 +79,22 @@ type ExternalAccount struct {
 
 	Address string
 	PubKey  []byte
+}
+
+type BatchSendEvent struct {
+	EthBlockHeight uint64
+	EventNonce     uint64
+	BatchNonce     uint64
+	TokenContract  string
+}
+
+type SendToPalomaEvent struct {
+	EthBlockHeight uint64
+	EventNonce     uint64
+	Amount         uint64
+	EthereumSender string
+	PalomaReceiver string
+	TokenContract  string
 }
 
 type ChainInfo interface {
@@ -57,7 +106,7 @@ type ChainInfo interface {
 //go:generate mockery --name=Processor
 type Processor interface {
 	health.Checker
-	// GetChainReferenceID returns the chain reference ID against which the processor is running.
+	// GetChainReferenceID returns the chain reference EventNonce against which the processor is running.
 	GetChainReferenceID() string
 
 	// SupportedQueues is a list of consensus queues that this processor supports and expects to work with.
@@ -76,8 +125,17 @@ type Processor interface {
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
+	SubmitBatchSendToEthClaims(context.Context, []BatchSendEvent, string) error
+	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
+
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
+
+	GravitySignBatches(context.Context, ...gravity.OutgoingTxBatch) ([]SignedGravityOutgoingTxBatch, error)
+	GravityRelayBatches(context.Context, []GravityBatchWithSignatures) error
+
+	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
+	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)
 }
 
 type ProcessorBuilder interface {

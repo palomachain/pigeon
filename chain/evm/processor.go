@@ -8,6 +8,7 @@ import (
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/queue"
@@ -16,7 +17,7 @@ import (
 )
 
 type Processor struct {
-	compass          compass
+	compass          *compass
 	evmClient        *Client
 	chainType        string
 	chainReferenceID string
@@ -77,6 +78,39 @@ func (p Processor) SignMessages(ctx context.Context, messages ...chain.QueuedMes
 	)
 }
 
+func (p Processor) GravitySignBatches(ctx context.Context, batches ...gravity.OutgoingTxBatch) ([]chain.SignedGravityOutgoingTxBatch, error) {
+	return slice.MapErr(batches, func(batch gravity.OutgoingTxBatch) (chain.SignedGravityOutgoingTxBatch, error) {
+		logger := log.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+
+		msgBytes := crypto.Keccak256(
+			append(
+				[]byte(SignedMessagePrefix),
+				batch.GetBytesToSign()...,
+			),
+		)
+		sig, err := p.evmClient.sign(ctx, msgBytes)
+		if err != nil {
+			logger.WithError(err).Error("signing a batch failed")
+			return chain.SignedGravityOutgoingTxBatch{}, err
+		}
+
+		logger.Info("signed a batch")
+
+		if err != nil {
+			return chain.SignedGravityOutgoingTxBatch{}, err
+		}
+
+		return chain.SignedGravityOutgoingTxBatch{
+			OutgoingTxBatch: batch,
+			Signature:       sig,
+			SignedByAddress: p.evmClient.addr.Hex(),
+		}, nil
+	},
+	)
+}
+
 func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
 	if !queueTypeName.IsTurnstoneQueue() {
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
@@ -86,6 +120,13 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.Type
 		ctx,
 		queueTypeName.String(),
 		msgs,
+	)
+}
+
+func (p Processor) GravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
+	return p.compass.gravityRelayBatches(
+		ctx,
+		batches,
 	)
 }
 
@@ -167,5 +208,31 @@ func (p Processor) isRightChain(blockHash common.Hash) error {
 		))
 	}
 
+	return nil
+}
+
+func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
+	return p.compass.GetBatchSendEvents(ctx, orchestrator)
+}
+
+func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
+	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
+}
+
+func (p Processor) SubmitBatchSendToEthClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
+	for _, batchSendEvent := range batchSendEvents {
+		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p Processor) SubmitSendToPalomaClaims(ctx context.Context, batchSendEvents []chain.SendToPalomaEvent, orchestrator string) error {
+	for _, batchSendEvent := range batchSendEvents {
+		if err := p.compass.submitSendToPalomaClaim(ctx, batchSendEvent, orchestrator); err != nil {
+			return err
+		}
+	}
 	return nil
 }

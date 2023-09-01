@@ -10,6 +10,7 @@ import (
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -33,12 +34,16 @@ type PalomaClienter interface {
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
 	GetValidatorAddress() sdk.ValAddress
 	GetValidator(ctx context.Context) (*stakingtypes.Validator, error)
-
+	GetCreator() string
 	BlockHeight(context.Context) (int64, error)
 	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 
 	QueryGetValidatorAliveUntilBlockHeight(ctx context.Context) (int64, error)
 	KeepValidatorAlive(ctx context.Context, appVersion string) error
+
+	GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error)
+	GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error
+	GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error)
 }
 
 //go:generate mockery --name=EvmFactorier
