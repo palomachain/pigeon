@@ -2,9 +2,9 @@ package chain
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gravity "github.com/palomachain/paloma/x/gravity/types"
-
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/internal/queue"
 )

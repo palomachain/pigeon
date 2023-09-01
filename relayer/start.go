@@ -82,7 +82,6 @@ func (r *Relayer) Start(ctx context.Context) error {
 	}
 
 	// Start gravity background goroutines to run separately from each other
-	//go r.startProcess(ctx, &locker, updateGravityOrchestratorAddressInterval, true, r.UpdateGravityOrchestratorAddress)
 	go r.startProcess(ctx, &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
 	go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
 	go r.startProcess(ctx, &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)

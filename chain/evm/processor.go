@@ -3,12 +3,12 @@ package evm
 import (
 	"context"
 	"fmt"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
 
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/queue"

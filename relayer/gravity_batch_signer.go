@@ -2,9 +2,9 @@ package relayer
 
 import (
 	"context"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"sync"
 
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"

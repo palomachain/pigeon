@@ -2,7 +2,6 @@ package relayer
 
 import (
 	"context"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	gravity "github.com/palomachain/paloma/x/gravity/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/paloma"

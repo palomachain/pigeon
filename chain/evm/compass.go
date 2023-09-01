@@ -5,12 +5,11 @@ import (
 	"errors"
 	goerrors "errors"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"math/big"
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
@@ -357,7 +357,6 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce ui
 
 	var found bool
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
-
 		for _, ethLog := range logs {
 			event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
 			if err != nil {
@@ -558,7 +557,6 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 }
 
 func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
-
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
 	if err != nil {
 		return nil, err
@@ -620,7 +618,6 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 }
 
 func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
-
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
 	if err != nil {
 		return nil, err

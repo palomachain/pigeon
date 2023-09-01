@@ -142,10 +142,10 @@ func queryMessagesForRelaying(
 		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
 		for j, vs := range msg.SignData {
 			valSigs[j] = chain.ValidatorSignature{
-				//ValAddress:      vs.GetValAddress(),
+				// ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
-				//PublicKey:       vs.GetPublicKey(),
+				// PublicKey:       vs.GetPublicKey(),
 			}
 		}
 		var ptr consensus.ConsensusMsg
@@ -189,10 +189,10 @@ func queryMessagesForAttesting(
 		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
 		for j, vs := range msg.SignData {
 			valSigs[j] = chain.ValidatorSignature{
-				//ValAddress:      vs.GetValAddress(),
+				// ValAddress:      vs.GetValAddress(),
 				Signature:       vs.GetSignature(),
 				SignedByAddress: vs.GetExternalAccountAddress(),
-				//PublicKey:       vs.GetPublicKey(),
+				// PublicKey:       vs.GetPublicKey(),
 			}
 		}
 		var ptr consensus.ConsensusMsg

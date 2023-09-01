@@ -2,7 +2,6 @@ package relayer
 
 import (
 	"context"
-	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"os"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
+	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/relayer/mocks"

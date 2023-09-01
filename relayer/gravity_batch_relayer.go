@@ -2,10 +2,10 @@ package relayer
 
 import (
 	"context"
-	"github.com/palomachain/pigeon/internal/liblog"
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
