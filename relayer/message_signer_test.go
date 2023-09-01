@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"os"
 	"testing"
 
@@ -34,7 +35,7 @@ func TestSignMessages(t *testing.T) {
 				return New(
 					config.Root{},
 					pc,
-					evm.NewFactory(pc),
+					evm.NewFactory(evmmocks.NewPalomaClienter(t)),
 					timemocks.NewTime(t),
 					Config{},
 				)

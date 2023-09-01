@@ -90,5 +90,8 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 	// Start the foreground process
 	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)
+
+	// Immediately send a keep alive to Paloma during startup
+	_ = r.keepAlive(liblog.MustEnrichContext(ctx), &locker)
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"strings"
-	"time"
 
 	"github.com/VolumeFi/whoops"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -436,16 +435,16 @@ func (c Client) SetErrorData(ctx context.Context, queueTypeName string, messageI
 	return err
 }
 
-func (c Client) QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error) {
+func (c Client) QueryGetValidatorAliveUntilBlockHeight(ctx context.Context) (int64, error) {
 	qc := valset.NewQueryClient(c.GRPCClient)
 	aliveUntilRes, err := qc.GetValidatorAliveUntil(ctx, &valset.QueryGetValidatorAliveUntilRequest{
 		ValAddress: c.valAddr,
 	})
 	if err != nil {
-		return time.Time{}, err
+		return 0, err
 	}
 
-	return aliveUntilRes.AliveUntil.UTC(), nil
+	return aliveUntilRes.AliveUntilBlockHeight, nil
 }
 
 func (c Client) KeepValidatorAlive(ctx context.Context, appVersion string) error {

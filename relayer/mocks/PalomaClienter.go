@@ -19,8 +19,6 @@ import (
 
 	proto "github.com/cosmos/gogoproto/proto"
 
-	time "time"
-
 	types "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
@@ -106,6 +104,20 @@ func (_m *PalomaClienter) BroadcastMessageSignatures(ctx context.Context, signat
 		r0 = rf(ctx, signatures...)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetCreator provides a mock function with given fields:
+func (_m *PalomaClienter) GetCreator() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -226,20 +238,6 @@ func (_m *PalomaClienter) GravityQueryLastUnsignedBatch(ctx context.Context, cha
 	return r0, r1
 }
 
-// GravityRequestBatch provides a mock function with given fields: ctx, chainReferenceId
-func (_m *PalomaClienter) GravityRequestBatch(ctx context.Context, chainReferenceId string) error {
-	ret := _m.Called(ctx, chainReferenceId)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, chainReferenceId)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // KeepValidatorAlive provides a mock function with given fields: ctx, appVersion
 func (_m *PalomaClienter) KeepValidatorAlive(ctx context.Context, appVersion string) error {
 	ret := _m.Called(ctx, appVersion)
@@ -332,19 +330,19 @@ func (_m *PalomaClienter) QueryGetSnapshotByID(ctx context.Context, id uint64) (
 	return r0, r1
 }
 
-// QueryGetValidatorAliveUntil provides a mock function with given fields: ctx
-func (_m *PalomaClienter) QueryGetValidatorAliveUntil(ctx context.Context) (time.Time, error) {
+// QueryGetValidatorAliveUntilBlockHeight provides a mock function with given fields: ctx
+func (_m *PalomaClienter) QueryGetValidatorAliveUntilBlockHeight(ctx context.Context) (int64, error) {
 	ret := _m.Called(ctx)
 
-	var r0 time.Time
+	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (time.Time, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) time.Time); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
 		r0 = rf(ctx)
 	} else {
-		r0 = ret.Get(0).(time.Time)
+		r0 = ret.Get(0).(int64)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
