@@ -104,6 +104,10 @@ Base Mainnet (base-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/base-main
 ```
+Arbitrum Mainnet (arb-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/arb-main
+```
 or import existing you existing Ethereum evm private keys
 
 Ethereum Mainnet (eth-main)
@@ -129,6 +133,10 @@ pigeon evm keys import ~/.pigeon/keys/evm/kava-main
 Base Mainnet (base-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/base-main
+```
+Arbitrum Mainnet (arb-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/arb-main
 ```
 
 ### Config setup
@@ -214,6 +222,15 @@ evm:
     signing-key: ${BASE_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/base-main
     gas-adjustment: 1
+    tx-type: 2
+
+  arb-main:
+    chain-id: 42161
+    base-rpc-url: ${ARB_RPC_URL}
+    keyring-pass-env-name: ARB_PASSWORD
+    signing-key: ${ARB_SIGNING_KEY}
+    keyring-dir: /root/.pigeon/keys/evm/arb-main
+    gas-adjustment: 2
     tx-type: 2
 
 ```
