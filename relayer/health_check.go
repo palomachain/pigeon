@@ -76,7 +76,7 @@ func (r *Relayer) HealthCheck(ctx context.Context) error {
 
 func (r *Relayer) BootHealthCheck(ctx context.Context) error {
 	var g whoops.Group
-	for _, cfg := range r.config.EVM {
+	for _, cfg := range r.cfg.EVM {
 		g.Add(evm.TestAndVerifyConfig(ctx, cfg))
 	}
 	return g.Return()

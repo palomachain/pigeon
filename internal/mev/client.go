@@ -22,7 +22,7 @@ type Client interface {
 	Relay(context.Context, *big.Int, *types.Transaction) (common.Hash, error)
 }
 
-func New(cfg *config.Root) Client {
+func New(cfg *config.Config) Client {
 	if len(cfg.BloxrouteAuthorizationHeader) < 1 {
 		log.Info("BLXR Auth header not found. No MEV relayer support.")
 		return nil

@@ -80,7 +80,7 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 	// TODO: add support of other types of chains! Right now, only EVM types are supported!
 	retErr := whoops.Wrap(ErrMissingChainConfig, whoops.Errorf("reference chain id: %s").Format(chainInfo.GetChainReferenceID()))
 
-	cfg, ok := r.config.EVM[chainInfo.GetChainReferenceID()]
+	cfg, ok := r.cfg.EVM[chainInfo.GetChainReferenceID()]
 	if !ok {
 		return nil, retErr
 	}
