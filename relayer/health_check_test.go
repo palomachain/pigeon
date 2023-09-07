@@ -30,7 +30,7 @@ var _ = Describe("health check", func() {
 
 	retErr := whoops.String("oh no")
 
-	var cfg config.Root
+	cfg := &config.Config{}
 
 	var val *stakingtypes.Validator
 	BeforeEach(func() {
@@ -50,7 +50,7 @@ var _ = Describe("health check", func() {
 	JustBeforeEach(func() {
 		r = &Relayer{
 			palomaClient: m,
-			config:       cfg,
+			cfg:          cfg,
 			evmFactory:   fm,
 		}
 	})

@@ -1,4 +1,5 @@
 loop-timeout: 5s
+health-check-address: 127.0.0.1
 health-check-port: 5757
 
 paloma:

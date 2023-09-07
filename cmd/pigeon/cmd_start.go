@@ -35,7 +35,8 @@ var startCmd = &cobra.Command{
 		go func() {
 			health.StartHTTPServer(
 				ctx,
-				app.Config().HealthCheckPort(),
+				app.Config().HealthCheckAddress,
+				app.Config().HealthCheckPort,
 				pid,
 				app.Version(),
 				app.Commit(),

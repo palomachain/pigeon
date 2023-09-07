@@ -48,7 +48,7 @@ func TestBuildProcessors(t *testing.T) {
 				evmFactoryMock.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(processorMock, nil)
 
 				r := New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"chain-1": {},
 						},
@@ -98,7 +98,7 @@ func TestBuildProcessors(t *testing.T) {
 				evmFactoryMock.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(processorMock, nil)
 
 				r := New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"chain-1": {},
 						},
@@ -154,7 +154,7 @@ func TestBuildProcessors(t *testing.T) {
 				evmFactoryMock.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(processorMock, nil)
 
 				r := New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"chain-1": {},
 						},
@@ -215,7 +215,7 @@ func TestBuildProcessors(t *testing.T) {
 				evmFactoryMock.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(processorMock, nil)
 
 				r := New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"chain-1": {},
 						},
@@ -264,7 +264,7 @@ func TestBuildProcessors(t *testing.T) {
 				)
 
 				r := New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"chain-1": {},
 						},

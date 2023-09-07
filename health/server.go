@@ -20,6 +20,7 @@ type jsonResponse struct {
 
 func StartHTTPServer(
 	ctx context.Context,
+	addr string,
 	port int,
 	pid int,
 	appVersion string,
@@ -38,7 +39,7 @@ func StartHTTPServer(
 	})
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
+		Addr:    fmt.Sprintf("%s:%d", addr, port),
 		Handler: m,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx

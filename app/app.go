@@ -31,7 +31,7 @@ const (
 
 var (
 	_relayer    *relayer.Relayer
-	_config     *config.Root
+	_config     *config.Config
 	_configPath string
 
 	_palomaClient *paloma.Client
@@ -61,7 +61,7 @@ func Commit() string { return commit }
 func Relayer() *relayer.Relayer {
 	if _relayer == nil {
 		_relayer = relayer.New(
-			*Config(),
+			Config(),
 			*PalomaClient(),
 			EvmFactory(),
 			Time(),
@@ -98,7 +98,7 @@ func EvmFactory() *evm.Factory {
 	return _evmFactory
 }
 
-func Config() *config.Root {
+func Config() *config.Config {
 	if len(_configPath) == 0 {
 		log.Fatal("config file path is not set")
 	}
@@ -116,7 +116,7 @@ func Config() *config.Root {
 				"err": err,
 			}).Fatal("couldn't read config file")
 		}
-		_config = &cnf
+		_config = cnf
 	}
 
 	return _config

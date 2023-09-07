@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/user"
@@ -12,8 +13,9 @@ import (
 )
 
 const (
-	ChainName = "paloma"
-	Name      = "pigeon"
+	ChainName                          = "paloma"
+	Name                               = "pigeon"
+	cDefaultHealthServerAddressBinding = "127.0.0.1"
 )
 
 type CosmosSpecificClientConfig struct {
@@ -45,8 +47,9 @@ func (f Filepath) Path() string {
 	return path.Clean(p)
 }
 
-type Root struct {
-	HealthCheckPortRaw int `yaml:"health-check-port"`
+type Config struct {
+	HealthCheckPort    int    `yaml:"health-check-port"`
+	HealthCheckAddress string `yaml:"health-check-address"`
 
 	BloxrouteAuthorizationHeader string `yaml:"bloxroute-auth-header"`
 
@@ -55,15 +58,20 @@ type Root struct {
 	EVM map[string]EVM `yaml:"evm"`
 }
 
-func (r *Root) HealthCheckPort() int {
-	if r.HealthCheckPortRaw == 0 {
-		panic(whoops.String("invalid health check port in pigeon's config file"))
+func (c *Config) defaults() *Config {
+	if len(c.HealthCheckAddress) < 1 {
+		c.HealthCheckAddress = cDefaultHealthServerAddressBinding
 	}
-	return r.HealthCheckPortRaw
+
+	return c
 }
 
-func (r *Root) init() {
-	(&r.Paloma).init()
+func (c *Config) validate() (*Config, error) {
+	if c.HealthCheckPort == 0 {
+		return nil, fmt.Errorf("invalid health server port binding: %d", c.HealthCheckPort)
+	}
+
+	return c, nil
 }
 
 type EVM struct {
@@ -77,9 +85,6 @@ type Paloma struct {
 	ChainID                    string `yaml:"chain-id"`
 }
 
-func (p *Paloma) init() {
-}
-
 func KeyringPassword(envKey string) string {
 	envVal, ok := os.LookupEnv(envKey)
 	if !ok {
@@ -88,20 +93,19 @@ func KeyringPassword(envKey string) string {
 	return envVal
 }
 
-func FromReader(r io.Reader) (Root, error) {
-	var cnf Root
+func FromReader(r io.Reader) (*Config, error) {
 	rawBody, err := io.ReadAll(r)
 	if err != nil {
-		return Root{}, err
+		return nil, err
 	}
 	str := string(rawBody)
 	str = os.ExpandEnv(str)
-	err = yaml.Unmarshal([]byte(str), &cnf)
+
+	var cfg Config
+	err = yaml.Unmarshal([]byte(str), &cfg)
 	if err != nil {
-		return Root{}, err
+		return nil, err
 	}
 
-	(&cnf).init()
-
-	return cnf, nil
+	return cfg.defaults().validate()
 }

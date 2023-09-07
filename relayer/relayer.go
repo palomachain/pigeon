@@ -63,7 +63,7 @@ type EvmFactorier interface {
 }
 
 type Relayer struct {
-	config config.Root
+	cfg *config.Config
 
 	palomaClient PalomaClienter
 
@@ -87,9 +87,9 @@ type Config struct {
 	KeepAliveBlockThreshold int64
 }
 
-func New(config config.Root, palomaClient PalomaClienter, evmFactory EvmFactorier, customTime utiltime.Time, cfg Config) *Relayer {
+func New(config *config.Config, palomaClient PalomaClienter, evmFactory EvmFactorier, customTime utiltime.Time, cfg Config) *Relayer {
 	return &Relayer{
-		config:        config,
+		cfg:           config,
 		palomaClient:  palomaClient,
 		evmFactory:    evmFactory,
 		time:          customTime,

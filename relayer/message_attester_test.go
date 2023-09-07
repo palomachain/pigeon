@@ -34,7 +34,7 @@ func TestAttestMessages(t *testing.T) {
 				pc := mocks.NewPalomaClienter(t)
 				pc.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return(nil, nil)
 				r := New(
-					config.Root{},
+					&config.Config{},
 					pc,
 					evm.NewFactory(evmmocks.NewPalomaClienter(t)),
 					timemocks.NewTime(t),
@@ -95,7 +95,7 @@ func TestAttestMessages(t *testing.T) {
 				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"main": {
 								ChainClientConfig: config.ChainClientConfig{
@@ -144,7 +144,7 @@ func TestAttestMessages(t *testing.T) {
 				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
-					config.Root{
+					&config.Config{
 						EVM: map[string]config.EVM{
 							"main": {
 								ChainClientConfig: config.ChainClientConfig{
