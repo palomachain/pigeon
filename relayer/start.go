@@ -7,6 +7,7 @@ import (
 
 	"github.com/palomachain/paloma/util/libvalid"
 	"github.com/palomachain/pigeon/internal/liblog"
+	"github.com/palomachain/pigeon/relayer/heartbeat"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -87,13 +88,19 @@ func (r *Relayer) Start(ctx context.Context) error {
 	go r.startProcess(ctx, &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
 	go r.startProcess(ctx, &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
 
-	// Start the foreground process
-	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)
+	// Setup heartbeat to Paloma
+	heart := heartbeat.New(
+		r.palomaClient.QueryGetValidatorAliveUntilBlockHeight,
+		r.palomaClient.BlockHeight,
+		r.palomaClient.KeepValidatorAlive,
+		r.relayerConfig.KeepAliveBlockThreshold,
+		r.appVersion,
+		&locker)
 
 	// Immediately send a keep alive to Paloma during startup
-	_ = r.keepAlive(liblog.MustEnrichContext(ctx), &locker)
+	_ = heart.Beat(liblog.MustEnrichContext(ctx), &locker)
 
 	// Start the foreground process
-	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, r.keepAlive)
+	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, heart.Beat)
 	return nil
 }
