@@ -26,10 +26,11 @@ type keepAliveCache struct {
 }
 
 func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
-	liblog.WithContext(ctx).WithField("cache", c).Info("cache get")
+	liblog.WithContext(ctx).WithField("cache", *c).Info("cache get")
 	if c.isStale() {
-		liblog.WithContext(ctx).WithField("cache", c).Info("cache is stale")
+		liblog.WithContext(ctx).WithField("cache", *c).Info("cache is stale")
 		err := linearFalloffRetry(ctx, c.locker, "cache refresh", cMaxCacheRefreshAttempts, c.retryFalloff, c.refresh)
+		liblog.WithContext(ctx).WithField("cache", *c).WithError(err).Info("cache refreshed")
 		if err != nil {
 			return 0, err
 		}
