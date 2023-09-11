@@ -27,37 +27,29 @@ type keepAliveCache struct {
 }
 
 func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
+	liblog.WithContext(ctx).Infof("%+v", *c)
 	liblog.WithContext(ctx).WithFields(logrus.Fields{
 		"retryFalloff":        c.retryFalloff,
-		"locker":              c.locker,
 		"estimatedBlockSpeed": c.estimatedBlockSpeed,
 		"lastBlockHeight":     c.lastBlockHeight,
 		"lastRefresh":         c.lastRefresh,
 		"lastAliveUntil":      c.lastAliveUntil,
-		"queryBTL":            c.queryBTL,
-		"queryBH":             c.queryBH,
 	}).Info("cache get")
 	if c.isStale() {
 		liblog.WithContext(ctx).WithFields(logrus.Fields{
 			"retryFalloff":        c.retryFalloff,
-			"locker":              c.locker,
 			"estimatedBlockSpeed": c.estimatedBlockSpeed,
 			"lastBlockHeight":     c.lastBlockHeight,
 			"lastRefresh":         c.lastRefresh,
 			"lastAliveUntil":      c.lastAliveUntil,
-			"queryBTL":            c.queryBTL,
-			"queryBH":             c.queryBH,
 		}).Info("cache is stale")
 		err := linearFalloffRetry(ctx, c.locker, "cache refresh", cMaxCacheRefreshAttempts, c.retryFalloff, c.refresh)
 		liblog.WithContext(ctx).WithFields(logrus.Fields{
 			"retryFalloff":        c.retryFalloff,
-			"locker":              c.locker,
 			"estimatedBlockSpeed": c.estimatedBlockSpeed,
 			"lastBlockHeight":     c.lastBlockHeight,
 			"lastRefresh":         c.lastRefresh,
 			"lastAliveUntil":      c.lastAliveUntil,
-			"queryBTL":            c.queryBTL,
-			"queryBH":             c.queryBH,
 		}).WithError(err).Info("cache refreshed")
 		if err != nil {
 			return 0, err
