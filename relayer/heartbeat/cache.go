@@ -27,30 +27,21 @@ type keepAliveCache struct {
 }
 
 func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
-	liblog.WithContext(ctx).Infof("%+v", *c)
-	liblog.WithContext(ctx).WithFields(logrus.Fields{
-		"retryFalloff":        c.retryFalloff,
-		"estimatedBlockSpeed": c.estimatedBlockSpeed,
-		"lastBlockHeight":     c.lastBlockHeight,
-		"lastRefresh":         c.lastRefresh,
-		"lastAliveUntil":      c.lastAliveUntil,
-	}).Info("cache get")
+	logger := liblog.WithContext(ctx).WithField("component", "cache")
 	if c.isStale() {
-		liblog.WithContext(ctx).WithFields(logrus.Fields{
-			"retryFalloff":        c.retryFalloff,
+		logger.WithFields(logrus.Fields{
 			"estimatedBlockSpeed": c.estimatedBlockSpeed,
 			"lastBlockHeight":     c.lastBlockHeight,
 			"lastRefresh":         c.lastRefresh,
 			"lastAliveUntil":      c.lastAliveUntil,
-		}).Info("cache is stale")
+		}).Debug("cache is stale")
 		err := linearFalloffRetry(ctx, c.locker, "cache refresh", cMaxCacheRefreshAttempts, c.retryFalloff, c.refresh)
-		liblog.WithContext(ctx).WithFields(logrus.Fields{
-			"retryFalloff":        c.retryFalloff,
+		logger.WithFields(logrus.Fields{
 			"estimatedBlockSpeed": c.estimatedBlockSpeed,
 			"lastBlockHeight":     c.lastBlockHeight,
 			"lastRefresh":         c.lastRefresh,
 			"lastAliveUntil":      c.lastAliveUntil,
-		}).WithError(err).Info("cache refreshed")
+		}).WithError(err).Debug("cache refreshed")
 		if err != nil {
 			return 0, err
 		}
@@ -62,7 +53,7 @@ func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
 func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error {
 	defer locker.Unlock()
 	logger := liblog.WithContext(ctx).WithField("component", "cache")
-	logger.Info("refreshing cache")
+	logger.Debug("refreshing cache")
 
 	locker.Lock()
 	abh, err := c.queryBTL(ctx)
@@ -81,12 +72,6 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	c.lastAliveUntil = abh
 	c.lastBlockHeight = bh
 	c.lastRefresh = time.Now().UTC()
-
-	logger.WithFields(logrus.Fields{
-		"lastAliveUntil": c.lastAliveUntil,
-		"abh":            abh,
-		"bh":             bh,
-	}).Info("cache refreshed")
 
 	return nil
 }
