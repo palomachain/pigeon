@@ -61,15 +61,19 @@ func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
 
 func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error {
 	defer locker.Unlock()
+	logger := liblog.WithContext(ctx).WithField("component", "cache")
+	logger.Info("refreshing cache")
 
 	locker.Lock()
 	abh, err := c.queryBTL(ctx)
 	if err != nil {
+		logger.WithError(err).Error("failed to query alive until height")
 		return err
 	}
 
 	bh, err := c.queryBH(ctx)
 	if err != nil {
+		logger.WithError(err).Error("failed to query current height")
 		return err
 	}
 
@@ -77,6 +81,12 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	c.lastAliveUntil = abh
 	c.lastBlockHeight = bh
 	c.lastRefresh = time.Now().UTC()
+
+	logger.WithFields(logrus.Fields{
+		"lastAliveUntil": c.lastAliveUntil,
+		"abh":            abh,
+		"bh":             bh,
+	}).Info("cache refreshed")
 
 	return nil
 }
