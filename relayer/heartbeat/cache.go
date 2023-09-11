@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/palomachain/pigeon/internal/liblog"
 )
 
 const (
@@ -24,7 +26,9 @@ type keepAliveCache struct {
 }
 
 func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
+	liblog.WithContext(ctx).WithField("cache", c).Info("cache get")
 	if c.isStale() {
+		liblog.WithContext(ctx).WithField("cache", c).Info("cache is stale")
 		err := linearFalloffRetry(ctx, c.locker, "cache refresh", cMaxCacheRefreshAttempts, c.retryFalloff, c.refresh)
 		if err != nil {
 			return 0, err
