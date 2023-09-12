@@ -42,11 +42,11 @@ func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
 	return nil
 }
 
-func (r *Relayer) startProcess(ctx context.Context, locker sync.Locker, tickerInterval time.Duration, requiresStaking bool, process func(context.Context, sync.Locker) error) {
+func (r *Relayer) startProcess(ctx context.Context, name string, locker sync.Locker, tickerInterval time.Duration, requiresStaking bool, process func(context.Context, sync.Locker) error) {
 	ticker := time.NewTicker(tickerInterval)
 	defer ticker.Stop()
 
-	logger := log.WithFields(log.Fields{})
+	logger := liblog.WithContext(ctx).WithField("component", "procmon").WithField("process", name)
 	for {
 		select {
 		case <-ctx.Done():
@@ -54,10 +54,13 @@ func (r *Relayer) startProcess(ctx context.Context, locker sync.Locker, tickerIn
 			return
 		case <-ticker.C:
 			if !requiresStaking || r.staking {
-				err := process(liblog.MustEnrichContext(ctx), locker)
+				jCtx := liblog.MustEnrichContext(ctx)
+				err := process(jCtx, locker)
 				if err != nil {
-					logger.Error(err)
+					liblog.WithContext(jCtx).WithField("component", "procmon").WithField("process", name).WithError(err).Errorf("Failed to execute process: %v", err)
 				}
+			} else {
+				logger.Debug("validor not staking, skipping process execution...")
 			}
 		}
 	}
@@ -72,21 +75,21 @@ func (r *Relayer) Start(ctx context.Context) error {
 	_ = r.checkStaking(ctx, &locker)
 
 	// Start background goroutines to run separately from each other
-	go r.startProcess(ctx, &locker, checkStakingLoopInterval, false, r.checkStaking)
-	go r.startProcess(ctx, &locker, updateExternalChainsLoopInterval, true, r.UpdateExternalChainInfos)
-	go r.startProcess(ctx, &locker, signMessagesLoopInterval, true, r.SignMessages)
-	go r.startProcess(ctx, &locker, relayMessagesLoopInterval, true, r.RelayMessages)
-	go r.startProcess(ctx, &locker, attestMessagesLoopInterval, true, r.AttestMessages)
+	go r.startProcess(ctx, "Check staking", &locker, checkStakingLoopInterval, false, r.checkStaking)
+	go r.startProcess(ctx, "Update external chain infos", &locker, updateExternalChainsLoopInterval, true, r.UpdateExternalChainInfos)
+	go r.startProcess(ctx, "Sign messages", &locker, signMessagesLoopInterval, true, r.SignMessages)
+	go r.startProcess(ctx, "Relay messages", &locker, relayMessagesLoopInterval, true, r.RelayMessages)
+	go r.startProcess(ctx, "Attest messages", &locker, attestMessagesLoopInterval, true, r.AttestMessages)
 
 	if !libvalid.IsNil(r.mevClient) {
-		go r.startProcess(ctx, &locker, r.mevClient.GetHealthprobeInterval(), false, r.mevClient.KeepAlive)
+		go r.startProcess(ctx, "[MEV] Client heartbeat", &locker, r.mevClient.GetHealthprobeInterval(), false, r.mevClient.KeepAlive)
 	}
 
 	// Start gravity background goroutines to run separately from each other
-	go r.startProcess(ctx, &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
-	go r.startProcess(ctx, &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
-	go r.startProcess(ctx, &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
-	go r.startProcess(ctx, &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
+	go r.startProcess(ctx, "[Gravity] Sign batches", &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
+	go r.startProcess(ctx, "[Gravity] Relay batches", &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
+	go r.startProcess(ctx, "[Gravity] Handle Batch Send Event", &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
+	go r.startProcess(ctx, "[Gravity] Handle Send to Paloma Event", &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
 
 	// Setup heartbeat to Paloma
 	heart := heartbeat.New(
@@ -101,6 +104,6 @@ func (r *Relayer) Start(ctx context.Context) error {
 	_ = heart.Beat(liblog.MustEnrichContext(ctx), &locker)
 
 	// Start the foreground process
-	r.startProcess(ctx, &locker, r.relayerConfig.KeepAliveLoopTimeout, false, heart.Beat)
+	r.startProcess(ctx, "Keep alive", &locker, r.relayerConfig.KeepAliveLoopTimeout, false, heart.Beat)
 	return nil
 }

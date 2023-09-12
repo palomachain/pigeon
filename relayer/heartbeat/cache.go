@@ -56,12 +56,14 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	logger.Debug("refreshing cache")
 
 	locker.Lock()
+	logger.Debug("Lock aquired. query btl.")
 	abh, err := c.queryBTL(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to query alive until height")
 		return err
 	}
 
+	logger.Debug("query bh.")
 	bh, err := c.queryBH(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to query current height")
@@ -73,6 +75,7 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	c.lastBlockHeight = bh
 	c.lastRefresh = time.Now().UTC()
 
+	logger.Debug("done refreshing cache")
 	return nil
 }
 
