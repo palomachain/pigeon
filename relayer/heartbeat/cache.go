@@ -55,13 +55,10 @@ func (c *keepAliveCache) invalidate() {
 	c.invalidated = true
 }
 
-func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error {
-	defer locker.Unlock()
+func (c *keepAliveCache) refresh(ctx context.Context, _ sync.Locker) error {
 	logger := liblog.WithContext(ctx).WithField("component", "cache")
 	logger.Debug("refreshing cache")
 
-	locker.Lock()
-	logger.Debug("Lock acquired.")
 	abh, err := c.queryBTL(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to query alive until height")
