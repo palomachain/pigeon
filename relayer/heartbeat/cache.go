@@ -61,7 +61,7 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	logger.Debug("refreshing cache")
 
 	locker.Lock()
-	logger.Debug("Lock aquired.")
+	logger.Debug("Lock acquired.")
 	abh, err := c.queryBTL(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to query alive until height")
