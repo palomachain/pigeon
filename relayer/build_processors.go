@@ -13,9 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) buildProcessors(ctx context.Context, locker sync.Locker) error {
-	locker.Lock()
-	defer locker.Unlock()
+func (r *Relayer) buildProcessors(ctx context.Context, _ sync.Locker) error {
 	queriedChainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
 		return err
