@@ -46,7 +46,8 @@ func New(i AliveUntilHeightQuery, j CurrentHeightQuery, k KeepAliveCall, keepAli
 }
 
 func (m *Heart) Beat(ctx context.Context, locker sync.Locker) error {
-	logger := liblog.WithContext(ctx)
+	logger := liblog.WithContext(ctx).WithField("component", "Heart.Beat")
+	logger.Debug("Running heartbeat")
 
 	aliveUntil, err := m.c.get(ctx)
 	if err != nil {
@@ -86,6 +87,8 @@ func (m *Heart) trySendKeepAlive(ctx context.Context, locker sync.Locker) (err e
 	err = m.sendKeepAlive(ctx, m.appVersion)
 	locker.Unlock()
 	if err == nil {
+		// Make sure we flag the cache for refreshing now
+		m.c.invalidate()
 		return nil
 	}
 

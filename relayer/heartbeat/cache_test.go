@@ -105,6 +105,16 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("isStale", func(t *testing.T) {
+		t.Run("with missing invalidated flag set", func(t *testing.T) {
+			c := &keepAliveCache{
+				lastBlockHeight:     10,
+				lastRefresh:         tm,
+				estimatedBlockSpeed: time.Second,
+			}
+			c.invalidate()
+			require.True(t, c.isStale(), "must return true")
+		})
+
 		t.Run("with missing estimated block speed", func(t *testing.T) {
 			c := &keepAliveCache{
 				lastBlockHeight: 10,

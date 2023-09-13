@@ -24,6 +24,7 @@ type keepAliveCache struct {
 	lastAliveUntil      int64
 	queryBTL            AliveUntilHeightQuery
 	queryBH             CurrentHeightQuery
+	invalidated         bool
 }
 
 func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
@@ -50,12 +51,17 @@ func (c *keepAliveCache) get(ctx context.Context) (int64, error) {
 	return c.lastAliveUntil, nil
 }
 
+func (c *keepAliveCache) invalidate() {
+	c.invalidated = true
+}
+
 func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error {
 	defer locker.Unlock()
 	logger := liblog.WithContext(ctx).WithField("component", "cache")
 	logger.Debug("refreshing cache")
 
 	locker.Lock()
+	logger.Debug("Lock acquired.")
 	abh, err := c.queryBTL(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to query alive until height")
@@ -72,12 +78,17 @@ func (c *keepAliveCache) refresh(ctx context.Context, locker sync.Locker) error 
 	c.lastAliveUntil = abh
 	c.lastBlockHeight = bh
 	c.lastRefresh = time.Now().UTC()
+	c.invalidated = false
 
+	logger.Debug("done refreshing cache")
 	return nil
 }
 
 func (c *keepAliveCache) isStale() bool {
-	if c.estimatedBlockSpeed == 0 || c.lastBlockHeight == 0 || c.lastRefresh.IsZero() {
+	if c.invalidated ||
+		c.estimatedBlockSpeed == 0 ||
+		c.lastBlockHeight == 0 ||
+		c.lastRefresh.IsZero() {
 		return true
 	}
 
