@@ -87,6 +87,8 @@ func (m *Heart) trySendKeepAlive(ctx context.Context, locker sync.Locker) (err e
 	err = m.sendKeepAlive(ctx, m.appVersion)
 	locker.Unlock()
 	if err == nil {
+		// Make sure we flag the cache for refreshing now
+		m.c.invalidate()
 		return nil
 	}
 
