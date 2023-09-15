@@ -20,7 +20,7 @@ require (
 	github.com/strangelove-ventures/lens v0.5.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/term v0.12.0
-	google.golang.org/grpc v1.58.0
+	google.golang.org/grpc v1.58.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
