@@ -393,6 +393,8 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{
@@ -521,6 +523,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{
@@ -610,6 +613,7 @@ func TestMessageProcessing(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(0)
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
@@ -696,6 +700,7 @@ func TestMessageProcessing(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 				fakeErr := fakeJsonRpcError("bla")
 
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
