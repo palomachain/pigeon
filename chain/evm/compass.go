@@ -338,7 +338,9 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 				found = true
 			}
 			found = messageID == logMessageID.Uint64()
-			return found
+			if found {
+				return found
+			}
 		}
 
 		return found
