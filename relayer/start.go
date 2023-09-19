@@ -18,11 +18,10 @@ const (
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	updateGravityOrchestratorAddressInterval = 1 * time.Minute
-	gravitySignBatchesLoopInterval           = 5 * time.Second
-	gravityRelayBatchesLoopInterval          = 5 * time.Second
-	batchSendEventWatcherLoopInterval        = 5 * time.Second
-	sendToPalomaEventWatcherLoopInterval     = 5 * time.Second
+	gravitySignBatchesLoopInterval       = 5 * time.Second
+	gravityRelayBatchesLoopInterval      = 5 * time.Second
+	batchSendEventWatcherLoopInterval    = 5 * time.Second
+	sendToPalomaEventWatcherLoopInterval = 1 * time.Minute
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
