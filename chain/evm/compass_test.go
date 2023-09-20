@@ -6,10 +6,12 @@ import (
 	"errors"
 	"math/big"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -73,15 +75,45 @@ func powerFromPercentage(p float64) uint64 {
 	return uint64(float64(maxPower) * p)
 }
 
+func getCompassABI(t *testing.T) *abi.ABI {
+	compassABI, err := abi.JSON(strings.NewReader("[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"checkpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"ValsetUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"payload\",\"type\":\"bytes\"},{\"indexed\":false,\"name\":\"message_id\",\"type\":\"uint256\"}],\"name\":\"LogicCallEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"receiver\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"SendToPalomaEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"message_id\",\"type\":\"uint256\"}],\"name\":\"BatchSendEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"cosmos_denom\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"token_contract\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"name\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"symbol\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"decimals\",\"type\":\"uint8\"}],\"name\":\"ERC20DeployedEvent\",\"type\":\"event\"},{\"inputs\":[{\"name\":\"turnstone_id\",\"type\":\"bytes32\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"turnstone_id\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"new_valset\",\"type\":\"tuple\"}],\"name\":\"update_valset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"}],\"name\":\"submit_logic_call\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"receiver\",\"type\":\"string\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"send_token_to_paloma\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"token\",\"type\":\"address\"},{\"components\":[{\"name\":\"receiver\",\"type\":\"address[]\"},{\"name\":\"amount\",\"type\":\"uint256[]\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"}],\"name\":\"submit_batch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_cosmos_denom\",\"type\":\"string\"},{\"name\":\"_name\",\"type\":\"string\"},{\"name\":\"_symbol\",\"type\":\"string\"},{\"name\":\"_decimals\",\"type\":\"uint8\"},{\"name\":\"_blueprint\",\"type\":\"address\"}],\"name\":\"deploy_erc20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_checkpoint\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_valset_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"arg0\",\"type\":\"uint256\"}],\"name\":\"message_id_used\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"))
+	require.NoError(t, err)
+	return &compassABI
+}
+
+func buildSubmitLogicCallBytes(t *testing.T, messageID int64) []byte {
+	arguments := abi.Arguments{
+		// logic_contract_address
+		{Type: whoops.Must(abi.NewType("address", "", nil))},
+		// payload
+		{Type: whoops.Must(abi.NewType("bytes", "", nil))},
+		// message_id
+		{Type: whoops.Must(abi.NewType("uint256", "", nil))},
+	}
+
+	examplePayload := []byte(``)
+
+	bytes, err := arguments.Pack(
+		common.HexToAddress("0x22786Ab8091D8E8EE6809ad17B83bE2df2Ed5E7a"),
+		examplePayload,
+		new(big.Int).SetInt64(messageID),
+	)
+	require.NoError(t, err)
+
+	return bytes
+}
+
 func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 	tests := []struct {
 		name          string
+		messageID     int64
 		setup         func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
 		expected      bool
 		expectedError error
 	}{
 		{
-			name: "False when unable to find current block number",
+			name:      "False when unable to find current block number",
+			messageID: 1,
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
@@ -93,7 +125,8 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 			expectedError: errors.New("FindCurrentBlockNumber error"),
 		},
 		{
-			name: "False when error filtering logs",
+			name:      "False when error filtering logs",
+			messageID: 1,
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
@@ -106,7 +139,8 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 			expectedError: errors.New("FilterLogs error"),
 		},
 		{
-			name: "False when not found in logs",
+			name:      "False when no logs found for filter",
+			messageID: 1,
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
@@ -119,7 +153,37 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name: "True when found in logs",
+			name:      "False when not found in logs",
+			messageID: 1,
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FindCurrentBlockNumber", mock.Anything).Times(1).Return(big.NewInt(5000), nil)
+
+				isArbitraryCallExecutedLogs := []etherumtypes.Log{
+					{
+						BlockNumber: 1,
+						Data:        buildSubmitLogicCallBytes(t, 2),
+					},
+					{
+						BlockNumber: 2,
+						Data:        buildSubmitLogicCallBytes(t, 3),
+					},
+				}
+
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
+					fn := args.Get(3).(func([]etherumtypes.Log) bool)
+					fn(isArbitraryCallExecutedLogs)
+				})
+
+				return evm, paloma
+			},
+			expected:      false,
+			expectedError: nil,
+		},
+		{
+			name:      "True when found in logs",
+			messageID: 1,
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
@@ -128,6 +192,11 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 				isArbitraryCallExecutedLogs := []etherumtypes.Log{
 					{
 						BlockNumber: 1,
+						Data:        buildSubmitLogicCallBytes(t, 2),
+					},
+					{
+						BlockNumber: 2,
+						Data:        buildSubmitLogicCallBytes(t, 1),
 					},
 				}
 
@@ -153,14 +222,14 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 				"id-123",
 				"internal-chain-id",
 				big.NewInt(1),
-				nil,
+				getCompassABI(t),
 				palomaClienter,
 				evmClienter,
 			)
 
 			ctx := context.Background()
 
-			actual, actualError := comp.isArbitraryCallAlreadyExecuted(ctx, 1)
+			actual, actualError := comp.isArbitraryCallAlreadyExecuted(ctx, uint64(tt.messageID))
 			asserter.Equal(tt.expected, actual)
 			asserter.Equal(tt.expectedError, actualError)
 		})
