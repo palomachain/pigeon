@@ -326,7 +326,23 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 
 	var found bool
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
-		found = len(logs) > 0
+		for _, ethLog := range logs {
+			event, err := t.compassAbi.Unpack("LogicCallEvent", ethLog.Data)
+			if err != nil {
+				found = true
+				return found
+			}
+
+			logMessageID, ok := event[2].(*big.Int)
+			if !ok {
+				found = true
+			}
+			found = messageID == logMessageID.Uint64()
+			if found {
+				return found
+			}
+		}
+
 		return found
 	})
 
