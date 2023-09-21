@@ -10,20 +10,22 @@ import (
 )
 
 const (
-	cMaxCacheRefreshAttempts      int           = 3
-	cCacheRefreshIntervalInBlocks int64         = 20
-	cDefaultBlockSpeed            time.Duration = time.Millisecond * 1620
+	cMaxCacheRefreshAttempts            int           = 3
+	cCacheRefreshIntervalInBlocks       int64         = 20
+	cDefaultBlockSpeed                  time.Duration = time.Millisecond * 1620
+	cMinMovingChainBlockHeightDiff      int64         = 20
+	cMinMovingChainCacheRefreshTimeDiff time.Duration = time.Minute * 2
 )
 
 type keepAliveCache struct {
-	retryFalloff        time.Duration
-	locker              sync.Locker
-	estimatedBlockSpeed time.Duration
-	lastBlockHeight     int64
 	lastRefresh         time.Time
-	lastAliveUntil      int64
+	locker              sync.Locker
 	queryBTL            AliveUntilHeightQuery
 	queryBH             CurrentHeightQuery
+	retryFalloff        time.Duration
+	estimatedBlockSpeed time.Duration
+	lastBlockHeight     int64
+	lastAliveUntil      int64
 	invalidated         bool
 }
 
@@ -106,8 +108,22 @@ func (c *keepAliveCache) estimateBlockSpeed(bh int64, t time.Time) time.Duration
 		return cDefaultBlockSpeed
 	}
 
-	blockDiff := bh - c.lastBlockHeight
 	timeDiff := t.Sub(c.lastRefresh)
+	if timeDiff > cMinMovingChainCacheRefreshTimeDiff {
+		// Looks like we're currently in a chain halt or just recovering from one.
+		// Return the default speed in order to avoid the impression of a very slow
+		// moving chain.
+		return cDefaultBlockSpeed
+	}
+
+	blockDiff := bh - c.lastBlockHeight
+	if blockDiff < cMinMovingChainBlockHeightDiff {
+		// Looks like we're currently in a chain halt or just recovering from one.
+		// Return the default speed in order to avoid the impression of a very slow
+		// moving chain.
+		return cDefaultBlockSpeed
+	}
+
 	bpms := timeDiff.Milliseconds() / int64(blockDiff)
 	return time.Duration(bpms) * time.Millisecond
 }
