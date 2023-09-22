@@ -93,6 +93,24 @@ func TestCache(t *testing.T) {
 			require.Equal(t, cDefaultBlockSpeed, i, "must return default block speed")
 		})
 
+		t.Run("with unrealistically low block height difference", func(t *testing.T) {
+			c := &keepAliveCache{
+				lastBlockHeight: 10,
+				lastRefresh:     tm.Add(time.Minute * -1),
+			}
+			i := c.estimateBlockSpeed(29, tm)
+			require.Equal(t, cDefaultBlockSpeed, i, "must return default block speed")
+		})
+
+		t.Run("with unrealistically high time difference", func(t *testing.T) {
+			c := &keepAliveCache{
+				lastBlockHeight: 10,
+				lastRefresh:     tm.Add(time.Hour * -1),
+			}
+			i := c.estimateBlockSpeed(60, tm)
+			require.Equal(t, cDefaultBlockSpeed, i, "must return default block speed")
+		})
+
 		t.Run("with valid parameters", func(t *testing.T) {
 			c := &keepAliveCache{
 				lastBlockHeight: 10,
