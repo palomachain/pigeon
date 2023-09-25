@@ -523,14 +523,15 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			}
 		case goerrors.Is(processingErr, ErrNoConsensus):
 			// Only log
+			logger.Warn(ErrNoConsensus.Error())
 			if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, ErrNoConsensus.Error()); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")
 			}
 		default:
+			logger.WithError(processingErr).Error("processing error")
 			if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, processingErr.Error()); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")
 			}
-			logger.WithError(processingErr).Error("processing error")
 			gErr.Add(processingErr)
 		}
 	}
