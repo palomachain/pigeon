@@ -65,10 +65,6 @@ func (p Processor) SignMessages(ctx context.Context, messages ...chain.QueuedMes
 			"message-id": msg.ID,
 		}).Info("signed a message")
 
-		if err != nil {
-			return chain.SignedQueuedMessage{}, err
-		}
-
 		return chain.SignedQueuedMessage{
 			QueuedMessage:   msg,
 			Signature:       sig,

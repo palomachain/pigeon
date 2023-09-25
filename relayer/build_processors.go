@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -10,45 +11,25 @@ import (
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/liblog"
 	log "github.com/sirupsen/logrus"
 )
 
 func (r *Relayer) buildProcessors(ctx context.Context, _ sync.Locker) error {
+	logger := liblog.WithContext(ctx)
 	queriedChainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
 		return err
 	}
-	logger := log.WithFields(log.Fields{})
-
-	logger.WithField("chains-infos", queriedChainsInfos).Trace("got chain infos")
 
 	// See if we need to update
-	if (r.processors != nil) && (r.chainsInfos != nil) && (len(r.chainsInfos) == len(queriedChainsInfos)) {
-		chainsChanged := false
-		for k, c := range r.chainsInfos {
-			if c.Id != queriedChainsInfos[k].Id ||
-				c.ChainReferenceID != queriedChainsInfos[k].ChainReferenceID ||
-				c.ChainID != queriedChainsInfos[k].ChainID ||
-				string(c.SmartContractUniqueID) != string(queriedChainsInfos[k].SmartContractUniqueID) ||
-				c.SmartContractAddr != queriedChainsInfos[k].SmartContractAddr ||
-				c.ReferenceBlockHeight != queriedChainsInfos[k].ReferenceBlockHeight ||
-				c.ReferenceBlockHash != queriedChainsInfos[k].ReferenceBlockHash ||
-				c.Abi != queriedChainsInfos[k].Abi ||
-				string(c.Bytecode) != string(queriedChainsInfos[k].Bytecode) ||
-				string(c.ConstructorInput) != string(queriedChainsInfos[k].ConstructorInput) ||
-				c.Status != queriedChainsInfos[k].Status ||
-				c.ActiveSmartContractID != queriedChainsInfos[k].ActiveSmartContractID ||
-				c.MinOnChainBalance != queriedChainsInfos[k].MinOnChainBalance {
-				chainsChanged = true
-			}
-		}
-		if !chainsChanged {
-			logger.Debug("chain infos unchanged since last tick")
-			return nil
-		}
+	err = r.validateChainInfos(queriedChainsInfos)
+	if err == nil {
+		logger.Debug("chain infos unchanged since last tick")
+		return nil
 	}
 
-	logger.Debug("chain infos changed.  building processors")
+	logger.WithError(err).Warn("Chain infos changed. Building processors...")
 
 	r.processors = []chain.Processor{}
 	r.chainsInfos = []evmtypes.ChainInfo{}
@@ -106,4 +87,61 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 		return nil, whoops.Wrap(err, retErr)
 	}
 	return processor, nil
+}
+
+func (r *Relayer) validateChainInfos(q []*evmtypes.ChainInfo) error {
+	if r.processors == nil {
+		return fmt.Errorf("missing processors")
+	}
+
+	if r.chainsInfos == nil {
+		return fmt.Errorf("missing chains infos")
+	}
+
+	if err := cmpIfEq("amount of chains", len(r.chainsInfos), len(q)); err != nil {
+		return err
+	}
+
+	for i, v := range r.chainsInfos {
+
+		type prdct struct {
+			name string
+			want interface{}
+			got  interface{}
+		}
+
+		predicate := func(n string, w interface{}, g interface{}) prdct {
+			return prdct{name: n, want: w, got: g}
+		}
+
+		for _, k := range []prdct{
+			predicate("Id", v.Id, q[i].Id),
+			predicate("ChainReferenceID", v.ChainReferenceID, q[i].ChainReferenceID),
+			predicate("ChainID", v.ChainID, q[i].ChainID),
+			predicate("SmartContractUniqueID", string(v.SmartContractUniqueID), string(q[i].SmartContractUniqueID)),
+			predicate("SmartContractAddr", v.SmartContractAddr, q[i].SmartContractAddr),
+			predicate("ReferenceBlockHeight", v.ReferenceBlockHeight, q[i].ReferenceBlockHeight),
+			predicate("ReferenceBlockHash", v.ReferenceBlockHash, q[i].ReferenceBlockHash),
+			predicate("Abi", v.Abi, q[i].Abi),
+			predicate("Bytecode", string(v.Bytecode), string(q[i].Bytecode)),
+			predicate("ConstructorInput", string(v.ConstructorInput), string(q[i].ConstructorInput)),
+			predicate("Status", v.Status, q[i].Status),
+			predicate("ActiveSmartContractID", v.ActiveSmartContractID, q[i].ActiveSmartContractID),
+			predicate("MinOnChainBalance", v.MinOnChainBalance, q[i].MinOnChainBalance),
+		} {
+			if err := cmpIfEq(k.name, k.want, k.got); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func cmpIfEq[K comparable](s string, want, got K) error {
+	if got == want {
+		return nil
+	}
+
+	return fmt.Errorf("chain info mismatch in: '%s', want '%v', got '%v'", s, want, got)
 }
