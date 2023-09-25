@@ -17,19 +17,29 @@ import (
 
 func (r *Relayer) buildProcessors(ctx context.Context, _ sync.Locker) error {
 	logger := liblog.WithContext(ctx)
+	// TODO: This should live in a short lived cache, it's run very often.
 	queriedChainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
 		return err
 	}
 
 	// See if we need to update
+	r.procRefreshMutex.RLock()
 	err = r.validateChainInfos(queriedChainsInfos)
+	r.procRefreshMutex.RUnlock()
 	if err == nil {
 		logger.Debug("chain infos unchanged since last tick")
 		return nil
 	}
 
 	logger.WithError(err).Warn("Chain infos changed. Building processors...")
+	logger.Debug("Acquiring mutex...")
+	r.procRefreshMutex.Lock()
+	logger.Debug("Mutex acquired.")
+	defer func() {
+		logger.Debug("Releasing mutex.")
+		r.procRefreshMutex.Unlock()
+	}()
 
 	r.processors = []chain.Processor{}
 	r.chainsInfos = []evmtypes.ChainInfo{}

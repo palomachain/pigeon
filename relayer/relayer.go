@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"math/big"
+	"sync"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -74,8 +75,9 @@ type Relayer struct {
 
 	time utiltime.Time
 
-	chainsInfos []evmtypes.ChainInfo
-	processors  []chain.Processor
+	chainsInfos      []evmtypes.ChainInfo
+	processors       []chain.Processor
+	procRefreshMutex *sync.RWMutex
 
 	staking bool
 
@@ -89,12 +91,13 @@ type Config struct {
 
 func New(config *config.Config, palomaClient PalomaClienter, evmFactory EvmFactorier, customTime utiltime.Time, cfg Config) *Relayer {
 	return &Relayer{
-		cfg:           config,
-		palomaClient:  palomaClient,
-		evmFactory:    evmFactory,
-		time:          customTime,
-		relayerConfig: cfg,
-		staking:       false,
+		cfg:              config,
+		palomaClient:     palomaClient,
+		evmFactory:       evmFactory,
+		time:             customTime,
+		relayerConfig:    cfg,
+		staking:          false,
+		procRefreshMutex: &sync.RWMutex{},
 	}
 }
 
