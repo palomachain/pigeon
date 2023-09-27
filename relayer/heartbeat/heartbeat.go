@@ -80,20 +80,18 @@ func (m *Heart) SetRetryFalloff(falloff time.Duration) {
 }
 
 // Will be blocking during retries. Make sure to always call in Goroutine.
-func (m *Heart) trySendKeepAlive(ctx context.Context, locker sync.Locker) (err error) {
+func (m *Heart) trySendKeepAlive(ctx context.Context, _ sync.Locker) (err error) {
 	logger := liblog.WithContext(ctx)
 
-	locker.Lock()
 	err = m.sendKeepAlive(ctx, m.appVersion)
-	locker.Unlock()
-	if err == nil {
-		// Make sure we flag the cache for refreshing now
-		m.c.invalidate()
-		return nil
+	if err != nil {
+		logger.WithError(err).Error("Error while trying to keep pigeon alive.")
+		return err
 	}
 
-	logger.WithError(err).Error("Error while trying to keep pigeon alive.")
-	return err
+	// Make sure we flag the cache for refreshing now
+	m.c.invalidate()
+	return nil
 }
 
 func linearFalloffRetry(ctx context.Context, locker sync.Locker, name string, maxRetries int, baseFalloff time.Duration, fn func(context.Context, sync.Locker) error) (err error) {
