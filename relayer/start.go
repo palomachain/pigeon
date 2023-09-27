@@ -57,6 +57,8 @@ func (r *Relayer) startProcess(ctx context.Context, name string, locker sync.Loc
 				err := process(jCtx, locker)
 				if err != nil {
 					liblog.WithContext(jCtx).WithField("component", "procmon").WithField("process", name).WithError(err).Errorf("Failed to execute process: %v", err)
+				} else {
+					liblog.WithContext(jCtx).WithField("component", "procmon").WithField("process", name).Debug("Process executed")
 				}
 			} else {
 				logger.Debug("validor not staking, skipping process execution...")
