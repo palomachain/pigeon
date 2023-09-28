@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"github.com/palomachain/pigeon/chain"
@@ -33,7 +34,7 @@ func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Lock
 			"acc-address":        v.Address,
 			"chain-type":         v.ChainType,
 			"chain-traits":       traits,
-		}).Info("sending account info to paloma")
+		}).Info("adding chain info to payload")
 
 		chainInfos[i] = paloma.ChainInfoIn{
 			ChainReferenceID: v.ChainReferenceID,
@@ -48,9 +49,20 @@ func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Lock
 		return nil
 	}
 
+	if reflect.DeepEqual(chainInfos, r.valCache.lastChainInfoRecord) {
+		logger.Info("Chain infos unchanged, skip sending...")
+		return nil
+	}
+
 	locker.Lock()
 	err := r.palomaClient.AddExternalChainInfo(ctx, chainInfos...)
 	locker.Unlock()
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Updated chain infos record sent, refreshing cache...")
+	r.valCache.lastChainInfoRecord = chainInfos
+	return nil
 }

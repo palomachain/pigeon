@@ -63,25 +63,23 @@ type EvmFactorier interface {
 	) (chain.Processor, error)
 }
 
+type valueCache struct {
+	lastChainInfoRecord []paloma.ChainInfoIn
+}
+
 type Relayer struct {
-	cfg *config.Config
-
-	palomaClient PalomaClienter
-
-	evmFactory EvmFactorier
-	mevClient  mev.Client
-
-	relayerConfig Config
-
-	time utiltime.Time
-
+	palomaClient     PalomaClienter
+	evmFactory       EvmFactorier
+	mevClient        mev.Client
+	time             utiltime.Time
+	cfg              *config.Config
+	procRefreshMutex *sync.RWMutex
+	valCache         *valueCache
+	appVersion       string
 	chainsInfos      []evmtypes.ChainInfo
 	processors       []chain.Processor
-	procRefreshMutex *sync.RWMutex
-
-	staking bool
-
-	appVersion string
+	relayerConfig    Config
+	staking          bool
 }
 
 type Config struct {
@@ -98,6 +96,7 @@ func New(config *config.Config, palomaClient PalomaClienter, evmFactory EvmFacto
 		relayerConfig:    cfg,
 		staking:          false,
 		procRefreshMutex: &sync.RWMutex{},
+		valCache:         &valueCache{},
 	}
 }
 
