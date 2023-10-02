@@ -480,7 +480,14 @@ func gravityQueryLastUnsignedBatch(ctx context.Context, grpcClient grpc.ClientCo
 		return nil, err
 	}
 
-	return batches.Batch, nil
+	filtered := make([]gravity.OutgoingTxBatch, 0, len(batches.Batch))
+	for _, v := range batches.Batch {
+		if v.GetChainReferenceID() == chainReferenceID {
+			filtered = append(filtered, v)
+		}
+	}
+
+	return filtered, nil
 }
 
 func (c Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
