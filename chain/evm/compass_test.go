@@ -259,7 +259,7 @@ func TestMessageProcessing(t *testing.T) {
 		expErr error
 	}{
 		{
-			name: "submit_logic_call/message is already executed then it does nothing",
+			name: "submit_logic_call/message is already executed then it returns an error",
 			msgs: []chain.MessageWithSignatures{
 				{
 					QueuedMessage: chain.QueuedMessage{
@@ -281,6 +281,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				}
 
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
 					fn(isArbitraryCallExecutedLogs)
@@ -293,6 +294,7 @@ func TestMessageProcessing(t *testing.T) {
 
 				return evm, paloma
 			},
+			expErr: ErrCallAlreadyExecuted,
 		},
 		{
 			name: "submit_logic_call/happy path",

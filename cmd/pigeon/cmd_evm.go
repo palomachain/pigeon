@@ -255,7 +255,7 @@ var (
 			countOK, total := 0, 0
 			for _, msg := range msgs {
 				logger = logger.WithField("msg-id", msg.ID)
-				xconsensus := evm.BuildCompassConsensus(ctx, valset, msg.Signatures)
+				xconsensus := evm.BuildCompassConsensus(valset, msg.Signatures)
 				logger.Info("message has ", len(msg.Signatures), " signatures")
 				logger.Info("there are ", len(xconsensus.Valset.Validators), " validators in the valset validator consensus")
 				for i := range xconsensus.Valset.Validators {

@@ -3,7 +3,6 @@ package evm
 import (
 	"context"
 	"errors"
-	goerrors "errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	etherumtypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -33,7 +31,7 @@ const (
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*etherumtypes.Transaction, error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*ethtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 
@@ -50,18 +48,15 @@ type observedHeights struct {
 }
 
 type compass struct {
-	CompassID        string
-	ChainReferenceID string
-
-	compassAbi        *abi.ABI
-	smartContractAddr common.Address
-	paloma            PalomaClienter
-	evm               evmClienter
-
-	startingBlockHeight int64
-
+	paloma                   PalomaClienter
+	evm                      evmClienter
+	compassAbi               *abi.ABI
 	chainID                  *big.Int
+	CompassID                string
+	ChainReferenceID         string
 	lastObservedBlockHeights observedHeights
+	startingBlockHeight      int64
+	smartContractAddr        common.Address
 }
 
 func newCompassClient(
@@ -93,9 +88,9 @@ type Signature struct {
 	S *big.Int
 }
 type CompassValset struct {
+	ValsetId   *big.Int
 	Validators []common.Address
 	Powers     []*big.Int
-	ValsetId   *big.Int
 }
 type CompassConsensus struct {
 	Valset     CompassValset
@@ -105,8 +100,8 @@ type CompassConsensus struct {
 }
 
 type CompassLogicCallArgs struct {
-	LogicContractAddress common.Address
 	Payload              []byte
+	LogicContractAddress common.Address
 }
 
 type CompassTokenSendArgs struct {
@@ -124,46 +119,48 @@ func (t compass) updateValset(
 	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
-	return whoops.TryVal(func() *ethtypes.Transaction {
-		currentValsetID, err := t.findLastValsetMessageID(ctx)
-		whoops.Assert(err)
-		logger := liblog.WithContext(ctx).WithFields(log.Fields{
-			"chain-reference-id": t.ChainReferenceID,
-			"current-valset-id":  currentValsetID,
-		})
-		logger.Debug("update_valset")
-
-		currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, currentValsetID, t.ChainReferenceID)
-		whoops.Assert(err)
-
-		if currentValset == nil {
-			logger.Error("current valset is empty")
-			whoops.Assert(fmt.Errorf("current valset is empty"))
-		}
-
-		consensusReached := isConsensusReached(ctx, currentValset, origMessage)
-		if !consensusReached {
-			logger.Error("no consensus")
-			whoops.Assert(ErrNoConsensus)
-		}
-
-		tx, err := t.callCompass(ctx, false, "update_valset", []any{
-			BuildCompassConsensus(ctx, currentValset, origMessage.Signatures),
-			TransformValsetToCompassValset(newValset),
-		})
-		if err != nil {
-			logger.WithError(err).Error("call_compass error")
-			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
-			if isSmartContractError {
-				logger.Debug("smart contract error. recovering...")
-				return nil
-			}
-			whoops.Assert(err)
-		}
-		logger.Debug("success")
-
-		return tx
+	currentValsetID, err := t.findLastValsetMessageID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
+		"chain-reference-id": t.ChainReferenceID,
+		"current-valset-id":  currentValsetID,
 	})
+	logger.Debug("update_valset")
+
+	currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, currentValsetID, t.ChainReferenceID)
+	if err != nil {
+		return nil, err
+	}
+	if currentValset == nil {
+		logger.Error("current valset is empty")
+		return nil, fmt.Errorf("current valset is empty")
+	}
+
+	consensusReached := isConsensusReached(ctx, currentValset, origMessage)
+	if !consensusReached {
+		return nil, ErrNoConsensus
+	}
+
+	tx, err := t.callCompass(ctx, false, "update_valset", []any{
+		BuildCompassConsensus(currentValset, origMessage.Signatures),
+		TransformValsetToCompassValset(newValset),
+	})
+	if err != nil {
+		logger.WithError(err).Error("call_compass error")
+		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+		if setErr != nil {
+			return nil, setErr
+		}
+		if isSmartContractError {
+			logger.Debug("smart contract error. recovering...")
+			return nil, nil
+		}
+		whoops.Assert(err)
+	}
+
+	return tx, nil
 }
 
 func (t compass) submitLogicCall(
@@ -172,48 +169,64 @@ func (t compass) submitLogicCall(
 	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
-	return whoops.TryVal(func() *ethtypes.Transaction {
-		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
-		whoops.Assert(err)
-		if executed {
-			return nil
-		}
-
-		valsetID, err := t.findLastValsetMessageID(ctx)
-		whoops.Assert(err)
-
-		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
-		whoops.Assert(err)
-
-		consensusReached := isConsensusReached(ctx, valset, origMessage)
-		if !consensusReached {
-			whoops.Assert(ErrNoConsensus)
-		}
-
-		con := BuildCompassConsensus(ctx, valset, origMessage.Signatures)
-		compassArgs := CompassLogicCallArgs{
-			LogicContractAddress: common.HexToAddress(msg.GetHexContractAddress()),
-			Payload:              msg.GetPayload(),
-		}
-
-		args := []any{
-			con,
-			compassArgs,
-			new(big.Int).SetInt64(int64(origMessage.ID)),
-			new(big.Int).SetInt64(msg.GetDeadline()),
-		}
-
-		tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
-		if err != nil {
-			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
-			if isSmartContractError {
-				return nil
-			}
-			whoops.Assert(err)
-		}
-
-		return tx
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
+		"chain-id": t.ChainReferenceID,
+		"msg-id":   origMessage.ID,
 	})
+	logger.Info("submit logic call")
+
+	executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
+	if err != nil {
+		return nil, err
+	}
+	if executed {
+		return nil, ErrCallAlreadyExecuted
+	}
+
+	valsetID, err := t.findLastValsetMessageID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+	if err != nil {
+		return nil, err
+	}
+
+	consensusReached := isConsensusReached(ctx, valset, origMessage)
+	if !consensusReached {
+		return nil, ErrNoConsensus
+	}
+
+	con := BuildCompassConsensus(valset, origMessage.Signatures)
+	compassArgs := CompassLogicCallArgs{
+		LogicContractAddress: common.HexToAddress(msg.GetHexContractAddress()),
+		Payload:              msg.GetPayload(),
+	}
+
+	args := []any{
+		con,
+		compassArgs,
+		new(big.Int).SetInt64(int64(origMessage.ID)),
+		new(big.Int).SetInt64(msg.GetDeadline()),
+	}
+
+	tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
+	if err != nil {
+		logger.WithError(err).Error("uploadSmartContract: error calling DeployContract")
+		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+		if setErr != nil {
+			return nil, setErr
+		}
+		if isSmartContractError {
+			logger.Debug("smart contract error. recovering...")
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return tx, nil
 }
 
 func (t compass) uploadSmartContract(
@@ -222,56 +235,57 @@ func (t compass) uploadSmartContract(
 	msg *evmtypes.UploadSmartContract,
 	origMessage chain.MessageWithSignatures,
 ) (*ethtypes.Transaction, error) {
-	return whoops.TryVal(func() *etherumtypes.Transaction {
-		constructorInput := msg.GetConstructorInput()
-		logger := liblog.WithContext(ctx).WithFields(log.Fields{
-			"chain-id":          t.ChainReferenceID,
-			"constructor-input": constructorInput,
-		})
-		logger.Info("upload smart contract")
-
-		// 0 means to get the latest valset
-		latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
-		if err != nil {
-			logger.WithError(err).Error("uploadSmartContract: error querying valset from Paloma")
-		}
-		whoops.Assert(err)
-
-		consensusReached := isConsensusReached(ctx, latestValset, origMessage)
-		if !consensusReached {
-			whoops.Assert(ErrNoConsensus)
-		}
-
-		_, tx, err := t.evm.DeployContract(
-			ctx,
-			t.chainID,
-			msg.GetAbi(),
-			msg.GetBytecode(),
-			constructorInput,
-		)
-		if err != nil {
-			logger.
-				WithError(err).
-				WithField("input", constructorInput).
-				Error("uploadSmartContract: error calling DeployContract")
-
-			isSmartContractError := whoops.Must(t.SetErrorData(ctx, queueTypeName, origMessage.ID, err))
-			if isSmartContractError {
-				logger.Info("uploadSmartContract: error calling DeployContract was a smart contract error")
-				return nil
-			}
-			whoops.Assert(err)
-		}
-
-		return tx
+	constructorInput := msg.GetConstructorInput()
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
+		"chain-id":          t.ChainReferenceID,
+		"constructor-input": constructorInput,
 	})
+	logger.Info("upload smart contract")
+
+	// 0 means to get the latest valset
+	latestValset, err := t.paloma.QueryGetEVMValsetByID(ctx, 0, t.ChainReferenceID)
+	if err != nil {
+		logger.WithError(err).Error("uploadSmartContract: error querying valset from Paloma")
+		return nil, err
+	}
+
+	consensusReached := isConsensusReached(ctx, latestValset, origMessage)
+	if !consensusReached {
+		return nil, ErrNoConsensus
+	}
+
+	_, tx, err := t.evm.DeployContract(
+		ctx,
+		t.chainID,
+		msg.GetAbi(),
+		msg.GetBytecode(),
+		constructorInput,
+	)
+	if err != nil {
+		logger.
+			WithError(err).
+			WithField("input", constructorInput).
+			Error("uploadSmartContract: error calling DeployContract")
+
+		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+		if setErr != nil {
+			return nil, setErr
+		}
+		if isSmartContractError {
+			logger.Debug("smart contract error. recovering...")
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return tx, nil
 }
 
 func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
 	var jsonRpcErr rpc.DataError
 	if !errors.As(errToProcess, &jsonRpcErr) {
-		err := t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(errToProcess.Error()))
-		return false, err
+		return false, t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(errToProcess.Error()))
 	} else {
 		liblog.WithContext(ctx).WithFields(
 			log.Fields{
@@ -325,7 +339,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	}
 
 	var found bool
-	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
 		for _, ethLog := range logs {
 			event, err := t.compassAbi.Unpack("LogicCallEvent", ethLog.Data)
 			if err != nil {
@@ -373,7 +387,7 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce ui
 	}
 
 	var found bool
-	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []etherumtypes.Log) bool {
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
 		for _, ethLog := range logs {
 			event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
 			if err != nil {
@@ -398,7 +412,6 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce ui
 }
 
 func BuildCompassConsensus(
-	ctx context.Context,
 	v *evmtypes.Valset,
 	signatures []chain.ValidatorSignature,
 ) CompassConsensus {
@@ -521,7 +534,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 					return gErr
 				}
 			}
-		case goerrors.Is(processingErr, ErrNoConsensus):
+		case errors.Is(processingErr, ErrNoConsensus):
 			// Only log
 			logger.Warn(ErrNoConsensus.Error())
 			if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, ErrNoConsensus.Error()); err != nil {
@@ -606,6 +619,9 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	var events []chain.BatchSendEvent
 
 	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
 
 	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
 	if err != nil {
@@ -667,6 +683,9 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 	var events []chain.SendToPalomaEvent
 
 	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
 
 	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
 	if err != nil {
@@ -844,10 +863,7 @@ func isConsensusReached(ctx context.Context, val *evmtypes.Valset, msg chain.Sig
 			"i": i,
 		}).Debug("good consensus")
 	}
-	if s >= powerThreshold {
-		return true
-	}
-	return false
+	return s >= powerThreshold
 }
 
 func (c compass) callCompass(
@@ -855,7 +871,7 @@ func (c compass) callCompass(
 	useMevRelay bool,
 	method string,
 	arguments []any,
-) (*etherumtypes.Transaction, error) {
+) (*ethtypes.Transaction, error) {
 	if c.compassAbi == nil {
 		return nil, ErrABINotInitialized
 	}
@@ -889,7 +905,7 @@ func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.Gravit
 		switch {
 		case processingErr == nil:
 			// do nothing.  claiming happens in a different goroutine
-		case goerrors.Is(processingErr, ErrNoConsensus):
+		case errors.Is(processingErr, ErrNoConsensus):
 			// does nothing
 		default:
 			logger.WithError(processingErr).Error("relay error")
@@ -922,7 +938,7 @@ func (t compass) gravityRelayBatch(
 			whoops.Assert(ErrNoConsensus)
 		}
 
-		con := BuildCompassConsensus(ctx, valset, batch.Signatures)
+		con := BuildCompassConsensus(valset, batch.Signatures)
 
 		receivers := make([]common.Address, len(batch.Transactions))
 		amounts := make([]*big.Int, len(batch.Transactions))
