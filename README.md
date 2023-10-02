@@ -165,8 +165,8 @@ paloma:
   keyring-type: os
   signing-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
-  gas-adjustment: 1.5
-  gas-prices: 0.001ugrain
+  gas-adjustment: 3.0
+  gas-prices: 0.01ugrain
   account-prefix: paloma
 
 evm:
