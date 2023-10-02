@@ -11,7 +11,7 @@ require (
 	github.com/go-resty/resty/v2 v2.9.1
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.12.1
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.28.0
 	github.com/palomachain/paloma v1.8.2
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
