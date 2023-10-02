@@ -13,7 +13,8 @@ const (
 
 	ErrEvm = whoops.String("EVM related error")
 
-	ErrNoConsensus = whoops.String("no consensus reached")
+	ErrNoConsensus         = whoops.String("no consensus reached")
+	ErrCallAlreadyExecuted = whoops.String("message with identical ID already on target chain")
 
 	ErrCouldntFindBlockWithTime = whoops.String("couldn't find block")
 )
