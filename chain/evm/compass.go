@@ -310,7 +310,7 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 	id, err := t.evm.LastValsetID(ctx, t.smartContractAddr)
 	if err != nil {
 		logger.WithError(err).WithField("addr", t.smartContractAddr.String()).Error("error getting LastValsetID")
-		return 0, fmt.Errorf("error getting LastValsetID")
+		return 0, fmt.Errorf("error getting LastValsetID: %w", err)
 	}
 
 	return id.Uint64(), nil
