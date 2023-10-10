@@ -10,7 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/go-resty/resty/v2 v2.9.1
 	github.com/jarcoal/httpmock v1.3.1
-	github.com/onsi/ginkgo/v2 v2.12.1
+	github.com/onsi/ginkgo/v2 v2.13.0
 	github.com/onsi/gomega v1.28.0
 	github.com/palomachain/paloma v1.8.2
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
