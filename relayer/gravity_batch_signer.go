@@ -27,7 +27,7 @@ func (r *Relayer) GravitySignBatches(ctx context.Context, locker sync.Locker) er
 	err = r.gravitySignBatches(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) gravitySignBatches(ctx context.Context, processors []chain.Processor) error {

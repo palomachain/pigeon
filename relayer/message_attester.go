@@ -28,7 +28,7 @@ func (r *Relayer) AttestMessages(ctx context.Context, locker sync.Locker) error 
 	err = r.attestMessages(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Processor) error {
