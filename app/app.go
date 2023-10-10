@@ -67,7 +67,7 @@ func Relayer() *relayer.Relayer {
 			Time(),
 			relayer.Config{
 				KeepAliveLoopTimeout:    5 * gotime.Second,
-				KeepAliveBlockThreshold: 30,
+				KeepAliveBlockThreshold: 600, // Approximately 15 minutes at 1.62 blocks per second
 			},
 		)
 	}
