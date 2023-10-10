@@ -26,7 +26,7 @@ func (r *Relayer) RelayMessages(ctx context.Context, locker sync.Locker) error {
 	err = r.relayMessages(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processor) error {

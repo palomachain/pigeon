@@ -27,7 +27,7 @@ func (r *Relayer) SignMessages(ctx context.Context, locker sync.Locker) error {
 	err = r.signMessages(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor) error {

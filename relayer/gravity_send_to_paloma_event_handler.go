@@ -27,7 +27,7 @@ func (r *Relayer) GravityHandleSendToPalomaEvent(ctx context.Context, locker syn
 	err = r.handleSendToPalomaEvents(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) handleSendToPalomaEvents(ctx context.Context, processors []chain.Processor) error {
