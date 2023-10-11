@@ -57,6 +57,7 @@ type compass struct {
 	lastObservedBlockHeights observedHeights
 	startingBlockHeight      int64
 	smartContractAddr        common.Address
+	lastSmartContractTxHash  []byte // hack, remove after proper support for ERC20 ownership transfer
 }
 
 func newCompassClient(
@@ -472,6 +473,24 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		logger.Debug("processing")
 
 		switch action := msg.GetAction().(type) {
+		case *evmtypes.Message_TransferERC20Ownership:
+			logger := logger.WithFields(log.Fields{
+				"chain-reference-id":     t.ChainReferenceID,
+				"msg-id":                 rawMsg.ID,
+				"msg-bytes-to-sign":      rawMsg.BytesToSign,
+				"msg-msg":                rawMsg.Msg,
+				"msg-nonce":              rawMsg.Nonce,
+				"msg-public-access-data": rawMsg.PublicAccessData,
+				"message-type":           "Message_TransferERC20Ownership",
+				"new-compass-address":    string(action.TransferERC20Ownership.NewCompassAddress),
+				"last-tx-hash":           t.lastSmartContractTxHash,
+			})
+			logger.Info("Processing erc20 transfer ownership message")
+			if err := t.paloma.SetPublicAccessData(ctx, queueTypeName, rawMsg.ID, t.lastSmartContractTxHash); err != nil {
+				gErr.Add(err)
+				return gErr
+			}
+			return nil
 		case *evmtypes.Message_SubmitLogicCall:
 			tx, processingErr = t.submitLogicCall(
 				ctx,
@@ -515,6 +534,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				action.UploadSmartContract,
 				rawMsg,
 			)
+			t.lastSmartContractTxHash = tx.Hash().Bytes()
 		default:
 			return ErrUnsupportedMessageType.Format(action)
 		}
