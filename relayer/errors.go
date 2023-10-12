@@ -6,7 +6,7 @@ import (
 
 	"github.com/VolumeFi/whoops"
 	"github.com/palomachain/pigeon/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/palomachain/pigeon/internal/liblog"
 )
 
 var (
@@ -20,31 +20,22 @@ var (
 	ErrValidatorIsNotStaking = whoops.String("validator is not staking")
 )
 
-func handleProcessError(err error) error {
-	switch {
-	case err == nil:
-		// success
-		return nil
-	case goerrors.Is(err, context.Canceled):
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Debug("exited from the process loop due the context being canceled")
-		return nil
-	case goerrors.Is(err, context.DeadlineExceeded):
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Debug("exited from the process loop due the context deadline being exceeded")
-		return nil
-	case errors.IsUnrecoverable(err):
-		// there is no way that we can recover from this
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("unrecoverable error returned")
+func handleProcessError(ctx context.Context, err error) error {
+	if err == nil {
 		return err
-	default:
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Error("error returned in process loop")
+	}
+
+	logger := liblog.WithContext(ctx)
+	if goerrors.Is(err, context.Canceled) || goerrors.Is(err, context.DeadlineExceeded) {
+		logger.WithError(err).Warn("exicted from the loop because of context error")
 		return nil
 	}
+
+	if errors.IsUnrecoverable(err) {
+		logger.WithError(err).Error("unrecoverable error returned")
+		return err
+	}
+
+	logger.WithError(err).Error("error returned in process loop")
+	return nil
 }

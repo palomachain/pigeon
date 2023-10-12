@@ -27,7 +27,7 @@ func (r *Relayer) GravityRelayBatches(ctx context.Context, locker sync.Locker) e
 	err = r.gravityRelayBatches(ctx, r.processors)
 	locker.Unlock()
 
-	return handleProcessError(err)
+	return handleProcessError(ctx, err)
 }
 
 func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Processor) error {
