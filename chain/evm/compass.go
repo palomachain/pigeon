@@ -537,7 +537,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				action.UploadSmartContract,
 				rawMsg,
 			)
-			lastTxHashLkup[t.ChainReferenceID] = tx.Hash().Bytes()
+			if tx != nil {
+				lastTxHashLkup[t.ChainReferenceID] = tx.Hash().Bytes()
+			}
 		default:
 			return ErrUnsupportedMessageType.Format(action)
 		}
