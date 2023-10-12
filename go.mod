@@ -12,7 +12,7 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.12.1
 	github.com/onsi/gomega v1.28.0
-	github.com/palomachain/paloma v1.8.2
+	github.com/palomachain/paloma v1.9.1
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
@@ -201,9 +201,8 @@ require (
 )
 
 replace (
-	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
 	// Link to op-geth, which is built on top of go-ethereum
-	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20231004172440-448a25d361ec
+	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
 	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
 	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
 )
