@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensustypes "github.com/palomachain/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
@@ -174,6 +175,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgAddEvidence{},
 					&consensustypes.MsgSetPublicAccessData{},
 					&consensustypes.MsgSetErrorData{},
+					&palomatypes.MsgAddStatusUpdate{},
 				},
 			},
 			{
@@ -184,6 +186,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&evmtypes.SmartContractExecutionErrorProof{},
 					&evmtypes.ValidatorBalancesAttestation{},
 					&evmtypes.ValidatorBalancesAttestationRes{},
+					&evmtypes.TransferERC20Ownership{},
 				},
 			},
 		},
