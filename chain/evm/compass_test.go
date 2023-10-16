@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/palomachain/paloma/x/evm/types"
+	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
 	"github.com/palomachain/pigeon/internal/queue"
@@ -334,6 +336,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
@@ -356,6 +359,52 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
+		},
+		{
+			name: "submit_logic_call/with target chain valset id not matching expected valset id, it should return an error",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
+					fn := args.Get(3).(func([]etherumtypes.Log) bool)
+					fn([]etherumtypes.Log{})
+				})
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(56)}, nil)
+				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return evm, paloma
+			},
+			expErr: fmt.Errorf("target chain valset mismatch, expected %d, got %v", 56, 55),
 		},
 		{
 			name: "submit_logic_call/happy path with mev relaying",
@@ -398,6 +447,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
@@ -464,6 +514,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
@@ -802,7 +853,11 @@ func TestMessageProcessing(t *testing.T) {
 			)
 
 			err := comp.processMessages(ctx, "queue-name", tt.msgs)
-			require.ErrorIs(t, err, tt.expErr)
+			if tt.expErr != nil {
+				require.ErrorContains(t, err, tt.expErr.Error())
+			} else {
+				require.ErrorIs(t, err, tt.expErr)
+			}
 		})
 	}
 }

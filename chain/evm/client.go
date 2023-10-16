@@ -31,6 +31,7 @@ import (
 	"github.com/palomachain/paloma/x/evm/types"
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
+	valset "github.com/palomachain/paloma/x/valset/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
@@ -111,6 +112,7 @@ type PalomaClienter interface {
 	SendSendToPalomaClaim(ctx context.Context, claim gravitytypes.MsgSendToPalomaClaim) error
 	QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error)
 	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravitytypes.OutgoingTxBatch, error)
+	QueryGetLatestPublishedSnapshot(ctx context.Context, chainReferenceID string) (*valset.Snapshot, error)
 }
 
 type Client struct {
@@ -684,16 +686,12 @@ func (c *Client) FindCurrentBlockNumber(ctx context.Context) (*big.Int, error) {
 }
 
 func (c *Client) LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error) {
-	log.
-		WithField("address", addr.String()).
-		Debug("called LastValsetID in EVM client")
+	logger := liblog.WithContext(ctx).WithField("address", addr.String())
+	logger.Debug("called LastValsetID in EVM client")
 
 	cmps, err := c.newCompass(addr)
 	if err != nil {
-		log.
-			WithField("error", err.Error()).
-			WithField("address", addr.String()).
-			Error("LastValsetID: error instantiating compass")
+		logger.WithError(err).Error("LastValsetID: error instantiating compass")
 		return nil, fmt.Errorf("error instantiating compass binding: %w", err)
 	}
 
