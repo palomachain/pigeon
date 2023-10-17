@@ -263,6 +263,18 @@ func (c Client) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Sn
 	return snapshotRes.Snapshot, nil
 }
 
+func (c Client) QueryGetLatestPublishedSnapshot(ctx context.Context, chainReferenceID string) (*valset.Snapshot, error) {
+	qc := valset.NewQueryClient(c.GRPCClient)
+	res, err := qc.GetLatestPublishedSnapshot(ctx, &valset.QueryGetLatestPublishedSnapshotRequest{
+		ChainReferenceID: chainReferenceID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Snapshot, nil
+}
+
 func (c Client) BlockHeight(ctx context.Context) (int64, error) {
 	res, err := c.L.RPCClient.Status(ctx)
 	if err != nil {

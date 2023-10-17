@@ -190,6 +190,17 @@ func (t compass) submitLogicCall(
 		return nil, err
 	}
 
+	logger = logger.WithField("last-valset-id", valsetID)
+	expectedValset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, t.ChainReferenceID)
+	if err != nil {
+		return nil, err
+	}
+	if valsetID != expectedValset.Id {
+		err := fmt.Errorf("target chain valset mismatch, expected %d, got %v", expectedValset.Id, valsetID)
+		logger.WithError(err).Error("Target chain valset mismatch!")
+		return nil, err
+	}
+
 	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 	if err != nil {
 		return nil, err
@@ -213,6 +224,7 @@ func (t compass) submitLogicCall(
 		new(big.Int).SetInt64(msg.GetDeadline()),
 	}
 
+	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
 	tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
 	if err != nil {
 		logger.WithError(err).Error("uploadSmartContract: error calling DeployContract")
@@ -315,6 +327,7 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 		return 0, fmt.Errorf("error getting LastValsetID: %w", err)
 	}
 
+	logger.WithField("last-valset-id", id).Debug("fetching last valset message id: done!")
 	return id.Uint64(), nil
 }
 
