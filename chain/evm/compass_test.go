@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"math/big"
 	"os"
 	"strings"
@@ -361,7 +360,7 @@ func TestMessageProcessing(t *testing.T) {
 			},
 		},
 		{
-			name: "submit_logic_call/with target chain valset id not matching expected valset id, it should return an error",
+			name: "submit_logic_call/with target chain valset id not matching expected valset id, it should NOT return an error, but report log to Paloma",
 			msgs: []chain.MessageWithSignatures{
 				{
 					QueuedMessage: chain.QueuedMessage{
@@ -404,7 +403,6 @@ func TestMessageProcessing(t *testing.T) {
 				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return evm, paloma
 			},
-			expErr: fmt.Errorf("target chain valset mismatch, expected %d, got %v", 56, 55),
 		},
 		{
 			name: "submit_logic_call/happy path with mev relaying",

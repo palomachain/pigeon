@@ -197,8 +197,11 @@ func (t compass) submitLogicCall(
 	}
 	if valsetID != expectedValset.Id {
 		err := fmt.Errorf("target chain valset mismatch, expected %d, got %v", expectedValset.Id, valsetID)
-		logger.WithError(err).Error("Target chain valset mismatch!")
-		return nil, err
+		logger.WithError(err).Error("Target chain valset mismatch! Swallowing error so message will be retried...")
+		if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, err.Error()); err != nil {
+			logger.WithError(err).Error("Failed to send log to Paloma.")
+		}
+		return nil, nil
 	}
 
 	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
