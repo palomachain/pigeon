@@ -380,10 +380,14 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 }
 
 func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
+	logger := liblog.WithContext(ctx).WithField("component", "gravity-is-batch-already-relayed").WithField("batch-nonce", batchNonce)
+	logger.Debug("querying block number")
 	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
 	if err != nil {
 		return false, err
 	}
+
+	logger.WithField("block-number", blockNumber).Debug("got block number")
 	fromBlock := *big.NewInt(0)
 	fromBlock.Sub(blockNumber, big.NewInt(9999))
 	filter := ethereum.FilterQuery{
@@ -398,21 +402,32 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce ui
 		FromBlock: &fromBlock,
 	}
 
+	logger.Debug("Filtering logs...")
 	var found bool
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
-		for _, ethLog := range logs {
+		logger.Debug(fmt.Sprintf("found %d logs", len(logs)))
+		for i, ethLog := range logs {
+			logger.
+				WithField("log-number", i).
+				WithField("tx-hash", ethLog.TxHash.Hex()).
+				WithField("block-number", ethLog.BlockNumber).
+				Debug("Checking log")
 			event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
 			if err != nil {
+				logger.WithError(err).Debug("failed to unpack event")
 				found = true
 			}
 
 			logBatchNonce, ok := event[1].(*big.Int)
 			if !ok {
+				logger.Debug("failed to parse log batch nonce")
 				found = true
 			}
+			logger.WithField("log-batch-nonce", logBatchNonce.Uint64()).Debug("Found nonce")
 			found = batchNonce == logBatchNonce.Uint64()
 		}
 
+		logger.WithField("found", found).Debug("Returning...")
 		return found
 	})
 
