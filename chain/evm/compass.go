@@ -28,6 +28,8 @@ const (
 	SignedMessagePrefix = "\x19Ethereum Signed Message:\n32"
 )
 
+var errValsetIDMismatch = errors.New("valset id mismatch")
+
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
@@ -185,23 +187,15 @@ func (t compass) submitLogicCall(
 		return nil, ErrCallAlreadyExecuted
 	}
 
-	valsetID, err := t.findLastValsetMessageID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
 	logger = logger.WithField("last-valset-id", valsetID)
-	expectedValset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, t.ChainReferenceID)
 	if err != nil {
-		return nil, err
-	}
-	if valsetID != expectedValset.Id {
-		err := fmt.Errorf("target chain valset mismatch, expected %d, got %v", expectedValset.Id, valsetID)
-		logger.WithError(err).Error("Target chain valset mismatch! Swallowing error so message will be retried...")
-		if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, err.Error()); err != nil {
-			logger.WithError(err).Error("Failed to send log to Paloma.")
+		if errors.Is(err, errValsetIDMismatch) {
+			logger.Warn("Valset ID mismatch. Swallowing error to retry message...")
+			return nil, nil
 		}
-		return nil, nil
+
+		return nil, err
 	}
 
 	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
@@ -962,14 +956,26 @@ func (t compass) gravityRelayBatch(
 	batch chain.GravityBatchWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
+		logger := liblog.WithContext(ctx).
+			WithField("component", "gravity-relay-batch").
+			WithField("gravity-batch-nonce", batch.BatchNonce).
+			WithField("chain-reference-id", batch.ChainReferenceId)
 		executed, err := t.gravityIsBatchAlreadyRelayed(ctx, batch.BatchNonce)
 		whoops.Assert(err)
 		if executed {
+			logger.Warn("gravity batch already executed!")
 			return nil
 		}
 
-		valsetID, err := t.findLastValsetMessageID(ctx)
-		whoops.Assert(err)
+		valsetID, err := t.performValsetIDCrosscheck(ctx, batch.ChainReferenceId)
+		if err != nil {
+			if errors.Is(err, errValsetIDMismatch) {
+				logger.Warn("Valset ID mismatch. Swallowing error to retry message...")
+				return nil
+			}
+
+			whoops.Assert(err)
+		}
 
 		valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 		whoops.Assert(err)
@@ -1007,9 +1013,39 @@ func (t compass) gravityRelayBatch(
 			},
 		)
 		if err != nil {
-			liblog.WithContext(ctx).WithError(err).Error("failed to relay batch")
+			logger.WithError(err).Error("failed to relay batch")
+			whoops.Assert(err)
 		}
 
 		return tx
 	})
+}
+
+// performValsetIDCrosscheck fetches the latest valset ID from the target chain
+// as well as the expected valset ID stored on Paloma for the given target chain.
+// In case of a mismatch, an error is logged to Paloma and errValsetIDMismatch is returned.
+func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID string) (uint64, error) {
+	logger := liblog.WithContext(ctx).WithField("chain-reference-id", chainReferenceID)
+	valsetID, err := t.findLastValsetMessageID(ctx)
+	if err != nil {
+		logger.WithError(err).Error("Failed to get last valset ID from target chain.")
+		return 0, err
+	}
+
+	expectedValset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, chainReferenceID)
+	if err != nil {
+		logger.WithError(err).Error("Failed to get expected valset ID from paloma.")
+		return 0, err
+	}
+
+	if valsetID != expectedValset.Id {
+		err := fmt.Errorf("target chain valset mismatch, expected %d, got %v", expectedValset.Id, valsetID)
+		logger.WithError(err).Error("Target chain valset mismatch!")
+		if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, err.Error()); err != nil {
+			logger.WithError(err).Error("Failed to send log to Paloma.")
+		}
+		return 0, errValsetIDMismatch
+	}
+
+	return valsetID, nil
 }
