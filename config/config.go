@@ -35,6 +35,7 @@ type ChainClientConfig struct {
 	SigningKey         string   `yaml:"signing-key"`
 	KeyringDirectory   Filepath `yaml:"keyring-dir"`
 	CallTimeout        string   `yaml:"call-timeout"`
+	SigningKeys        []string `yaml:"signing-keys"`
 	GasAdjustment      float64  `yaml:"gas-adjustment"`
 }
 

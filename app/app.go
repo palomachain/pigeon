@@ -20,6 +20,7 @@ import (
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/relayer"
+	"github.com/palomachain/pigeon/util/rotator"
 	"github.com/palomachain/pigeon/util/time"
 	log "github.com/sirupsen/logrus"
 	"github.com/strangelove-ventures/lens/byop"
@@ -118,6 +119,12 @@ func Config() *config.Config {
 				"err": err,
 			}).Fatal("couldn't read config file")
 		}
+
+		if len(cnf.Paloma.SigningKeys) < 1 {
+			log.Info("No signing key collection provided, falling back to legacy signing key")
+			cnf.Paloma.SigningKeys = []string{cnf.Paloma.SigningKey}
+		}
+
 		_config = cnf
 	}
 
@@ -140,10 +147,17 @@ func PalomaClient() *paloma.Client {
 			os.Stdout,
 		))
 
+		// It's important to pass the lens config as pointer throughout the codebase for this to work!
+		fn := func(s string) {
+			log.Info("new lens key", "lens-key", s)
+			lensConfig.Key = s
+		}
+		r := rotator.New(fn, palomaConfig.SigningKeys...)
+
 		_palomaClient = &paloma.Client{
 			L:             lensClient,
 			GRPCClient:    paloma.GRPCClientDowner{W: lensClient},
-			MessageSender: paloma.MessageSenderDowner{W: lensClient},
+			MessageSender: paloma.MessageSenderDowner{W: lensClient, R: r},
 			PalomaConfig:  palomaConfig,
 		}
 		_palomaClient.Init()
@@ -211,7 +225,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 	})
 
 	return &lens.ChainClientConfig{
-		Key:            palomaConfig.SigningKey,
+		Key:            palomaConfig.SigningKeys[0],
 		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),

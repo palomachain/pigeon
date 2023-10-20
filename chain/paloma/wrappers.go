@@ -6,7 +6,7 @@ import (
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
-	log "github.com/sirupsen/logrus"
+	"github.com/palomachain/pigeon/internal/liblog"
 	ggrpc "google.golang.org/grpc"
 )
 
@@ -18,7 +18,12 @@ type GRPCClientDowner struct {
 	W grpc.ClientConn
 }
 
+type KeyRotator interface {
+	RotateKeys(context.Context)
+}
+
 type MessageSenderDowner struct {
+	R KeyRotator
 	W MessageSender
 }
 
@@ -41,9 +46,13 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 }
 
 func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	log.Debug("Sending Msg: ", msg)
-	res, err := m.W.SendMsg(ctx, msg, memo)
+	logger := liblog.WithContext(ctx).WithField("component", "message-sender").WithField("msg", msg)
+	logger.Debug("Sending Msg")
 
+	// TODO: use lock
+	m.R.RotateKeys(ctx)
+
+	res, err := m.W.SendMsg(ctx, msg, memo)
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)
 	}

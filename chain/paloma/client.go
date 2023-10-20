@@ -647,7 +647,9 @@ func (c Client) GetCreator() string {
 }
 
 func getMainAddress(c Client) sdk.Address {
-	key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
+	// TODO: Is this okay?
+	// key, err := c.Keyring().Key(c.L.ChainClient.Config.Key)
+	key, err := c.Keyring().Key(c.PalomaConfig.SigningKey)
 	if err != nil {
 		panic(err)
 	}
