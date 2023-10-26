@@ -133,13 +133,16 @@ func Config() *config.Config {
 
 func PalomaClient() *paloma.Client {
 	if _palomaClient == nil {
+		log.Info("cfg loading...")
 		palomaConfig := Config().Paloma
 
+		log.Info("client cfg loading...")
 		clientCfg := palomaClientConfig(palomaConfig)
 
 		// HACK: \n is added at the end of a password because github.com/cosmos/cosmos-sdk@v0.45.1/client/input/input.go at line 93 would return an EOF error which then would fail
 		// Should be fixed with https://github.com/cosmos/cosmos-sdk/pull/11796
 		passInput := strings.NewReader(config.KeyringPassword(palomaConfig.KeyringPassEnvName) + "\n")
+		log.Info("ion client construction...")
 		ionClient := whoops.Must(ion.NewClient(
 			clientCfg,
 			passInput,
@@ -155,6 +158,7 @@ func PalomaClient() *paloma.Client {
 
 		grpcWrapper := paloma.GRPCClientWrapper{W: ionClient}
 		senderWrapper := paloma.PalomaMessageSender{W: ionClient, R: r}
+		log.Info("new client...")
 		_palomaClient = paloma.NewClient(palomaConfig, grpcWrapper, ionClient, senderWrapper, ionClient)
 	}
 	return _palomaClient

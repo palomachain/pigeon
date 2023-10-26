@@ -14,6 +14,8 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	"github.com/palomachain/pigeon/internal/liblog"
+	log "github.com/sirupsen/logrus"
 )
 
 // queryBalanceWithAddress returns the amount of coins in the relayer account with address as input
@@ -31,7 +33,17 @@ func (cc *Client) queryBalanceWithAddress(ctx context.Context, address string) (
 }
 
 func (cc *Client) Status(ctx context.Context) (*ctypes.ResultStatus, error) {
-	return cc.RPCClient.Status(ctx)
+	log.Info("Client: Status")
+	status, err := cc.RPCClient.Status(ctx)
+	if err != nil {
+		log.WithField("err", err).Error("Nope")
+		liblog.WithContext(ctx).WithError(err).Error("Nope")
+		return nil, err
+	}
+
+	log.WithField("status", status).Info("Client: Status")
+	liblog.WithContext(ctx).WithField("status", status).Info("Client: Status")
+	return status, nil
 }
 
 func (cc *Client) queryLatestHeight(ctx context.Context) (int64, error) {

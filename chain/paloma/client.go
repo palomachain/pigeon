@@ -16,7 +16,9 @@ import (
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/config"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
+	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -62,9 +64,12 @@ func NewClient(cfg config.Paloma, grpcWrapper grpc.ClientConn, ion IonClient, se
 }
 
 func (c *Client) init() *Client {
-	c.creator = getCreator(*c)
-	c.creatorValoper = getCreatorAsValoper(*c)
-	c.valAddr = sdk.ValAddress(getMainAddress(*c).Bytes())
+	log.Info("paloma client: init")
+	c.creator = getCreator(c)
+	log.Info("paloma client: get as valoper")
+	c.creatorValoper = getCreatorAsValoper(c)
+	log.Info("paloma client: get val address")
+	c.valAddr = sdk.ValAddress(getMainAddress(c).Bytes())
 	return c
 }
 
@@ -203,6 +208,7 @@ func (c *Client) KeepValidatorAlive(ctx context.Context, appVersion string) erro
 }
 
 func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
+	liblog.WithContext(ctx).Info("STATUS")
 	res, err := c.Ion.Status(ctx)
 	if err != nil {
 		return nil, err
@@ -212,6 +218,7 @@ func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
 }
 
 func (c *Client) PalomaStatus(ctx context.Context) error {
+	liblog.WithContext(ctx).Info("PALOMA STATUS")
 	res, err := c.Status(ctx)
 
 	if IsPalomaDown(err) {
@@ -280,7 +287,7 @@ func (c *Client) GetCreator() string {
 	return c.creator
 }
 
-func getMainAddress(c Client) sdk.Address {
+func getMainAddress(c *Client) sdk.Address {
 	key, err := c.Keyring().Key(c.PalomaConfig.SigningKey)
 	if err != nil {
 		panic(err)
@@ -293,15 +300,15 @@ func getMainAddress(c Client) sdk.Address {
 }
 
 // TODO: CLEAN THIS UP???
-func getCreator(c Client) string {
+func getCreator(c *Client) string {
 	return c.addressString(getMainAddress(c))
 }
 
-func getCreatorAsValoper(c Client) string {
+func getCreatorAsValoper(c *Client) string {
 	return c.addressString(sdk.ValAddress(getMainAddress(c).Bytes()))
 }
 
 func (c Client) addressString(val sdk.Address) string {
-	defer c.Ion.SetSDKContext()
+	defer (c.Ion.SetSDKContext())()
 	return val.String()
 }

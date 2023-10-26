@@ -45,7 +45,9 @@ var startCmd = &cobra.Command{
 
 		// wait for paloma to get online
 		waitCtx, cancelFnc := context.WithTimeout(ctx, 2*time.Minute)
+		log.Info("Waiting for paloma")
 		err := health.WaitForPaloma(waitCtx, app.PalomaClient())
+		log.Info("Done waiting for paloma")
 		cancelFnc()
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			log.WithError(err).Fatal("exiting as paloma was not detected to be running")

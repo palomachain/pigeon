@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -66,20 +67,26 @@ func NewClient(cfg *ChainClientConfig, input io.Reader, output io.Writer, kro ..
 
 func (c *Client) init() (*Client, error) {
 	// TODO: test key directory and return error if not created
+	log.Info("lens init")
 	keybase, err := keyring.New(c.Config.ChainID, c.Config.KeyringBackend, c.Config.KeyDirectory, c.Input, c.Codec.Marshaler, c.KeyringOptions...)
 	if err != nil {
+		log.WithField("err", err).Error("keybase new keyring error")
 		return nil, err
 	}
 	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
 
 	timeout, _ := time.ParseDuration(c.Config.Timeout)
+	log.Info("lens init: rpc client")
 	rpcClient, err := NewRPCClient(c.Config.RPCAddr, timeout)
 	if err != nil {
+		log.WithField("err", err).Error("keybase new keyring error")
 		return nil, err
 	}
 
+	log.Info("lens init: light provider")
 	lightprovider, err := prov.New(c.Config.ChainID, c.Config.RPCAddr)
 	if err != nil {
+		log.WithField("err", err).Error("failed to load light provider")
 		return nil, err
 	}
 
@@ -87,6 +94,7 @@ func (c *Client) init() (*Client, error) {
 	c.LightProvider = lightprovider
 	c.Keybase = keybase
 
+	log.Info("lens init: return")
 	return c, nil
 }
 

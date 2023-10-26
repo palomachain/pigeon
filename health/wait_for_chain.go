@@ -21,6 +21,7 @@ func WaitForPaloma(ctx context.Context, ps PalomaStatuser) error {
 	ch := channels.FanIn(t.C, t1)
 
 	for {
+		log.Info("Wait for paloma")
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
