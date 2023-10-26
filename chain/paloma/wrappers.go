@@ -10,11 +10,11 @@ import (
 	ggrpc "google.golang.org/grpc"
 )
 
-var _ grpc.ClientConn = GRPCClientDowner{}
+var _ grpc.ClientConn = GRPCClientWrapper{}
 
-var _ MessageSender = MessageSenderDowner{}
+var _ MessageSender = PalomaMessageSender{}
 
-type GRPCClientDowner struct {
+type GRPCClientWrapper struct {
 	W grpc.ClientConn
 }
 
@@ -22,12 +22,12 @@ type KeyRotator interface {
 	RotateKeys(context.Context)
 }
 
-type MessageSenderDowner struct {
+type PalomaMessageSender struct {
 	R KeyRotator
 	W MessageSender
 }
 
-func (g GRPCClientDowner) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...ggrpc.CallOption) error {
+func (g GRPCClientWrapper) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...ggrpc.CallOption) error {
 	err := g.W.Invoke(ctx, method, args, reply, opts...)
 	if IsPalomaDown(err) {
 		return whoops.Wrap(ErrPalomaIsDown, err)
@@ -35,7 +35,7 @@ func (g GRPCClientDowner) Invoke(ctx context.Context, method string, args, reply
 	return err
 }
 
-func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc, method string, opts ...ggrpc.CallOption) (ggrpc.ClientStream, error) {
+func (g GRPCClientWrapper) NewStream(ctx context.Context, desc *ggrpc.StreamDesc, method string, opts ...ggrpc.CallOption) (ggrpc.ClientStream, error) {
 	stream, err := g.W.NewStream(ctx, desc, method, opts...)
 
 	if IsPalomaDown(err) {
@@ -45,7 +45,7 @@ func (g GRPCClientDowner) NewStream(ctx context.Context, desc *ggrpc.StreamDesc,
 	return stream, err
 }
 
-func (m MessageSenderDowner) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	logger := liblog.WithContext(ctx).WithField("component", "message-sender").WithField("msg", msg)
 	logger.Debug("Sending Msg")
 

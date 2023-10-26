@@ -14,12 +14,12 @@ import (
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
-	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/relayer"
+	"github.com/palomachain/pigeon/util/ion"
 	"github.com/palomachain/pigeon/util/rotator"
 	"github.com/palomachain/pigeon/util/time"
 	log "github.com/sirupsen/logrus"
@@ -65,7 +65,7 @@ func Relayer() *relayer.Relayer {
 	if _relayer == nil {
 		_relayer = relayer.New(
 			Config(),
-			*PalomaClient(),
+			PalomaClient(),
 			EvmFactory(),
 			Time(),
 			relayer.Config{
@@ -135,14 +135,13 @@ func PalomaClient() *paloma.Client {
 	if _palomaClient == nil {
 		palomaConfig := Config().Paloma
 
-		lensConfig := palomaLensClientConfig(palomaConfig)
+		clientCfg := palomaClientConfig(palomaConfig)
 
 		// HACK: \n is added at the end of a password because github.com/cosmos/cosmos-sdk@v0.45.1/client/input/input.go at line 93 would return an EOF error which then would fail
 		// Should be fixed with https://github.com/cosmos/cosmos-sdk/pull/11796
 		passInput := strings.NewReader(config.KeyringPassword(palomaConfig.KeyringPassEnvName) + "\n")
-
-		lensClient := whoops.Must(chain.NewChainClient(
-			lensConfig,
+		ionClient := whoops.Must(ion.NewClient(
+			clientCfg,
 			passInput,
 			os.Stdout,
 		))
@@ -150,17 +149,13 @@ func PalomaClient() *paloma.Client {
 		// It's important to pass the lens config as pointer throughout the codebase for this to work!
 		fn := func(s string) {
 			log.Info("new lens key", "lens-key", s)
-			lensConfig.Key = s
+			clientCfg.Key = s
 		}
 		r := rotator.New(fn, palomaConfig.SigningKeys...)
 
-		_palomaClient = &paloma.Client{
-			L:             lensClient,
-			GRPCClient:    paloma.GRPCClientDowner{W: lensClient},
-			MessageSender: paloma.MessageSenderDowner{W: lensClient, R: r},
-			PalomaConfig:  palomaConfig,
-		}
-		_palomaClient.Init()
+		grpcWrapper := paloma.GRPCClientWrapper{W: ionClient}
+		senderWrapper := paloma.PalomaMessageSender{W: ionClient, R: r}
+		_palomaClient = paloma.NewClient(palomaConfig, grpcWrapper, ionClient, senderWrapper, ionClient)
 	}
 	return _palomaClient
 }
@@ -173,7 +168,7 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 	return proposedVal
 }
 
-func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig {
+func palomaClientConfig(palomaConfig config.Paloma) *ion.ChainClientConfig {
 	modules := lens.ModuleBasics[:]
 
 	modules = append(modules, byop.Module{
@@ -186,7 +181,6 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgAddMessagesSignatures{},
 					&valsettypes.MsgAddExternalChainInfoForValidator{},
 					&valsettypes.MsgKeepAlive{},
-					&consensustypes.MsgDeleteJob{},
 					&consensustypes.MsgAddEvidence{},
 					&consensustypes.MsgSetPublicAccessData{},
 					&consensustypes.MsgSetErrorData{},
@@ -224,8 +218,10 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 		},
 	})
 
-	return &lens.ChainClientConfig{
-		Key:            palomaConfig.SigningKeys[0],
+	return &ion.ChainClientConfig{
+		// TODO: FIX FIX FIX
+		// Key:            palomaConfig.SigningKeys[0],
+		Key:            palomaConfig.SigningKey,
 		ChainID:        defaultValue(palomaConfig.ChainID, "paloma"),
 		RPCAddr:        defaultValue(palomaConfig.BaseRPCURL, "http://127.0.0.1:26657"),
 		AccountPrefix:  defaultValue(palomaConfig.AccountPrefix, "paloma"),
