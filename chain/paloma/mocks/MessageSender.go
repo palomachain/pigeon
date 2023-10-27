@@ -6,6 +6,7 @@ import (
 	context "context"
 
 	types "github.com/cosmos/cosmos-sdk/types"
+	ion "github.com/palomachain/pigeon/util/ion"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,25 +15,32 @@ type MessageSender struct {
 	mock.Mock
 }
 
-// SendMsg provides a mock function with given fields: ctx, msg, memo
-func (_m *MessageSender) SendMsg(ctx context.Context, msg types.Msg, memo string) (*types.TxResponse, error) {
-	ret := _m.Called(ctx, msg, memo)
+// SendMsg provides a mock function with given fields: ctx, msg, memo, opts
+func (_m *MessageSender) SendMsg(ctx context.Context, msg types.Msg, memo string, opts ...ion.SendMsgOption) (*types.TxResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, msg, memo)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *types.TxResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string) (*types.TxResponse, error)); ok {
-		return rf(ctx, msg, memo)
+	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string, ...ion.SendMsgOption) (*types.TxResponse, error)); ok {
+		return rf(ctx, msg, memo, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string) *types.TxResponse); ok {
-		r0 = rf(ctx, msg, memo)
+	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string, ...ion.SendMsgOption) *types.TxResponse); ok {
+		r0 = rf(ctx, msg, memo, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.TxResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.Msg, string) error); ok {
-		r1 = rf(ctx, msg, memo)
+	if rf, ok := ret.Get(1).(func(context.Context, types.Msg, string, ...ion.SendMsgOption) error); ok {
+		r1 = rf(ctx, msg, memo, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}

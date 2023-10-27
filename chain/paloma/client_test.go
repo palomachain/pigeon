@@ -15,6 +15,7 @@ import (
 	"github.com/palomachain/pigeon/chain"
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
 	"github.com/palomachain/pigeon/types/testdata"
+	"github.com/palomachain/pigeon/util/ion"
 	"github.com/strangelove-ventures/lens/byop"
 	lens "github.com/strangelove-ventures/lens/client"
 	"github.com/stretchr/testify/mock"
@@ -444,6 +445,7 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 				ctx,
 				msgSender,
 				creator,
+				[]ion.SendMsgOption{},
 				tt.signatures...,
 			)
 			require.ErrorIs(t, err, tt.expErr)

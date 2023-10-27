@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/palomachain/pigeon/internal/liblog"
+	"github.com/palomachain/pigeon/util/ion"
 	ggrpc "google.golang.org/grpc"
 )
 
@@ -45,14 +46,14 @@ func (g GRPCClientWrapper) NewStream(ctx context.Context, desc *ggrpc.StreamDesc
 	return stream, err
 }
 
-func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error) {
 	logger := liblog.WithContext(ctx).WithField("component", "message-sender").WithField("msg", msg)
 	logger.Debug("Sending Msg")
 
 	// TODO: use lock
 	m.R.RotateKeys(ctx)
 
-	res, err := m.W.SendMsg(ctx, msg, memo)
+	res, err := m.W.SendMsg(ctx, msg, memo, opts...)
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)
 	}

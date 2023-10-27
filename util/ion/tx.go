@@ -44,8 +44,16 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
-func (cc *Client) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	return cc.SendMsgs(ctx, []sdk.Msg{msg}, memo)
+type SendMsgOption func(tx.Factory) tx.Factory
+
+func WithFeeGranter(address sdk.AccAddress) SendMsgOption {
+	return func(txf tx.Factory) tx.Factory {
+		return txf.WithFeeGranter(address)
+	}
+}
+
+func (cc *Client) SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...SendMsgOption) (*sdk.TxResponse, error) {
+	return cc.SendMsgs(ctx, []sdk.Msg{msg}, memo, opts...)
 }
 
 // SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
@@ -53,7 +61,7 @@ func (cc *Client) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.T
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opts ...SendMsgOption) (*sdk.TxResponse, error) {
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
@@ -73,6 +81,11 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*s
 
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
+
+	// Set user defined options
+	for _, v := range opts {
+		txf = v(txf)
+	}
 
 	// Build the transaction builder
 	txb, err := txf.BuildUnsignedTx(msgs...)

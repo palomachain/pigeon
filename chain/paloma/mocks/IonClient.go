@@ -58,35 +58,20 @@ func (_m *IonClient) GetKeybase() keyring.Keyring {
 	return r0
 }
 
-// SendMsg provides a mock function with given fields: ctx, msg, memo
-func (_m *IonClient) SendMsg(ctx context.Context, msg types.Msg, memo string) (*types.TxResponse, error) {
-	ret := _m.Called(ctx, msg, memo)
+// SetSDKContext provides a mock function with given fields:
+func (_m *IonClient) SetSDKContext() func() {
+	ret := _m.Called()
 
-	var r0 *types.TxResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string) (*types.TxResponse, error)); ok {
-		return rf(ctx, msg, memo)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.Msg, string) *types.TxResponse); ok {
-		r0 = rf(ctx, msg, memo)
+	var r0 func()
+	if rf, ok := ret.Get(0).(func() func()); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.TxResponse)
+			r0 = ret.Get(0).(func())
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.Msg, string) error); ok {
-		r1 = rf(ctx, msg, memo)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SetSDKContext provides a mock function with given fields:
-func (_m *IonClient) SetSDKContext() {
-	_m.Called()
+	return r0
 }
 
 // Status provides a mock function with given fields: _a0

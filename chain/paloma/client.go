@@ -16,9 +16,8 @@ import (
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/config"
-	"github.com/palomachain/pigeon/internal/liblog"
+	"github.com/palomachain/pigeon/util/ion"
 	"github.com/palomachain/pigeon/util/slice"
-	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -28,7 +27,7 @@ type (
 
 //go:generate mockery --name=MessageSender
 type MessageSender interface {
-	SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error)
+	SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error)
 }
 
 //go:generate mockery --name=IonClient
@@ -47,6 +46,7 @@ type Client struct {
 	Ion           IonClient
 	Unpacker      Unpacker
 	MessageSender MessageSender
+	sendingOpts   []ion.SendMsgOption
 
 	creator        string
 	creatorValoper string
@@ -64,12 +64,10 @@ func NewClient(cfg config.Paloma, grpcWrapper grpc.ClientConn, ion IonClient, se
 }
 
 func (c *Client) init() *Client {
-	log.Info("paloma client: init")
 	c.creator = getCreator(c)
-	log.Info("paloma client: get as valoper")
 	c.creatorValoper = getCreatorAsValoper(c)
-	log.Info("paloma client: get val address")
 	c.valAddr = sdk.ValAddress(getMainAddress(c).Bytes())
+	c.sendingOpts = []ion.SendMsgOption{ion.WithFeeGranter(c.valAddr.Bytes())}
 	return c
 }
 
@@ -83,7 +81,7 @@ type BroadcastMessageSignatureIn struct {
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
 // It build the message and sends it over.
 func (c *Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
-	return broadcastMessageSignatures(ctx, c.MessageSender, c.creator, signatures...)
+	return broadcastMessageSignatures(ctx, c.MessageSender, c.creator, c.sendingOpts, signatures...)
 }
 
 func (c *Client) BlockHeight(ctx context.Context) (int64, error) {
@@ -101,12 +99,12 @@ func (c *Client) BlockHeight(ctx context.Context) (int64, error) {
 
 // TODO Combine with below method
 func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBatchSendToEthClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "")
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }
 
 func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim gravity.MsgSendToPalomaClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "")
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }
 
@@ -142,7 +140,7 @@ func (c *Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainIn
 		},
 	)
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -158,7 +156,7 @@ func (c *Client) AddMessageEvidence(ctx context.Context, queueTypeName string, m
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err = c.MessageSender.SendMsg(ctx, msg, "")
+	_, err = c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -170,7 +168,7 @@ func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, 
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -182,7 +180,7 @@ func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, message
 		QueueTypeName: queueTypeName,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -193,7 +191,7 @@ func (c *Client) AddStatusUpdate(ctx context.Context, level palomatypes.MsgAddSt
 		Level:   level,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -203,12 +201,11 @@ func (c *Client) KeepValidatorAlive(ctx context.Context, appVersion string) erro
 		PigeonVersion: appVersion,
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "")
+	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
 func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
-	liblog.WithContext(ctx).Info("STATUS")
 	res, err := c.Ion.Status(ctx)
 	if err != nil {
 		return nil, err
@@ -218,7 +215,6 @@ func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
 }
 
 func (c *Client) PalomaStatus(ctx context.Context) error {
-	liblog.WithContext(ctx).Info("PALOMA STATUS")
 	res, err := c.Status(ctx)
 
 	if IsPalomaDown(err) {
@@ -253,6 +249,7 @@ func broadcastMessageSignatures(
 	ctx context.Context,
 	ms MessageSender,
 	creator string,
+	opts []ion.SendMsgOption,
 	signatures ...BroadcastMessageSignatureIn,
 ) error {
 	if len(signatures) == 0 {
@@ -271,7 +268,7 @@ func broadcastMessageSignatures(
 		Creator:        creator,
 		SignedMessages: signedMessages,
 	}
-	_, err := ms.SendMsg(ctx, msg, "")
+	_, err := ms.SendMsg(ctx, msg, "", opts...)
 	return err
 }
 
