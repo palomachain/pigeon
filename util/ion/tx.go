@@ -18,6 +18,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/palomachain/pigeon/internal/liblog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -104,6 +105,7 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 		done := cc.SetSDKContext()
 		// ensure that we allways call done, even in case of an error or panic
 		defer done()
+		liblog.WithContext(ctx).WithField("component", "send-msgs").WithField("key", cc.Config.Key).Info("signing transaction")
 		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 			return err
 		}

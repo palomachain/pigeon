@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	log "github.com/sirupsen/logrus"
 )
 
 // This file is cursed and this mutex is too
@@ -16,13 +15,10 @@ var sdkConfigMutex sync.Mutex
 // if lens is successful, this can be eliminated
 // TODO: :dagger: :knife: :chainsaw: remove this function
 func (cc *Client) SetSDKContext() func() {
-	log.Info("Setting SDK context")
 	sdkConfigMutex.Lock()
-	log.Info("Setting config values")
 	sdkConf := sdk.GetConfig()
 	sdkConf.SetBech32PrefixForAccount(cc.Config.AccountPrefix, cc.Config.AccountPrefix+"pub")
 	sdkConf.SetBech32PrefixForValidator(cc.Config.AccountPrefix+"valoper", cc.Config.AccountPrefix+"valoperpub")
 	sdkConf.SetBech32PrefixForConsensusNode(cc.Config.AccountPrefix+"valcons", cc.Config.AccountPrefix+"valconspub")
-	log.Info("returning the unlock")
 	return sdkConfigMutex.Unlock
 }

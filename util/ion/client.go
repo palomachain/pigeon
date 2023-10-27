@@ -98,15 +98,33 @@ func (c *Client) init() (*Client, error) {
 	return c, nil
 }
 
-func (cc *Client) GetKeyAddress() (sdk.AccAddress, error) {
+func (cc *Client) GetKeyAddress() (addr sdk.AccAddress, err error) {
 	done := cc.SetSDKContext()
-	defer done()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+			log.WithField("component", "get-key-address").WithField("recover", r).Error("Recovering from panic ...")
+		}
+		log.WithField("component", "get-key-address").WithField("address", addr).WithField("err", err).Info("Calling done ...")
+		done()
+	}()
 
+	log.WithField("component", "get-key-address").WithField("key", cc.Config.Key).Info("Getting address from key ...")
 	info, err := cc.Keybase.Key(cc.Config.Key)
+	log.WithField("component", "get-key-address").WithField("key", cc.Config.Key).Info("Done gettig address ...")
 	if err != nil {
+		log.WithField("component", "get-key-address").WithError(err).Error("Failed to get key from keybase")
 		return nil, err
 	}
-	return info.GetAddress()
+	log.WithField("component", "get-key-address").Info("Got info ...")
+	addr, err = info.GetAddress()
+	log.WithField("component", "get-key-address").WithField("address", addr).WithField("err", err).Info("After got info ...")
+	if err != nil {
+		log.WithField("component", "get-key-address").WithError(err).Error("Failed to get address")
+		return nil, err
+	}
+	log.WithField("component", "get-key-address").WithField("address", addr).Info("Got address ...")
+	return addr, err
 }
 
 func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
