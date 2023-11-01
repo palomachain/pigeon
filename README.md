@@ -143,6 +143,9 @@ pigeon evm keys import ~/.pigeon/keys/evm/arb-main
 
 **IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type: 2`, `gas-adjustment` is set to `2` except for `bnb-main` chain. However, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
 
+#### Configuration updates
+Please make sure you restart Pigeon after making changes to your configuration files for the updates to come into effect.
+
 Make sure your Paloma Cosmos-SDK keys are stored and available on your environment.
 
 `palomad keys add "$VALIDATOR" --recover`
