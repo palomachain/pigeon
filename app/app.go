@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensustypes "github.com/palomachain/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
@@ -176,6 +177,12 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 					&consensustypes.MsgSetPublicAccessData{},
 					&consensustypes.MsgSetErrorData{},
 					&palomatypes.MsgAddStatusUpdate{},
+					&gravitytypes.MsgSendToEth{},
+					&gravitytypes.MsgConfirmBatch{},
+					&gravitytypes.MsgSendToPalomaClaim{},
+					&gravitytypes.MsgBatchSendToEthClaim{},
+					&gravitytypes.MsgCancelSendToEth{},
+					&gravitytypes.MsgSubmitBadSignatureEvidence{},
 				},
 			},
 			{
@@ -194,7 +201,7 @@ func palomaLensClientConfig(palomaConfig config.Paloma) *lens.ChainClientConfig 
 			{
 				Iface: (*consensustypes.ConsensusMsg)(nil),
 				Msgs: []proto.Message{
-					&evmtypes.SubmitLogicCall{}, // TODO : Test to ensure this is right
+					&evmtypes.SubmitLogicCall{},
 					&evmtypes.Message{},
 					&evmtypes.ValidatorBalancesAttestation{},
 					&evmtypes.ValidatorBalancesAttestationRes{},
