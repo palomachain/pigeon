@@ -58,7 +58,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 ### To get the latest prebuilt `pigeon` binary:
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v1.9.2/pigeon_Linux_x86_64.tar.gz  | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v1.9.5/pigeon_Linux_x86_64.tar.gz  | \
   sudo tar -C /usr/local/bin -xvzf - pigeon
 sudo chmod +x /usr/local/bin/pigeon
 
@@ -69,7 +69,7 @@ mkdir ~/.pigeon
 ```shell
 git clone https://github.com/palomachain/pigeon.git
 cd pigeon
-git checkout v1.9.2
+git checkout v1.9.5
 make build
 sudo mv ./build/pigeon /usr/local/bin/pigeon
 
@@ -79,6 +79,7 @@ mkdir ~/.pigeon
 If you're upgrading to the most recent version, you will need to stop `pigeond` before removing the old binary and copying the new binary into place.
 
 ## Set up your EVM Keys. Don't forget your passwords!
+### Create a new key
 
 Ethereum Mainnet (eth-main)
 ```
@@ -108,7 +109,12 @@ Arbitrum Mainnet (arb-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/arb-main
 ```
-or import existing you existing Ethereum evm private keys
+Gnosis Mainnet (gnosis-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/gnosis-main
+```
+
+### or import existing you existing Ethereum evm private keys
 
 Ethereum Mainnet (eth-main)
 ```
@@ -137,6 +143,10 @@ pigeon evm keys import ~/.pigeon/keys/evm/base-main
 Arbitrum Mainnet (arb-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/arb-main
+```
+Gnosis Mainnet (gnosis-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/gnosis-main
 ```
 
 ### Config setup
@@ -236,6 +246,14 @@ evm:
     gas-adjustment: 2
     tx-type: 2
 
+ gnosis-main:
+    chain-id: 100
+    base-rpc-url: ${GNOSIS_RPC_URL}
+    keyring-pass-env-name: GNOSIS_PASSWORD
+    signing-key: ${GNOSIS_SIGNING_KEY}
+    keyring-dir: /root/.pigeon/keys/evm/gnosis-main
+    gas-adjustment: 2
+    tx-type: 2
 ```
 
 
@@ -258,6 +276,9 @@ MATIC_SIGNING_KEY=<Your BNB SIGNING KEY>
 BASE_RPC_URL=<Your Base mainnet RPC URL>
 BASE_PASSWORD=<Your Base Key Password>
 BASE_SIGNING_KEY=<Your Base SIGNING KEY>
+GNOSIS_RPC_URL=<Your Gnosis mainnet RPC URL>
+GNOSIS_PASSWORD=<Your Gnosis Key Password>
+GNOSIS_SIGNING_KEY=<Your Gnosis SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
