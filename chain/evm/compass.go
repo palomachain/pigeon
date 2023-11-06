@@ -781,6 +781,7 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 		"msg-id":             rawMsg.ID,
 		"public-access-data": rawMsg.PublicAccessData,
 	}).Debug("providing proof")
+	lastTxHashLkup[t.ChainReferenceID] = rawMsg.PublicAccessData
 	txHash := common.BytesToHash(rawMsg.PublicAccessData)
 	tx, _, err := t.evm.TransactionByHash(ctx, txHash)
 	if err != nil {
