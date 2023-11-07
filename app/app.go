@@ -147,15 +147,15 @@ func PalomaClient() *paloma.Client {
 
 		// It's important to pass the lens config as pointer throughout the codebase for this to work!
 		fn := func(s string) {
-			log.Info("new lens key", "lens-key", s)
 			clientCfg.Key = s
 		}
 		r := rotator.New(fn, palomaConfig.SigningKeys...)
 
-		grpcWrapper := paloma.GRPCClientWrapper{W: ionClient}
-		senderWrapper := paloma.PalomaMessageSender{W: ionClient, R: r}
+		grpcWrapper := &paloma.GRPCClientWrapper{W: ionClient}
+		senderWrapper := &paloma.PalomaMessageSender{W: ionClient, R: r}
 		_palomaClient = paloma.NewClient(palomaConfig, grpcWrapper, ionClient, senderWrapper, ionClient)
 		senderWrapper.GetCreator = _palomaClient.GetCreator
+		senderWrapper.GetSigner = _palomaClient.GetSigner
 	}
 	return _palomaClient
 }

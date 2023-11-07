@@ -36,6 +36,7 @@ type IonClient interface {
 	DecodeBech32ValAddr(string) (sdk.ValAddress, error)
 	GetKeybase() keyring.Keyring
 	SetSDKContext() func()
+	GetKeyAddress() (sdk.AccAddress, error)
 }
 
 type Client struct {
@@ -66,7 +67,7 @@ func NewClient(cfg config.Paloma, grpcWrapper grpc.ClientConn, ion IonClient, se
 func (c *Client) init() *Client {
 	c.creator = getCreator(c)
 	c.creatorValoper = getCreatorAsValoper(c)
-	c.valAddr = sdk.ValAddress(getMainAddress(c).Bytes())
+	c.valAddr = sdk.ValAddress(getValidatorAddress(c).Bytes())
 	c.sendingOpts = []ion.SendMsgOption{ion.WithFeeGranter(c.valAddr.Bytes())}
 	return c
 }
@@ -284,25 +285,42 @@ func (c *Client) GetCreator() string {
 	return c.creator
 }
 
-func getMainAddress(c *Client) sdk.Address {
-	key, err := c.Keyring().Key(c.PalomaConfig.SigningKey)
+func (c *Client) GetSigner() string {
+	addr, err := c.Ion.GetKeyAddress()
 	if err != nil {
 		panic(err)
 	}
-	address, err := key.GetAddress()
+
+	return addr.String()
+}
+
+func getValidatorAddress(c *Client) sdk.Address {
+	address, err := getKeyAddress(c, c.PalomaConfig.SigningKey)
 	if err != nil {
 		panic(err)
 	}
 	return address
 }
 
+func getKeyAddress(c *Client, keyname string) (sdk.Address, error) {
+	key, err := c.Keyring().Key(keyname)
+	if err != nil {
+		return nil, err
+	}
+	address, err := key.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+	return address, nil
+}
+
 // TODO: CLEAN THIS UP???
 func getCreator(c *Client) string {
-	return c.addressString(getMainAddress(c))
+	return c.addressString(getValidatorAddress(c))
 }
 
 func getCreatorAsValoper(c *Client) string {
-	return c.addressString(sdk.ValAddress(getMainAddress(c).Bytes()))
+	return c.addressString(sdk.ValAddress(getValidatorAddress(c).Bytes()))
 }
 
 func (c Client) addressString(val sdk.Address) string {

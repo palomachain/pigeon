@@ -23,13 +23,14 @@ type GRPCClientWrapper struct {
 }
 
 type KeyRotator interface {
-	RotateKeys(context.Context) string
+	RotateKeys(context.Context)
 }
 
 type PalomaMessageSender struct {
 	R          KeyRotator
 	W          MessageSender
 	GetCreator func() string
+	GetSigner  func() string
 }
 
 func (g GRPCClientWrapper) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...ggrpc.CallOption) error {
@@ -55,7 +56,11 @@ func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo stri
 	logger.Debug("Sending Msg")
 
 	// TODO: use lock
-	signer := m.R.RotateKeys(ctx)
+	m.R.RotateKeys(ctx)
+	creator := m.GetCreator()
+	signer := m.GetSigner()
+
+	logger.WithField("creator", creator).WithField("signer", signer).Debug("Injecting metadata")
 
 	if err := tryInjectMetadata(msg, vtypes.MsgMetadata{
 		Creator: m.GetCreator(),

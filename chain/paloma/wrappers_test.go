@@ -47,17 +47,19 @@ func (*mockMsg) Reset()               {}
 func (*mockMsg) String() string       { return "" }
 func (*mockMsg) ValidateBasic() error { return nil }
 
-func (m *mockKeyRotator) RotateKeys(context.Context) string { return "foobar" }
+func (m *mockKeyRotator) RotateKeys(context.Context) {}
 
 func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 	t.Run("must ignore messages without metadata fields", func(t *testing.T) {
 		ctx := context.Background()
 		sender := &mockMsgSender{t: t}
 		creator := "creator"
+		signer := "signer"
 		testee := paloma.PalomaMessageSender{
 			R:          &mockKeyRotator{},
 			W:          sender,
 			GetCreator: func() string { return creator },
+			GetSigner:  func() string { return signer },
 		}
 
 		msg := &mockMsg{
@@ -74,10 +76,12 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 		ctx := context.Background()
 		sender := &mockMsgSender{t: t}
 		creator := "creator"
+		signer := "signer"
 		testee := paloma.PalomaMessageSender{
 			R:          &mockKeyRotator{},
 			W:          sender,
 			GetCreator: func() string { return creator },
+			GetSigner:  func() string { return signer },
 		}
 
 		msg := &palomatypes.MsgAddStatusUpdate{
@@ -91,6 +95,6 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 		_, err := testee.SendMsg(ctx, msg, "")
 		require.NoError(t, err)
 		require.Equal(t, creator, msg.GetMetadata().GetCreator(), "must inject creator")
-		require.Equal(t, []string{"foobar"}, msg.GetMetadata().GetSigners(), "must inject creator")
+		require.Equal(t, []string{signer}, msg.GetMetadata().GetSigners(), "must inject signer address")
 	})
 }
