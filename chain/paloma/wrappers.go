@@ -52,8 +52,7 @@ func (g GRPCClientWrapper) NewStream(ctx context.Context, desc *ggrpc.StreamDesc
 }
 
 func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error) {
-	logger := liblog.WithContext(ctx).WithField("component", "message-sender").WithField("msg", msg)
-	logger.Debug("Sending Msg")
+	logger := liblog.WithContext(ctx).WithField("component", "message-sender")
 
 	// TODO: use lock
 	m.R.RotateKeys(ctx)
