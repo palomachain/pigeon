@@ -155,6 +155,7 @@ func PalomaClient() *paloma.Client {
 		grpcWrapper := paloma.GRPCClientWrapper{W: ionClient}
 		senderWrapper := paloma.PalomaMessageSender{W: ionClient, R: r}
 		_palomaClient = paloma.NewClient(palomaConfig, grpcWrapper, ionClient, senderWrapper, ionClient)
+		senderWrapper.GetCreator = _palomaClient.GetCreator
 	}
 	return _palomaClient
 }

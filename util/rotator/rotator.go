@@ -35,10 +35,12 @@ func New(rotateFn Assigner, keyNames ...string) *Rotator {
 }
 
 // RotateKeys rotates the keys and calls the rotateFn with the next key name.
-func (r *Rotator) RotateKeys(ctx context.Context) {
+func (r *Rotator) RotateKeys(ctx context.Context) string {
 	r.m.Lock()
 	defer r.m.Unlock()
 
 	r.ring = r.ring.Next()
-	r.fn(r.ring.Value.(string))
+	key := r.ring.Value.(string)
+	r.fn(key)
+	return key
 }

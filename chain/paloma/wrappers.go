@@ -2,10 +2,13 @@ package paloma
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
+	vtypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/ion"
 	ggrpc "google.golang.org/grpc"
@@ -20,12 +23,13 @@ type GRPCClientWrapper struct {
 }
 
 type KeyRotator interface {
-	RotateKeys(context.Context)
+	RotateKeys(context.Context) string
 }
 
 type PalomaMessageSender struct {
-	R KeyRotator
-	W MessageSender
+	R          KeyRotator
+	W          MessageSender
+	GetCreator func() string
 }
 
 func (g GRPCClientWrapper) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...ggrpc.CallOption) error {
@@ -51,7 +55,14 @@ func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo stri
 	logger.Debug("Sending Msg")
 
 	// TODO: use lock
-	m.R.RotateKeys(ctx)
+	signer := m.R.RotateKeys(ctx)
+
+	if err := tryInjectMetadata(msg, vtypes.MsgMetadata{
+		Creator: m.GetCreator(),
+		Signers: []string{signer},
+	}); err != nil {
+		return nil, fmt.Errorf("failed to inject metadata: %w", err)
+	}
 
 	res, err := m.W.SendMsg(ctx, msg, memo, opts...)
 	if IsPalomaDown(err) {
@@ -59,4 +70,27 @@ func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo stri
 	}
 
 	return res, err
+}
+
+func tryInjectMetadata(msg sdk.Msg, md vtypes.MsgMetadata) error {
+	val := reflect.ValueOf(msg)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		return fmt.Errorf("%v is not a struct", msg)
+	}
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := field.Type()
+
+		// Check if the field's type matches the target type
+		if fieldType == reflect.TypeOf(vtypes.MsgMetadata{}) {
+			field.Set(reflect.ValueOf(md))
+		}
+	}
+
+	return nil
 }
