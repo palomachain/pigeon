@@ -152,10 +152,10 @@ func PalomaClient() *paloma.Client {
 		r := rotator.New(fn, palomaConfig.SigningKeys...)
 
 		grpcWrapper := &paloma.GRPCClientWrapper{W: ionClient}
-		senderWrapper := &paloma.PalomaMessageSender{W: ionClient, R: r}
+		senderWrapper := paloma.NewPalomaMessageSender(r, ionClient)
 		_palomaClient = paloma.NewClient(palomaConfig, grpcWrapper, ionClient, senderWrapper, ionClient)
-		senderWrapper.GetCreator = _palomaClient.GetCreator
-		senderWrapper.GetSigner = _palomaClient.GetSigner
+		senderWrapper.WithCreatorProvider(_palomaClient.GetCreator)
+		senderWrapper.WithSignerProvider(_palomaClient.GetSigner)
 	}
 	return _palomaClient
 }
