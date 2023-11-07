@@ -12,11 +12,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, _ sync.Locker) error {
 	logger := liblog.WithContext(ctx).WithField("component", "update-external-chain-infos")
 	logger.Info("updating external chain infos")
 
-	if err := r.buildProcessors(ctx, locker); err != nil {
+	if err := r.buildProcessors(ctx, nil); err != nil {
 		logger.WithError(err).Error("couldn't build processors to update external chain info")
 		return err
 	}
@@ -54,10 +54,7 @@ func (r *Relayer) UpdateExternalChainInfos(ctx context.Context, locker sync.Lock
 		return nil
 	}
 
-	locker.Lock()
 	err := r.palomaClient.AddExternalChainInfo(ctx, chainInfos...)
-	locker.Unlock()
-
 	if err != nil {
 		return err
 	}

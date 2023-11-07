@@ -80,15 +80,10 @@ func (m *Heart) SetRetryFalloff(falloff time.Duration) {
 }
 
 // Will be blocking during retries. Make sure to always call in Goroutine.
-func (m *Heart) trySendKeepAlive(ctx context.Context, locker sync.Locker) (err error) {
+func (m *Heart) trySendKeepAlive(ctx context.Context, _ sync.Locker) (err error) {
 	logger := liblog.WithContext(ctx).WithField("component", "try-send-keep-alive")
 
-	logger.Debug("Trying to acquire lock.")
-	locker.Lock()
-	logger.Debug("Lock acquired.")
 	err = m.sendKeepAlive(ctx, m.appVersion)
-	logger.Debug("Freeing lock.")
-	locker.Unlock()
 	if err != nil {
 		logger.WithError(err).Error("Error while trying to keep pigeon alive.")
 		return err

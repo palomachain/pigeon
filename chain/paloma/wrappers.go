@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +17,7 @@ import (
 
 var _ grpc.ClientConn = GRPCClientWrapper{}
 
-var _ MessageSender = PalomaMessageSender{}
+var _ MessageSender = &PalomaMessageSender{}
 
 type GRPCClientWrapper struct {
 	W grpc.ClientConn
@@ -31,6 +32,7 @@ type PalomaMessageSender struct {
 	W          MessageSender
 	GetCreator func() string
 	GetSigner  func() string
+	m          *sync.Mutex
 }
 
 func (g GRPCClientWrapper) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...ggrpc.CallOption) error {
@@ -51,10 +53,32 @@ func (g GRPCClientWrapper) NewStream(ctx context.Context, desc *ggrpc.StreamDesc
 	return stream, err
 }
 
-func (m PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error) {
+func NewPalomaMessageSender(R KeyRotator, W MessageSender) *PalomaMessageSender {
+	return &PalomaMessageSender{
+		R: R,
+		W: W,
+		m: &sync.Mutex{},
+	}
+}
+
+func (m *PalomaMessageSender) WithCreatorProvider(p func() string) *PalomaMessageSender {
+	m.GetCreator = p
+	return m
+}
+
+func (m *PalomaMessageSender) WithSignerProvider(p func() string) *PalomaMessageSender {
+	m.GetSigner = p
+	return m
+}
+
+func (m *PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error) {
 	logger := liblog.WithContext(ctx).WithField("component", "message-sender")
 
-	// TODO: use lock
+	// It's theoretically possible two messages would be sent in parallel by different consumers of the client.
+	// In order to avoid a race conditions where keys are being rotated and then used twice, we add some basic locking here.
+	m.m.Lock()
+	defer m.m.Unlock()
+
 	m.R.RotateKeys(ctx)
 	creator := m.GetCreator()
 	signer := m.GetSigner()

@@ -3,6 +3,7 @@ package paloma_test
 import (
 	"context"
 	"reflect"
+	"sync"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,6 +11,12 @@ import (
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/util/ion"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	keys     = []string{"foo", "bar", "baz"}
+	keyIdx   = 0
+	usedKeys = make([]string, 0, 100)
 )
 
 type mockMsgSender struct {
@@ -32,6 +39,10 @@ func (m *mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, o
 
 type mockKeyRotator struct{}
 
+func (m *mockKeyRotator) RotateKeys(context.Context) {
+	keyIdx = (keyIdx + 1) % len(keys)
+}
+
 type mockMsg struct {
 	info string
 }
@@ -47,20 +58,15 @@ func (*mockMsg) Reset()               {}
 func (*mockMsg) String() string       { return "" }
 func (*mockMsg) ValidateBasic() error { return nil }
 
-func (m *mockKeyRotator) RotateKeys(context.Context) {}
-
 func Test_PalomaMessageSender_SendMsg(t *testing.T) {
-	t.Run("must ignore messages without metadata fields", func(t *testing.T) {
+	t.Run("must skip injecting metadata for messages with no need for it", func(t *testing.T) {
 		ctx := context.Background()
 		sender := &mockMsgSender{t: t}
 		creator := "creator"
 		signer := "signer"
-		testee := paloma.PalomaMessageSender{
-			R:          &mockKeyRotator{},
-			W:          sender,
-			GetCreator: func() string { return creator },
-			GetSigner:  func() string { return signer },
-		}
+		testee := paloma.NewPalomaMessageSender(&mockKeyRotator{}, sender).
+			WithCreatorProvider(func() string { return creator }).
+			WithSignerProvider(func() string { return signer })
 
 		msg := &mockMsg{
 			info: "foobar",
@@ -77,12 +83,9 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 		sender := &mockMsgSender{t: t}
 		creator := "creator"
 		signer := "signer"
-		testee := paloma.PalomaMessageSender{
-			R:          &mockKeyRotator{},
-			W:          sender,
-			GetCreator: func() string { return creator },
-			GetSigner:  func() string { return signer },
-		}
+		testee := paloma.NewPalomaMessageSender(&mockKeyRotator{}, sender).
+			WithCreatorProvider(func() string { return creator }).
+			WithSignerProvider(func() string { return signer })
 
 		msg := &palomatypes.MsgAddStatusUpdate{
 			Creator: "foo",
@@ -96,5 +99,40 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, creator, msg.GetMetadata().GetCreator(), "must inject creator")
 		require.Equal(t, []string{signer}, msg.GetMetadata().GetSigners(), "must inject signer address")
+	})
+
+	t.Run("must not reuse same key when called concurrently", func(t *testing.T) {
+		ctx := context.Background()
+		sender := &mockMsgSender{t: t}
+		creator := "creator"
+		testee := paloma.NewPalomaMessageSender(&mockKeyRotator{}, sender).
+			WithCreatorProvider(func() string { return creator }).
+			WithSignerProvider(func() string { return keys[keyIdx] })
+		wg := &sync.WaitGroup{}
+
+		msg := &palomatypes.MsgAddStatusUpdate{
+			Creator: "foo",
+			Status:  "bar",
+			Level:   palomatypes.MsgAddStatusUpdate_LEVEL_INFO,
+		}
+		sender.expectedMsg = msg
+
+		for i := 0; i < 3; i++ {
+			wg.Add(1)
+			go func() {
+				for j := 0; j < 33; j++ {
+					_, err := testee.SendMsg(ctx, msg, "")
+					usedKeys = append(usedKeys, msg.GetMetadata().GetSigners()...)
+					require.NoError(t, err)
+				}
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		for i, v := range usedKeys {
+			require.Equal(t, v, usedKeys[i%len(keys)])
+		}
 	})
 }

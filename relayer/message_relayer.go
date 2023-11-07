@@ -10,21 +10,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) RelayMessages(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) RelayMessages(ctx context.Context, _ sync.Locker) error {
 	log.Info("relayer loop")
 	if ctx.Err() != nil {
 		log.Info("exiting relayer loop as context has ended")
 		return ctx.Err()
 	}
 
-	err := r.buildProcessors(ctx, locker)
+	err := r.buildProcessors(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	locker.Lock()
 	err = r.relayMessages(ctx, r.processors)
-	locker.Unlock()
 
 	return handleProcessError(ctx, err)
 }

@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) AttestMessages(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) AttestMessages(ctx context.Context, _ sync.Locker) error {
 	logger := liblog.WithContext(ctx)
 	logger.Info("attester loop")
 	if ctx.Err() != nil {
@@ -19,14 +19,12 @@ func (r *Relayer) AttestMessages(ctx context.Context, locker sync.Locker) error 
 		return ctx.Err()
 	}
 
-	err := r.buildProcessors(ctx, locker)
+	err := r.buildProcessors(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	locker.Lock()
 	err = r.attestMessages(ctx, r.processors)
-	locker.Unlock()
 
 	return handleProcessError(ctx, err)
 }
