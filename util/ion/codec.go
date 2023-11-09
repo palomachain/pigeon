@@ -16,7 +16,7 @@ type Codec struct {
 	Amino             *codec.LegacyAmino
 }
 
-func makeCodec(moduleBasics []module.AppModuleBasic, _ []string) Codec {
+func MakeCodec(moduleBasics []module.AppModuleBasic, _ []string) Codec {
 	modBasic := module.NewBasicManager(moduleBasics...)
 	encodingConfig := makeCodecConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)

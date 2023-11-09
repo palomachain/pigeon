@@ -16,8 +16,7 @@ import (
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
 	"github.com/palomachain/pigeon/types/testdata"
 	"github.com/palomachain/pigeon/util/ion"
-	"github.com/strangelove-ventures/lens/byop"
-	lens "github.com/strangelove-ventures/lens/client"
+	"github.com/palomachain/pigeon/util/ion/byop"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -60,8 +59,8 @@ func valsetQueryServerDailer(t *testing.T, msgsrv *valsetmocks.QueryServer) func
 	}
 }
 
-func makeCodec() lens.Codec {
-	return lens.MakeCodec([]module.AppModuleBasic{
+func makeCodec() ion.Codec {
+	return ion.MakeCodec([]module.AppModuleBasic{
 		byop.Module{
 			ModuleName: "testing",
 			MsgsImplementations: []byop.RegisterImplementation{

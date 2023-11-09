@@ -20,7 +20,6 @@ require (
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
-	github.com/strangelove-ventures/lens v0.5.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/term v0.13.0
 	google.golang.org/grpc v1.59.0
@@ -205,5 +204,4 @@ replace (
 	github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101106.0-rc.2
 	github.com/palomachain/paloma => github.com/volumefi/paloma v1.5.0-next.0.20231106113521-20a3414bd85e
 	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
-	github.com/strangelove-ventures/lens => github.com/volumefi/lens-1 v0.5.5
 )

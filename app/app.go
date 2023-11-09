@@ -20,11 +20,10 @@ import (
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/relayer"
 	"github.com/palomachain/pigeon/util/ion"
+	"github.com/palomachain/pigeon/util/ion/byop"
 	"github.com/palomachain/pigeon/util/rotator"
 	"github.com/palomachain/pigeon/util/time"
 	log "github.com/sirupsen/logrus"
-	"github.com/strangelove-ventures/lens/byop"
-	lens "github.com/strangelove-ventures/lens/client"
 )
 
 const (
@@ -145,7 +144,7 @@ func PalomaClient() *paloma.Client {
 			os.Stdout,
 		))
 
-		// It's important to pass the lens config as pointer throughout the codebase for this to work!
+		// Always pass configurations as pointers to enable updates during runtime!
 		fn := func(s string) {
 			clientCfg.Key = s
 		}
@@ -169,7 +168,7 @@ func defaultValue[T comparable](proposedVal T, defaultVal T) T {
 }
 
 func palomaClientConfig(palomaConfig config.Paloma) *ion.ChainClientConfig {
-	modules := lens.ModuleBasics[:]
+	modules := ion.ModuleBasics[:]
 
 	modules = append(modules, byop.Module{
 		ModuleName: "paloma",

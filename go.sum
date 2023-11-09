@@ -1052,8 +1052,6 @@ github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijb
 github.com/urfave/cli v1.22.1 h1:+mkCCcOFKPnCmVYVcURKps1Xe+3zP90gSYGNfRkjoIY=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa h1:5SqCsI/2Qya2bCzK15ozrqo2sZxkh0FHynJZOTVoV6Q=
-github.com/volumefi/lens-1 v0.5.5 h1:OmSZOXRn7gsVuQ2ucjoEObIgPRD8D/RYPzcCHgmFclQ=
-github.com/volumefi/lens-1 v0.5.5/go.mod h1:6PdiMJFYkr4Mm3ioZ4UdidpQ1o9lspP0qX31NUsacF4=
 github.com/volumefi/paloma v1.5.0-next.0.20231106113521-20a3414bd85e h1:sAFI/7KQD9TLivxHCbKkWLQkVfsGq9mJLpnImKLLr7U=
 github.com/volumefi/paloma v1.5.0-next.0.20231106113521-20a3414bd85e/go.mod h1:Jxa/tAPOtQ3lJS4jEa+IMOsFADpHfdkYPS1LEOiEGkQ=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
