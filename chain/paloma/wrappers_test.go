@@ -14,14 +14,13 @@ import (
 )
 
 var (
-	keys     = []string{"foo", "bar", "baz"}
+	keys     = []string{sdk.AccAddress("foo").String(), sdk.AccAddress("bar").String(), sdk.AccAddress("baz").String()}
 	keyIdx   = 0
 	usedKeys = make([]string, 0, 100)
 )
 
 type mockMsgSender struct {
 	t           *testing.T
-	result      *sdk.TxResponse
 	error       error
 	expectedMsg sdk.Msg
 	calledMsg   sdk.Msg
@@ -34,7 +33,7 @@ func (m *mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, o
 
 	m.calledMsg = msg
 
-	return m.result, m.error
+	return &sdk.TxResponse{TxHash: string(msg.GetSigners()[0])}, m.error
 }
 
 type mockKeyRotator struct{}
@@ -81,8 +80,8 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 	t.Run("must inject metadata in messages that need it", func(t *testing.T) {
 		ctx := context.Background()
 		sender := &mockMsgSender{t: t}
-		creator := "creator"
-		signer := "signer"
+		creator := sdk.AccAddress("creator").String()
+		signer := sdk.AccAddress("signer").String()
 		testee := paloma.NewPalomaMessageSender(&mockKeyRotator{}, sender).
 			WithCreatorProvider(func() string { return creator }).
 			WithSignerProvider(func() string { return signer })
@@ -121,8 +120,8 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				for j := 0; j < 33; j++ {
-					_, err := testee.SendMsg(ctx, msg, "")
-					usedKeys = append(usedKeys, msg.GetMetadata().GetSigners()...)
+					r, err := testee.SendMsg(ctx, msg, "")
+					usedKeys = append(usedKeys, r.TxHash)
 					require.NoError(t, err)
 				}
 				wg.Done()

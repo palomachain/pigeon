@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"path"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -59,14 +58,10 @@ func NewClient(cfg *ChainClientConfig, input io.Reader, output io.Writer, kro ..
 		Codec:          MakeCodec(cfg.Modules, nil),
 	}
 
-	// TODO: Needed?
-	// cfg.KeyDirectory = keysDir("", cfg.Key)
-
 	return c.init()
 }
 
 func (c *Client) init() (*Client, error) {
-	// TODO: test key directory and return error if not created
 	keybase, err := keyring.New(c.Config.ChainID, c.Config.KeyringBackend, c.Config.KeyDirectory, c.Input, c.Codec.Marshaler, c.KeyringOptions...)
 	if err != nil {
 		log.WithField("err", err).Error("keybase new keyring error")
@@ -96,30 +91,18 @@ func (c *Client) init() (*Client, error) {
 
 func (cc *Client) GetKeyAddress() (addr sdk.AccAddress, err error) {
 	done := cc.SetSDKContext()
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-			log.WithField("component", "get-key-address").WithField("recover", r).Error("Recovering from panic ...")
-		}
-		log.WithField("component", "get-key-address").WithField("address", addr).WithField("err", err).Info("Calling done ...")
-		done()
-	}()
+	defer done()
 
-	log.WithField("component", "get-key-address").WithField("key", cc.Config.Key).Info("Getting address from key ...")
 	info, err := cc.Keybase.Key(cc.Config.Key)
-	log.WithField("component", "get-key-address").WithField("key", cc.Config.Key).Info("Done gettig address ...")
 	if err != nil {
 		log.WithField("component", "get-key-address").WithError(err).Error("Failed to get key from keybase")
 		return nil, err
 	}
-	log.WithField("component", "get-key-address").Info("Got info ...")
 	addr, err = info.GetAddress()
-	log.WithField("component", "get-key-address").WithField("address", addr).WithField("err", err).Info("After got info ...")
 	if err != nil {
 		log.WithField("component", "get-key-address").WithError(err).Error("Failed to get address")
 		return nil, err
 	}
-	log.WithField("component", "get-key-address").WithField("address", addr).Info("Got address ...")
 	return addr, err
 }
 
@@ -134,10 +117,6 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 		return nil, err
 	}
 	return rpcClient, nil
-}
-
-func keysDir(home, chainID string) string {
-	return path.Join(home, "keys", chainID)
 }
 
 // TODO: actually do something different here have a couple of levels of verbosity
