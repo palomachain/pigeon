@@ -10,22 +10,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) SignMessages(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) SignMessages(ctx context.Context, _ sync.Locker) error {
 	log.Info("signer loop")
 	if ctx.Err() != nil {
 		log.Info("exiting signer loop as context has ended")
 		return ctx.Err()
 	}
 
-	err := r.buildProcessors(ctx, locker)
+	err := r.buildProcessors(ctx, nil)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	locker.Lock()
 	err = r.signMessages(ctx, r.processors)
-	locker.Unlock()
 
 	return handleProcessError(ctx, err)
 }

@@ -75,14 +75,16 @@ func (c *Config) validate() (*Config, error) {
 }
 
 type EVM struct {
-	EVMSpecificClientConfig `yaml:",inline"`
 	ChainClientConfig       `yaml:",inline"`
+	EVMSpecificClientConfig `yaml:",inline"`
 }
 
 type Paloma struct {
 	CosmosSpecificClientConfig `yaml:",inline"`
-	ChainClientConfig          `yaml:",inline"`
 	ChainID                    string `yaml:"chain-id"`
+	ValidatorKey               string `yaml:"validator-key"`
+	ChainClientConfig          `yaml:",inline"`
+	SigningKeys                []string `yaml:"signing-keys"`
 }
 
 func KeyringPassword(envKey string) string {

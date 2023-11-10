@@ -176,7 +176,7 @@ paloma:
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
   keyring-type: os
-  signing-key: ${VALIDATOR}
+  validator-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
   gas-adjustment: 3.0
   gas-prices: 0.01ugrain
@@ -256,6 +256,34 @@ evm:
     tx-type: 2
 ```
 
+#### Support for multiple signing keys
+
+By default, Pigeon will use your validator key to sign any transactions sent to Paloma. In high throughput environments, this may lead to `account sequence mismatch` errors.
+It's possible to define more than one signing key to be used in rotation to combat this issue. In order to do so, you will need to create a number of new keys and register them with Pigeon like this:
+
+```bash
+# First, create a number of new keys. You may create an arbitrary amount of keys.
+palomad keys add pigeon-operator-alpha
+palomad keys add pigeon-operator-bravo
+palomad keys add pigeon-operator-charlie
+
+# Second, your new addresses will need to receive an active feegrant from your validator address.
+# This step is very important. It's not enough to simply fund those addresses manually.
+# The active feegrant is considered a "permission" to send transactions from your validator address".
+palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-alpha --fees 500ugrain -y
+palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-bravo --fees 500ugrain -y
+palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-charlie --fees 500ugrain -y
+```
+
+After creating your signing keys, all you need to do is register them with Pigeon by adding the following to your pigeon config. Make sure to restart the service after making these changes.
+
+```yaml
+paloma:
+  signing-keys:
+    - pigeon-operator-alpha
+    - pigeon-operator-bravo
+    - pigeon-operator-charlie
+```
 
 ### Start pigeon
 
