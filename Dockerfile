@@ -3,7 +3,7 @@
 ###########################
 ####     Base image    ####
 ###########################
-FROM golang:1.20-bullseye AS base
+FROM golang:1.21-bullseye AS base
 WORKDIR /app
 
 ###########################
