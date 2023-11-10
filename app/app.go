@@ -119,9 +119,13 @@ func Config() *config.Config {
 			}).Fatal("couldn't read config file")
 		}
 
+		if len(cnf.Paloma.ValidatorKey) < 1 {
+			// TODO: Remove legacy SigningKey field after successful migration
+			cnf.Paloma.ValidatorKey = cnf.Paloma.SigningKey
+		}
 		if len(cnf.Paloma.SigningKeys) < 1 {
-			log.Info("No signing key collection provided, falling back to legacy signing key")
-			cnf.Paloma.SigningKeys = []string{cnf.Paloma.SigningKey}
+			log.Info("No signing key collection provided, falling back to using validator key for signing")
+			cnf.Paloma.SigningKeys = []string{cnf.Paloma.ValidatorKey}
 		}
 
 		_config = cnf
@@ -145,6 +149,7 @@ func PalomaClient() *paloma.Client {
 		))
 
 		// Always pass configurations as pointers to enable updates during runtime!
+		// TODO: Move rotator & paloma client wrapper functionalities directly into ion client
 		fn := func(s string) {
 			clientCfg.Key = s
 		}
