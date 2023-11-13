@@ -270,9 +270,9 @@ palomad keys add pigeon-operator-charlie
 # Second, your new addresses will need to receive an active feegrant from your validator address.
 # This step is very important. It's not enough to simply fund those addresses manually.
 # The active feegrant is considered a "permission" to send transactions from your validator address".
-palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-alpha --fees 500ugrain -y
-palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-bravo --fees 500ugrain -y
-palomad tx feegrant grant $VALIDATOR_ADDRESS pigeon-operator-charlie --fees 500ugrain -y
+palomad tx feegrant grant $VALIDATOR_ADDRESS $(palomad keys show pigeon-operator-alpha-$(hostname) -a) --fees 500ugrain -y
+palomad tx feegrant grant $VALIDATOR_ADDRESS $(palomad keys show pigeon-operator-bravo-$(hostname) -a) --fees 500ugrain -y
+palomad tx feegrant grant $VALIDATOR_ADDRESS $(palomad keys show pigeon-operator-charlie-$(hostname) -a) --fees 500ugrain -y
 ```
 
 After creating your signing keys, all you need to do is register them with Pigeon by adding the following to your pigeon config. Make sure to restart the service after making these changes.
