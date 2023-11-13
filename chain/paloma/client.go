@@ -295,7 +295,7 @@ func (c *Client) GetSigner() string {
 }
 
 func getValidatorAddress(c *Client) sdk.Address {
-	address, err := getKeyAddress(c, c.PalomaConfig.SigningKey)
+	address, err := getKeyAddress(c, c.PalomaConfig.ValidatorKey)
 	if err != nil {
 		panic(err)
 	}
