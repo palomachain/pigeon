@@ -341,7 +341,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256)")),
+				crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256,uint256)")),
 				common.Hash{},
 				common.Hash{},
 				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
@@ -393,7 +393,7 @@ func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce ui
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
+				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)")),
 			},
 		},
 		FromBlock: &fromBlock,
@@ -651,7 +651,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256)")),
+				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)")),
 			},
 		},
 		FromBlock: &fromBlock,
@@ -675,19 +675,29 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, err
 		}
 
-		batchNonce, ok := event[1].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid batch nonce")
-		}
-
 		tokenContract, ok := event[0].(common.Address)
 		if !ok {
 			return nil, fmt.Errorf("invalid token contract")
 		}
 
+		batchNonce, ok := event[1].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid batch nonce")
+		}
+
+		eventNonce, ok := event[2].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid event nonce")
+		}
+
+		if eventNonce.Uint64() <= lastEventNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+			continue
+		}
+
 		events = append(events, chain.BatchSendEvent{
 			EthBlockHeight: ethLog.BlockNumber,
-			EventNonce:     lastEventNonce + 1,
+			EventNonce:     eventNonce.Uint64(),
 			BatchNonce:     batchNonce.Uint64(),
 			TokenContract:  tokenContract.String(),
 		})
@@ -704,7 +714,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		return nil, err
 	}
 	if t.lastObservedBlockHeights.sendToPalomaEvent == 0 {
-		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64() - 1
+		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64() - 1000
 	}
 
 	fromBlock := *big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent + 1)
@@ -715,7 +725,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		},
 		Topics: [][]common.Hash{
 			{
-				crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256)")),
+				crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256)")),
 			},
 		},
 		FromBlock: &fromBlock,
@@ -759,9 +769,19 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid amount")
 		}
 
+		eventNonce, ok := event[4].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid event nonce")
+		}
+
+		if eventNonce.Uint64() <= lastEventNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+			continue
+		}
+
 		events = append(events, chain.SendToPalomaEvent{
 			EthBlockHeight: ethLog.BlockNumber,
-			EventNonce:     lastEventNonce + 1,
+			EventNonce:     eventNonce.Uint64(),
 			Amount:         amount.Uint64(),
 			EthereumSender: ethSender.String(),
 			PalomaReceiver: palomaReceiver,
