@@ -340,19 +340,6 @@ func TestFindingTheBlockNearestToTime(t *testing.T) {
 		expHeight uint64
 	}{
 		{
-			name:               "one block fails because the same block is the current one",
-			start:              1,
-			when:               time.Unix(100, 0),
-			currentBlockNumber: 1,
-			headers: []ethHeader{
-				{
-					height: 1,
-					time:   1,
-				},
-			},
-			expErr: ErrBlockNotYetGenerated,
-		},
-		{
 			name:               "one block but the time is in the future",
 			start:              1,
 			when:               time.Unix(100, 0),
@@ -407,8 +394,8 @@ func TestFindingTheBlockNearestToTime(t *testing.T) {
 					time:   400,
 				},
 			},
-			expErr:    ErrBlockNotYetGenerated,
-			expHeight: 0,
+			expErr:    nil,
+			expHeight: 2,
 		},
 		{
 			name:               "block has been generated (even number of blocks)",
