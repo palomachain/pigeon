@@ -19,10 +19,7 @@ const (
 	ErrCouldntFindBlockWithTime = whoops.String("couldn't find block")
 )
 
-var (
-	ErrStartingBlockIsInTheFuture = ErrCouldntFindBlockWithTime.WrapS("starting height's block time is set in future")
-	ErrBlockNotYetGenerated       = ErrCouldntFindBlockWithTime.WrapS("block has not yet been generated")
-)
+var ErrStartingBlockIsInTheFuture = ErrCouldntFindBlockWithTime.WrapS("starting height's block time is set in future")
 
 const (
 	FieldMessageID   whoops.Field[uint64] = "message id"

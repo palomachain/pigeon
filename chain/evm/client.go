@@ -670,8 +670,9 @@ func (c *Client) FindBlockNearestToTime(ctx context.Context, startingHeight uint
 	}
 
 	if res == currBlockHeight {
-		// there needs to be at least one block standing in between
-		return 0, ErrBlockNotYetGenerated
+		// in case the block has just been gerated, return the
+		// previous block number.
+		return res - 1, nil
 	}
 
 	return res, nil
