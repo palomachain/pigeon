@@ -19,13 +19,15 @@ import (
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	"github.com/palomachain/pigeon/chain"
+	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	SignedMessagePrefix = "\x19Ethereum Signed Message:\n32"
+	SignedMessagePrefix             = "\x19Ethereum Signed Message:\n32"
+	cEventQueryBlockHeightMinWindow = 10
 )
 
 var errValsetIDMismatch = errors.New("valset id mismatch")
@@ -329,25 +331,22 @@ func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
 }
 
 func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID uint64) (bool, error) {
-	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	topics := [][]common.Hash{
+		{
+			crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256,uint256)")),
+			common.Hash{},
+			common.Hash{},
+			crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
+		},
+	}
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(9999).
+		WithTopics(topics...).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
 	if err != nil {
 		return false, err
-	}
-	fromBlock := *big.NewInt(0)
-	fromBlock.Sub(blockNumber, big.NewInt(9999))
-	filter := ethereum.FilterQuery{
-		Addresses: []common.Address{
-			t.smartContractAddr,
-		},
-		Topics: [][]common.Hash{
-			{
-				crypto.Keccak256Hash([]byte("LogicCallEvent(address,bytes,uint256,uint256)")),
-				common.Hash{},
-				common.Hash{},
-				crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
-			},
-		},
-		FromBlock: &fromBlock,
 	}
 
 	var found bool
@@ -380,23 +379,14 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 }
 
 func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
-	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(9999).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)"))}).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
 	if err != nil {
 		return false, err
-	}
-
-	fromBlock := *big.NewInt(0)
-	fromBlock.Sub(blockNumber, big.NewInt(9999))
-	filter := ethereum.FilterQuery{
-		Addresses: []common.Address{
-			t.smartContractAddr,
-		},
-		Topics: [][]common.Hash{
-			{
-				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)")),
-			},
-		},
-		FromBlock: &fromBlock,
 	}
 
 	found, err := t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
@@ -635,27 +625,22 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 }
 
 func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
-	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(1).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)"))}).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	blockNumber := filter.FromBlock.Int64()
 	if t.lastObservedBlockHeights.batchSendEvent == 0 {
-		t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64() - 10000
+		t.lastObservedBlockHeights.batchSendEvent = blockNumber - 10000
 	}
 
-	fromBlock := *big.NewInt(t.lastObservedBlockHeights.batchSendEvent + 1)
-
-	filter := ethereum.FilterQuery{
-		Addresses: []common.Address{
-			t.smartContractAddr,
-		},
-		Topics: [][]common.Hash{
-			{
-				crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)")),
-			},
-		},
-		FromBlock: &fromBlock,
-	}
+	filter.FromBlock = big.NewInt(t.lastObservedBlockHeights.batchSendEvent)
 
 	var events []chain.BatchSendEvent
 
@@ -703,33 +688,28 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		})
 	}
 
-	t.lastObservedBlockHeights.batchSendEvent = blockNumber.Int64()
+	t.lastObservedBlockHeights.batchSendEvent = blockNumber
 
 	return events, err
 }
 
 func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
-	blockNumber, err := t.evm.FindCurrentBlockNumber(ctx)
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(1).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256)"))}).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	blockNumber := filter.FromBlock.Int64()
 	if t.lastObservedBlockHeights.sendToPalomaEvent == 0 {
-		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64() - 1000
+		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber - 1000
 	}
 
-	fromBlock := *big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent + 1)
-
-	filter := ethereum.FilterQuery{
-		Addresses: []common.Address{
-			t.smartContractAddr,
-		},
-		Topics: [][]common.Hash{
-			{
-				crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256)")),
-			},
-		},
-		FromBlock: &fromBlock,
-	}
+	filter.FromBlock = big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent)
 
 	var events []chain.SendToPalomaEvent
 
@@ -789,7 +769,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		})
 	}
 
-	t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber.Int64()
+	t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber
 
 	return events, err
 }
