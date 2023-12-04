@@ -33,17 +33,17 @@ func TestFactory(t *testing.T) {
 
 	t.Run("with valid block provider", func(t *testing.T) {
 		for _, tt := range []struct {
-			name       string
-			addressess []common.Address
-			topics     [][]common.Hash
-			margin     int64
+			name      string
+			addresses []common.Address
+			topics    [][]common.Hash
+			margin    int64
 		}{
 			{
 				name: "with no additional configuration",
 			},
 			{
-				name:       "with addresses",
-				addressess: []common.Address{common.HexToAddress("address-1")},
+				name:      "with addresses",
+				addresses: []common.Address{common.HexToAddress("address-1")},
 			},
 			{
 				name:   "with topics",
@@ -54,27 +54,27 @@ func TestFactory(t *testing.T) {
 				margin: 10,
 			},
 			{
-				name:       "with addresses and topics",
-				addressess: []common.Address{common.HexToAddress("address-1")},
-				topics:     [][]common.Hash{{common.HexToHash("topic-1")}},
+				name:      "with addresses and topics",
+				addresses: []common.Address{common.HexToAddress("address-1")},
+				topics:    [][]common.Hash{{common.HexToHash("topic-1")}},
 			},
 			{
-				name:       "with all configuration present",
-				addressess: []common.Address{common.HexToAddress("address-1")},
-				topics:     [][]common.Hash{{common.HexToHash("topic-1")}},
-				margin:     10,
+				name:      "with all configuration present",
+				addresses: []common.Address{common.HexToAddress("address-1")},
+				topics:    [][]common.Hash{{common.HexToHash("topic-1")}},
+				margin:    10,
 			},
 		} {
 			t.Run(tt.name, func(t *testing.T) {
 				p := mockProvider(100)
 				f, err := ethfilter.Factory().
 					WithFromBlockNumberProvider(p).
-					WithAddresses(tt.addressess...).
+					WithAddresses(tt.addresses...).
 					WithTopics(tt.topics...).
 					WithFromBlockNumberSafetyMargin(tt.margin).
 					Filter(ctx)
 				require.NoError(t, err)
-				require.Equal(t, tt.addressess, f.Addresses)
+				require.Equal(t, tt.addresses, f.Addresses)
 				require.Equal(t, tt.topics, f.Topics)
 				require.Equal(t, int64(100-tt.margin), f.FromBlock.Int64())
 			})
