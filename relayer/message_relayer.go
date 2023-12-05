@@ -2,13 +2,18 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
+
+const cMsgCacheSyncInterval = time.Minute * 5
 
 func (r *Relayer) RelayMessages(ctx context.Context, _ sync.Locker) error {
 	log.Info("relayer loop")
@@ -23,8 +28,31 @@ func (r *Relayer) RelayMessages(ctx context.Context, _ sync.Locker) error {
 	}
 
 	err = r.relayMessages(ctx, r.processors)
+	if err != nil {
+		return handleProcessError(ctx, err)
+	}
 
+	err = r.syncMsgCacheWithPaloma(ctx)
 	return handleProcessError(ctx, err)
+}
+
+func (r *Relayer) syncMsgCacheWithPaloma(ctx context.Context) error {
+	if time.Now().UTC().Sub(r.msgCache.lastSync) < cMsgCacheSyncInterval {
+		return nil
+	}
+
+	msgIDs := maps.Keys(r.msgCache.records)
+	if err := r.palomaClient.NewStatus().
+		WithArg("msg-ids", fmt.Sprintf("%v", msgIDs)).
+		WithLog("Query inbox sync.").
+		Info(ctx); err != nil {
+		return err
+	}
+
+	r.msgCache.lastSync = time.Now().UTC()
+	clear(r.msgCache.records)
+
+	return nil
 }
 
 func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processor) error {
@@ -53,6 +81,10 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 			if err != nil {
 				logger.WithError(err).Error("couldn't get messages to relay")
 				return err
+			}
+
+			for _, v := range messagesInQueue {
+				r.msgCache.records[v.ID] = struct{}{}
 			}
 
 			if len(messagesInQueue) > 0 {
