@@ -30,9 +30,9 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palomachain/paloma/x/evm/types"
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
-	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
+	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/liblog"
@@ -103,7 +103,7 @@ func StoredContracts() map[string]StoredContract {
 
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
-	AddStatusUpdate(ctx context.Context, level palomatypes.MsgAddStatusUpdate_Level, status string) error
+	NewStatus() paloma.StatusUpdater
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error

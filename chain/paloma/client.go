@@ -185,7 +185,7 @@ func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, message
 	return err
 }
 
-func (c *Client) AddStatusUpdate(ctx context.Context, level palomatypes.MsgAddStatusUpdate_Level, status string) error {
+func (c *Client) addStatusUpdate(ctx context.Context, level palomatypes.MsgAddStatusUpdate_Level, status string) error {
 	msg := &palomatypes.MsgAddStatusUpdate{
 		Creator: c.creator,
 		Status:  status,
