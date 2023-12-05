@@ -22,6 +22,7 @@ import (
 
 //go:generate mockery --name=PalomaClienter
 type PalomaClienter interface {
+	NewStatus() paloma.StatusUpdater
 	AddExternalChainInfo(ctx context.Context, chainInfos ...paloma.ChainInfoIn) error
 	QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
@@ -67,14 +68,20 @@ type valueCache struct {
 	lastChainInfoRecord []paloma.ChainInfoIn
 }
 
+type messageCache struct {
+	records  map[uint64]struct{}
+	lastSync time.Time
+}
+
 type Relayer struct {
 	palomaClient     PalomaClienter
 	evmFactory       EvmFactorier
 	mevClient        mev.Client
 	time             utiltime.Time
-	cfg              *config.Config
-	procRefreshMutex *sync.RWMutex
 	valCache         *valueCache
+	procRefreshMutex *sync.RWMutex
+	cfg              *config.Config
+	msgCache         *messageCache
 	appVersion       string
 	chainsInfos      []evmtypes.ChainInfo
 	processors       []chain.Processor
@@ -97,6 +104,7 @@ func New(config *config.Config, palomaClient PalomaClienter, evmFactory EvmFacto
 		staking:          false,
 		procRefreshMutex: &sync.RWMutex{},
 		valCache:         &valueCache{},
+		msgCache:         &messageCache{records: make(map[uint64]struct{}), lastSync: time.Now().UTC()},
 	}
 }
 
