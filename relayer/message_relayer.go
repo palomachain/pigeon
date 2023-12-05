@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-const cMsgCacheSyncInterval = time.Minute
+const cMsgCacheSyncInterval = time.Minute * 5
 
 func (r *Relayer) RelayMessages(ctx context.Context, _ sync.Locker) error {
 	log.Info("relayer loop")
