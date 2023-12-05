@@ -22,6 +22,7 @@ import (
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"
+	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -39,6 +40,17 @@ var _ rpc.DataError = fakeJsonRpcError("bla")
 
 func (f fakeJsonRpcError) Error() string  { return string(f) }
 func (f fakeJsonRpcError) ErrorData() any { return string(f) }
+
+type StatusUpdater struct{}
+
+func (s *StatusUpdater) WithLog(status string) paloma.StatusUpdater                        { return s }
+func (s *StatusUpdater) WithMsg(msg *chain.MessageWithSignatures) paloma.StatusUpdater     { return s }
+func (s *StatusUpdater) WithQueueType(queueType string) paloma.StatusUpdater               { return s }
+func (s *StatusUpdater) WithChainReferenceID(chainReferenceID string) paloma.StatusUpdater { return s }
+func (s *StatusUpdater) WithArg(key, value string) paloma.StatusUpdater                    { return s }
+func (s *StatusUpdater) Info(ctx context.Context) error                                    { return nil }
+func (s *StatusUpdater) Error(ctx context.Context) error                                   { return nil }
+func (s *StatusUpdater) Debug(ctx context.Context) error                                   { return nil }
 
 var (
 	smartContractAddr        = common.HexToAddress("0xDEF")
@@ -288,7 +300,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				}
 
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
 					fn := args.Get(3).(func([]etherumtypes.Log) bool)
 					fn(isArbitraryCallExecutedLogs)
@@ -406,7 +418,7 @@ func TestMessageProcessing(t *testing.T) {
 				)
 
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(56)}, nil)
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 				return evm, paloma
 			},
 		},
@@ -519,7 +531,7 @@ func TestMessageProcessing(t *testing.T) {
 				)
 
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
@@ -649,7 +661,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{
@@ -739,7 +751,7 @@ func TestMessageProcessing(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				currentValsetID := int64(0)
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
@@ -826,7 +838,7 @@ func TestMessageProcessing(t *testing.T) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 				fakeErr := fakeJsonRpcError("bla")
 
-				paloma.On("AddStatusUpdate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},

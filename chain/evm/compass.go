@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
-	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
@@ -460,7 +459,7 @@ func BuildCompassConsensus(
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
-	for _, rawMsg := range msgs {
+	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
 		if ctx.Err() != nil {
@@ -568,12 +567,22 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		case errors.Is(processingErr, ErrNoConsensus):
 			// Only log
 			logger.Warn(ErrNoConsensus.Error())
-			if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, ErrNoConsensus.Error()); err != nil {
+			if err := t.paloma.NewStatus().
+				WithChainReferenceID(t.ChainReferenceID).
+				WithQueueType(queueTypeName).
+				WithMsg(&msgs[i]).
+				WithLog(ErrNoConsensus.Error()).
+				Error(ctx); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")
 			}
 		default:
 			logger.WithError(processingErr).Error("processing error")
-			if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, processingErr.Error()); err != nil {
+			if err := t.paloma.NewStatus().
+				WithChainReferenceID(t.ChainReferenceID).
+				WithQueueType(queueTypeName).
+				WithMsg(&msgs[i]).
+				WithLog(processingErr.Error()).
+				Error(ctx); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")
 			}
 			gErr.Add(processingErr)
@@ -1048,7 +1057,7 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 	if valsetID != expectedValset.Id {
 		err := fmt.Errorf("target chain valset mismatch, expected %d, got %v", expectedValset.Id, valsetID)
 		logger.WithError(err).Error("Target chain valset mismatch!")
-		if err := t.paloma.AddStatusUpdate(ctx, palomatypes.MsgAddStatusUpdate_LEVEL_ERROR, err.Error()); err != nil {
+		if err := t.paloma.NewStatus().WithChainReferenceID(t.ChainReferenceID).WithLog(err.Error()).Error(ctx); err != nil {
 			logger.WithError(err).Error("Failed to send log to Paloma.")
 		}
 		return 0, errValsetIDMismatch
