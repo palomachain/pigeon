@@ -3,6 +3,7 @@ package paloma
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -199,11 +200,30 @@ func TestStatusUpdater(t *testing.T) {
 					ms := mocks.NewMessageSender(t)
 					msg := tt.setup()
 					msg.Level = cfg.level
-					ms.On("SendMsg", mock.Anything, msg, mock.Anything).Return(nil, nil)
+					ms.On("SendMsg", mock.Anything, mock.MatchedBy(matchArgs(msg)), mock.Anything).Return(nil, nil)
 					client := Client{MessageSender: ms}
 					cfg.exec(tt.exec(&client))
 				})
 			}
 		})
+	}
+}
+
+func matchArgs(expected *palomatypes.MsgAddStatusUpdate) func(*palomatypes.MsgAddStatusUpdate) bool {
+	return func(actual *palomatypes.MsgAddStatusUpdate) bool {
+		for _, v := range expected.Args {
+			if !slices.ContainsFunc(actual.Args, func(i palomatypes.MsgAddStatusUpdate_KeyValuePair) bool {
+				return i.Key == v.Key && i.Value == v.Value
+			}) {
+				return false
+			}
+		}
+
+		if len(expected.Args) != len(actual.Args) {
+			return false
+		}
+
+		return expected.Level == actual.Level &&
+			expected.Status == actual.Status
 	}
 }
