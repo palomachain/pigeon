@@ -459,7 +459,7 @@ func BuildCompassConsensus(
 func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
-	for _, rawMsg := range msgs {
+	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
 		if ctx.Err() != nil {
@@ -570,7 +570,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			if err := t.paloma.NewStatus().
 				WithChainReferenceID(t.ChainReferenceID).
 				WithQueueType(queueTypeName).
-				WithMsg(&rawMsg).
+				WithMsg(&msgs[i]).
 				WithLog(ErrNoConsensus.Error()).
 				Error(ctx); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")
@@ -580,7 +580,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			if err := t.paloma.NewStatus().
 				WithChainReferenceID(t.ChainReferenceID).
 				WithQueueType(queueTypeName).
-				WithMsg(&rawMsg).
+				WithMsg(&msgs[i]).
 				WithLog(processingErr.Error()).
 				Error(ctx); err != nil {
 				logger.WithError(err).Error("failed to send paloma status update")

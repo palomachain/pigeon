@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensus "github.com/palomachain/paloma/x/consensus/types"
 	gravity "github.com/palomachain/paloma/x/gravity/types"
-	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/util/ion"
@@ -179,17 +178,6 @@ func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, message
 		Data:          data,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
-	}
-
-	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
-	return err
-}
-
-func (c *Client) addStatusUpdate(ctx context.Context, level palomatypes.MsgAddStatusUpdate_Level, status string) error {
-	msg := &palomatypes.MsgAddStatusUpdate{
-		Creator: c.creator,
-		Status:  status,
-		Level:   level,
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
