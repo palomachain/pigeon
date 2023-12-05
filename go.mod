@@ -20,7 +20,7 @@ require (
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/term v0.13.0
 	google.golang.org/grpc v1.59.0
