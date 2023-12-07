@@ -332,6 +332,9 @@ func callSmartContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = args.signingAddr
 
+		// https://github.com/VolumeFi/paloma/issues/1048
+		txOpts.GasLimit = uint64(float64(txOpts.GasLimit) * 1.1)
+
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
 			txOpts.GasTipCap = gasTipCap
