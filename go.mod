@@ -11,7 +11,7 @@ require (
 	github.com/cosmos/ibc-go/v7 v7.3.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/go-resty/resty/v2 v2.10.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.13.0
