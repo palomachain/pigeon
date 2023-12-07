@@ -90,6 +90,9 @@ func deployContract(
 
 		var gasTipCap *big.Int
 
+		// https://github.com/VolumeFi/paloma/issues/1048
+		txOpts.GasLimit = uint64(float64(txOpts.GasLimit) * 1.1)
+
 		if txType == 2 {
 			gasPrice = gasPrice.Mul(gasPrice, big.NewInt(2)) // double gas price for EIP-1559 tx
 			gasTipCap, err = ethClient.SuggestGasTipCap(ctx)
@@ -209,6 +212,9 @@ func deployContractArbitrum(
 		}
 
 		var gasTipCap *big.Int
+
+		// https://github.com/VolumeFi/paloma/issues/1048
+		txOpts.GasLimit = uint64(float64(txOpts.GasLimit) * 1.1)
 
 		if txType == 2 {
 			gasPrice = gasPrice.Mul(gasPrice, big.NewInt(2)) // double gas price for EIP-1559 tx
