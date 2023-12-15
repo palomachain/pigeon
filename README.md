@@ -242,7 +242,7 @@ evm:
     base-rpc-url: ${ARB_RPC_URL}
     keyring-pass-env-name: ARB_PASSWORD
     signing-key: ${ARB_SIGNING_KEY}
-    keyring-dir: /root/.pigeon/keys/evm/arb-main
+    keyring-dir: /root/.pigeon/keys/evm/arbitrum-main
     gas-adjustment: 2
     tx-type: 2
 
