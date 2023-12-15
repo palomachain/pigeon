@@ -237,7 +237,7 @@ evm:
     gas-adjustment: 1
     tx-type: 2
 
-  arb-main:
+  arbitrum-main:
     chain-id: 42161
     base-rpc-url: ${ARB_RPC_URL}
     keyring-pass-env-name: ARB_PASSWORD
