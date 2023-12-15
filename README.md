@@ -142,7 +142,7 @@ pigeon evm keys import ~/.pigeon/keys/evm/base-main
 ```
 Arbitrum Mainnet (arb-main)
 ```
-pigeon evm keys import ~/.pigeon/keys/evm/arb-main
+pigeon evm keys import ~/.pigeon/keys/evm/arbitrum-main
 ```
 Gnosis Mainnet (gnosis-main)
 ```
