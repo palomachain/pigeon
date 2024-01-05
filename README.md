@@ -160,12 +160,12 @@ Validators joining the Paloma network for the first time will need to fund the m
 | Chain Name    | Paloma Chain-ID | Native Token | Minimum Balance Required | Governance Proposal|
 | ------------- | --------------- |------------- |-------------- |---------------- |
 | BNB Chain / Binance Smart Chain |bnb-main | BNB  | 0.005 BNB  | [PIP 27 - Paloma Mainnet Support for BNB Chain](https://paloma.explorers.guru/proposal/9) |
-| Ethereum  | eth-maain  | ETH  | 0.005 ETH  | [PIP 28 - Paloma Compass-EVM and Mainnet Support for Ethereum Mainnet](https://paloma.explorers.guru/proposal/10)| 
-| Polygon MATCI  | matic-maain  | MATIC  | 0.005 MATIC  | [PIP 34 - Paloma Messenger Mainnet Validator Support for Polygon Mainnet](https://paloma.explorers.guru/proposal/15)| 
-| Optimism  | op-maain  | ETH  | 0.005 ETH  | [PIP 36 - Paloma Mainnet Support for Optimistic EVM blockchain, Optimism](https://paloma.explorers.guru/proposal/22)| 
-| Base  | base-maain  | ETH  | 0.005 ETH  | [PIP 37 - Paloma Mainnet Support for Base EVM blockchain](https://paloma.explorers.guru/proposal/23)|
-| Gnosis  | base-maain  | xDAI  | 10 xDAI  | [PIP 46 - Paloma Mainnet Support for Gnosis EVM blockchain](https://paloma.explorers.guru/proposal/36)| 
-| Arbitrum  | arbitrum-maain  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)| 
+| Ethereum  | eth-main  | ETH  | 0.005 ETH  | [PIP 28 - Paloma Compass-EVM and Mainnet Support for Ethereum Mainnet](https://paloma.explorers.guru/proposal/10)| 
+| Polygon MATIC  | matic-main  | MATIC  | 0.005 MATIC  | [PIP 34 - Paloma Messenger Mainnet Validator Support for Polygon Mainnet](https://paloma.explorers.guru/proposal/15)| 
+| Optimism  | op-main  | ETH  | 0.005 ETH  | [PIP 36 - Paloma Mainnet Support for Optimistic EVM blockchain, Optimism](https://paloma.explorers.guru/proposal/22)| 
+| Base  | base-main  | ETH  | 0.001 ETH  | [PIP 37 - Paloma Mainnet Support for Base EVM blockchain](https://paloma.explorers.guru/proposal/23)|
+| Gnosis  | base-main  | xDAI  | 10 xDAI  | [PIP 46 - Paloma Mainnet Support for Gnosis EVM blockchain](https://paloma.explorers.guru/proposal/36)| 
+| Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)| 
 
 #### Configuration updates
 Please make sure you restart Pigeon after making changes to your configuration files for the updates to come into effect.
