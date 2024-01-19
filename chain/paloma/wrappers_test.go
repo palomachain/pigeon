@@ -33,7 +33,7 @@ func (m *mockMsgSender) SendMsg(ctx context.Context, msg sdk.Msg, memo string, o
 
 	m.calledMsg = msg
 
-	return &sdk.TxResponse{TxHash: string(msg.GetSigners()[0])}, m.error
+	return &sdk.TxResponse{TxHash: msg.String()}, m.error
 }
 
 type mockKeyRotator struct{}

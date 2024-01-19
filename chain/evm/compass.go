@@ -7,8 +7,8 @@ import (
 	"math/big"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/VolumeFi/whoops"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -824,7 +824,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		EventNonce:       event.EventNonce,
 		EthBlockHeight:   event.EthBlockHeight,
 		TokenContract:    event.TokenContract,
-		Amount:           sdk.NewInt(int64(event.Amount)),
+		Amount:           math.NewInt(int64(event.Amount)),
 		EthereumSender:   event.EthereumSender,
 		PalomaReceiver:   event.PalomaReceiver,
 		ChainReferenceId: t.ChainReferenceID,

@@ -24,9 +24,9 @@ func Test_Rotator_RotateKeys(t *testing.T) {
 
 	// Confirm rotator is concurrency safe
 	for i := 0; i < 3; i++ {
-		wg.Add(1)
 		go func() {
 			for i := 1; i < 100; i++ {
+				wg.Add(1)
 				r.RotateKeys(context.Background())
 				wg.Done()
 			}

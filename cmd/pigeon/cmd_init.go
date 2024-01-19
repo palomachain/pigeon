@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -20,10 +20,8 @@ var initCmd = &cobra.Command{
 		// if it does not, it creates one which it reads from the passed in config.
 		key := "signing-key"
 
-		legacyAmino := codec.NewLegacyAmino()
-		aminoCodec := codec.NewAminoCodec(legacyAmino)
-
-		kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin, aminoCodec)
+		clientCtx := client.GetClientContextFromCmd(cmd)
+		kr, err := keyring.New("pigeon", args[0], args[1], os.Stdin, clientCtx.Codec)
 		if err != nil {
 			return err
 		}
