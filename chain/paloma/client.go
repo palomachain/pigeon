@@ -124,7 +124,9 @@ func (c *Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainIn
 	}
 
 	msg := &valset.MsgAddExternalChainInfoForValidator{
-		Creator: c.creator,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
 	}
 
 	msg.ChainInfos = slice.Map(
@@ -150,10 +152,12 @@ func (c *Client) AddMessageEvidence(ctx context.Context, queueTypeName string, m
 		return err
 	}
 	msg := &consensus.MsgAddEvidence{
-		Creator:       c.creator,
 		Proof:         anyProof,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
 	}
 
 	_, err = c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
@@ -162,7 +166,6 @@ func (c *Client) AddMessageEvidence(ctx context.Context, queueTypeName string, m
 
 func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
 	msg := &consensus.MsgSetPublicAccessData{
-		Creator:       c.creator,
 		Data:          data,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
@@ -174,10 +177,12 @@ func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, 
 
 func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
 	msg := &consensus.MsgSetErrorData{
-		Creator:       c.creator,
 		Data:          data,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
@@ -186,8 +191,10 @@ func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, message
 
 func (c *Client) KeepValidatorAlive(ctx context.Context, appVersion string) error {
 	msg := &valset.MsgKeepAlive{
-		Creator:       c.creator,
 		PigeonVersion: appVersion,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
@@ -254,8 +261,10 @@ func broadcastMessageSignatures(
 		}
 	}
 	msg := &consensus.MsgAddMessagesSignatures{
-		Creator:        creator,
 		SignedMessages: signedMessages,
+		Metadata: valset.MsgMetadata{
+			Creator: creator,
+		},
 	}
 	_, err := ms.SendMsg(ctx, msg, "", opts...)
 	return err

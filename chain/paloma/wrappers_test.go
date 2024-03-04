@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
+	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/util/ion"
 	"github.com/stretchr/testify/require"
@@ -87,9 +88,11 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 			WithSignerProvider(func() string { return signer })
 
 		msg := &palomatypes.MsgAddStatusUpdate{
-			Creator: "foo",
-			Status:  "bar",
-			Level:   palomatypes.MsgAddStatusUpdate_LEVEL_INFO,
+			Status: "bar",
+			Level:  palomatypes.MsgAddStatusUpdate_LEVEL_INFO,
+			Metadata: valsettypes.MsgMetadata{
+				Creator: "foo",
+			},
 		}
 
 		sender.expectedMsg = msg
@@ -110,9 +113,11 @@ func Test_PalomaMessageSender_SendMsg(t *testing.T) {
 		wg := &sync.WaitGroup{}
 
 		msg := &palomatypes.MsgAddStatusUpdate{
-			Creator: "foo",
-			Status:  "bar",
-			Level:   palomatypes.MsgAddStatusUpdate_LEVEL_INFO,
+			Status: "bar",
+			Level:  palomatypes.MsgAddStatusUpdate_LEVEL_INFO,
+			Metadata: valsettypes.MsgMetadata{
+				Creator: "foo",
+			},
 		}
 		sender.expectedMsg = msg
 
