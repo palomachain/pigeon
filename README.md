@@ -248,7 +248,7 @@ evm:
     keyring-pass-env-name: BASE_PASSWORD
     signing-key: ${BASE_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/base-main
-    gas-adjustment: 1
+    gas-adjustment: 2
     tx-type: 2
 
   arbitrum-main:
@@ -266,6 +266,15 @@ evm:
     keyring-pass-env-name: GNOSIS_PASSWORD
     signing-key: ${GNOSIS_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/gnosis-main
+    gas-adjustment: 2
+    tx-type: 2
+
+  blast-main:
+    chain-id: 81457
+    base-rpc-url: ${BLAST_RPC_URL}
+    keyring-pass-env-name: BLAST_PASSWORD
+    signing-key: ${BLAST_SIGNING_KEY}
+    keyring-dir: ~/.pigeon/keys/evm/blast-main
     gas-adjustment: 2
     tx-type: 2
 ```
