@@ -141,7 +141,7 @@ type mevClient interface {
 
 //go:generate mockery --name=ethClientConn --inpackage --testonly
 type ethClientConn interface {
-	bind.ContractBackend
+	ethClienter
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *etherumtypes.Transaction, isPending bool, err error)
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
 	BlockByHash(ctx context.Context, hash common.Hash) (*etherumtypes.Block, error)
@@ -168,6 +168,11 @@ type CompassBindingFilterer interface {
 	ParseValsetUpdated(log ethtypes.Log) (*compassABI.CompassValsetUpdated, error)
 	WatchLogicCallEvent(opts *bind.WatchOpts, sink chan<- *compassABI.CompassLogicCallEvent) (event.Subscription, error)
 	WatchValsetUpdated(opts *bind.WatchOpts, sink chan<- *compassABI.CompassValsetUpdated) (event.Subscription, error)
+}
+
+//go:generate mockery --name=ethClienter --inpackage --testonly
+type ethClienter interface {
+	bind.ContractBackend
 }
 
 //go:generate mockery --name=CompassBinding
@@ -215,11 +220,6 @@ func (c *Client) isArbitrumClient() bool {
 
 func (c *Client) newCompass(addr common.Address) (CompassBinding, error) {
 	return compassABI.NewCompass(addr, c.conn)
-}
-
-//go:generate mockery --name=ethClienter --inpackage --testonly
-type ethClienter interface {
-	bind.ContractBackend
 }
 
 type executeSmartContractIn struct {
@@ -333,7 +333,14 @@ func callSmartContract(
 		txOpts.From = args.signingAddr
 
 		// https://github.com/VolumeFi/paloma/issues/1048
-		txOpts.GasLimit = uint64(float64(txOpts.GasLimit) * 1.1)
+		value := new(big.Int)
+		gasFeeCap := new(big.Int)
+		if args.txType == 2 {
+			gasFeeCap = gasPrice
+		}
+		gasLimit, err := estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, gasTipCap, gasFeeCap, value)
+		whoops.Assert(err)
+		txOpts.GasLimit = uint64(float64(gasLimit) * 1.2)
 
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
@@ -404,6 +411,34 @@ func callSmartContract(
 
 		return tx
 	})
+}
+
+// Copied from https://github.com/ethereum/go-ethereum/blob/e5d5e09faae48dac3723634e2b1813e4f2e89535/accounts/abi/bind/base.go#L357
+// since the original implementation is not exported, but we need access to the gas limit to multiply it
+// before we send the TX.
+// More detail: https://github.com/VolumeFi/paloma/issues/1048
+// And: https://github.com/VolumeFi/paloma/issues/1158#issuecomment-1896488916
+func estimateGasLimit(ctx context.Context, c ethClienter, opts *bind.TransactOpts, contract *ethcommon.Address, input []byte, gasPrice, gasTipCap, gasFeeCap, value *big.Int) (uint64, error) {
+	if contract != nil {
+		// Gas estimation cannot succeed without code for method invocations.
+		if code, err := c.PendingCodeAt(ctx, *contract); err != nil {
+			return 0, err
+		} else if len(code) == 0 {
+			return 0, bind.ErrNoCode
+		}
+	}
+
+	msg := ethereum.CallMsg{
+		From:      opts.From,
+		To:        contract,
+		GasPrice:  gasPrice,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+		Value:     value,
+		Data:      input,
+	}
+
+	return c.EstimateGas(ctx, msg)
 }
 
 func (c *Client) sign(ctx context.Context, bytes []byte) ([]byte, error) {

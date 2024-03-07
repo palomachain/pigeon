@@ -23,6 +23,7 @@ func Test_Rotator_RotateKeys(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	// Confirm rotator is concurrency safe
+	wg.Add(3 * 99)
 	for i := 0; i < 3; i++ {
 		go func() {
 			for i := 1; i < 100; i++ {
