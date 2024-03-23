@@ -165,7 +165,8 @@ Validators joining the Paloma network for the first time will need to fund the m
 | Optimism  | op-main  | ETH  | 0.005 ETH  | [PIP 36 - Paloma Mainnet Support for Optimistic EVM blockchain, Optimism](https://paloma.explorers.guru/proposal/22)| 
 | Base  | base-main  | ETH  | 0.001 ETH  | [PIP 37 - Paloma Mainnet Support for Base EVM blockchain](https://paloma.explorers.guru/proposal/23)|
 | Gnosis  | base-main  | xDAI  | 10 xDAI  | [PIP 46 - Paloma Mainnet Support for Gnosis EVM blockchain](https://paloma.explorers.guru/proposal/36)| 
-| Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)| 
+| Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)|
+| BLAST  | blast-main  | ETH  | 0.005 ETH  | [PIP-55 - Paloma Messenger Support for BLAST!](https://paloma.explorers.guru/proposal/46)| 
 
 #### Configuration updates
 Please make sure you restart Pigeon after making changes to your configuration files for the updates to come into effect.
