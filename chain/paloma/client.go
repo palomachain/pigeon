@@ -169,6 +169,9 @@ func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, 
 		Data:          data,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
 	}
 
 	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
