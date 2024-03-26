@@ -179,7 +179,7 @@ func (p Processor) ExternalAccount() chain.ExternalAccount {
 func (p Processor) IsRightChain(ctx context.Context) error {
 	block, err := p.evmClient.BlockByHash(ctx, p.blockHeightHash)
 	if err != nil {
-		return err
+		return fmt.Errorf("BlockByHash: %w", err)
 	}
 
 	if p.chainReferenceID == "kava-main" && p.blockHeight == 5690000 {
