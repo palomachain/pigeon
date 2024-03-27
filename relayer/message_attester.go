@@ -67,6 +67,9 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 				err := p.ProvideEvidence(ctx, queue.FromString(queueName), messagesInQueue)
 				if err != nil {
 					logger.WithError(err).Error("error attesting messages")
+					if err := r.palomaClient.NewStatus().WithArg("error", err.Error()).WithLog("error attesting messages").Error(ctx); err != nil {
+						logger.WithError(err).Error("failed to send Paloma status update")
+					}
 					return err
 				}
 			}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/store/rootmulti"
 	"github.com/avast/retry-go/v4"
 	abci "github.com/cometbft/cometbft/abci/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
@@ -13,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
@@ -106,7 +106,7 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 		// ensure that we allways call done, even in case of an error or panic
 		defer done()
 		liblog.WithContext(ctx).WithField("component", "send-msgs").WithField("key", cc.Config.Key).Info("signing transaction")
-		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+		if err = tx.Sign(ctx, txf, cc.Config.Key, txb, false); err != nil {
 			return err
 		}
 		return nil

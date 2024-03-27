@@ -11,6 +11,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	protov2 "google.golang.org/protobuf/proto"
 )
 
 var errExpected = errors.New("expected unexpected error ;)")
@@ -27,6 +28,10 @@ func (m myFakeMsg) GetSigners() []sdk.AccAddress { return []sdk.AccAddress{sdk.A
 
 type myFakeTx struct {
 	msgs []myFakeMsg
+}
+
+func (t myFakeTx) GetMsgsV2() ([]protov2.Message, error) {
+	return nil, nil // this is a hack for tests
 }
 
 func (m myFakeTx) GetMsgs() (msgs []sdk.Msg) {

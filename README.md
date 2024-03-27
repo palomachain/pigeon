@@ -1,9 +1,28 @@
-![Logo!](assets/paloma.png)
-
-# Pigeon
+<div align="center">
+  <h1> Pigeon </h1>
+    <img alt="Paloma" src="https://github.com/palomachain/pigeon/blob/master/assets/paloma.png" />
+</div>
 
 > A Golang cross-chain message relayer system
 > for Paloma validators to deliver messages to any blockchain.
+
+<div align="center">
+  <a href="https://github.com/palomachain/pigeon/blob/master/LICENSE">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/palomachain/pigeon.svg" />
+  </a>
+  <a href="https://pkg.go.dev/github.com/palomachain/pigeon">
+    <img src="https://pkg.go.dev/badge/github.com/palomachain/pigeon.svg" alt="Go Reference">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/palomachain/pigeon">
+    <img alt="Go report card" src="https://goreportcard.com/badge/github.com/palomachain/pigeon" />
+  </a>
+  <a href="https://github.com/palomachain/pigeon/blob/master/.github/workflows/ci-test.yml">
+    <img alt="Code Coverage" src="https://github.com/palomachain/pigeon/actions/workflows/ci-test.yml/badge.svg?branch=master" />
+  </a>
+  <a href="https://github.com/palomachain/pigeon/blob/master/.github/workflows/release.yml">
+    <img alt="Code Coverage" src="https://github.com/palomachain/pigeon/actions/workflows/release.yml/badge.svg?branch=master" />
+  </a>
+</div>
 
 For Crosschain software engineers that want simultaneous control of multiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scalable, crosschain, smart contract execution with any data source.
 
@@ -58,7 +77,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 ### To get the latest prebuilt `pigeon` binary:
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v1.10.2/pigeon_Linux_x86_64.tar.gz  | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v1.10.3/pigeon_Linux_x86_64.tar.gz  | \
   sudo tar -C /usr/local/bin -xvzf - pigeon
 sudo chmod +x /usr/local/bin/pigeon
 
@@ -69,7 +88,7 @@ mkdir ~/.pigeon
 ```shell
 git clone https://github.com/palomachain/pigeon.git
 cd pigeon
-git checkout v1.10.2
+git checkout v1.10.3
 make build
 sudo mv ./build/pigeon /usr/local/bin/pigeon
 
@@ -165,7 +184,8 @@ Validators joining the Paloma network for the first time will need to fund the m
 | Optimism  | op-main  | ETH  | 0.005 ETH  | [PIP 36 - Paloma Mainnet Support for Optimistic EVM blockchain, Optimism](https://paloma.explorers.guru/proposal/22)| 
 | Base  | base-main  | ETH  | 0.001 ETH  | [PIP 37 - Paloma Mainnet Support for Base EVM blockchain](https://paloma.explorers.guru/proposal/23)|
 | Gnosis  | base-main  | xDAI  | 10 xDAI  | [PIP 46 - Paloma Mainnet Support for Gnosis EVM blockchain](https://paloma.explorers.guru/proposal/36)| 
-| Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)| 
+| Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)|
+| BLAST  | blast-main  | ETH  | 0.005 ETH  | [PIP-55 - Paloma Messenger Support for BLAST!](https://paloma.explorers.guru/proposal/46)| 
 
 #### Configuration updates
 Please make sure you restart Pigeon after making changes to your configuration files for the updates to come into effect.
