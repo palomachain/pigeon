@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/math"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	"github.com/palomachain/pigeon/internal/liblog"
 	log "github.com/sirupsen/logrus"
 )
@@ -115,7 +116,7 @@ func (cc *Client) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.A
 
 	var out sdk.Coins
 	for _, c := range coins {
-		if c.Amount.Equal(sdk.NewInt(0)) {
+		if c.Amount.Equal(math.NewInt(0)) {
 			continue
 		}
 

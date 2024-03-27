@@ -496,7 +496,7 @@ func (c *Client) wrapArbitrumBlockByHash(ctx context.Context, blockHash common.H
 		Nonce:           ethtypes.BlockNonce(b.Header().Nonce),
 		BaseFee:         b.Header().BaseFee,
 		WithdrawalsHash: (*ethcommon.Hash)(b.Header().WithdrawalsHash),
-		ExcessDataGas:   nil,
+		ExcessBlobGas:   nil,
 	}
 	return ethtypes.NewBlockWithHeader(hdr), nil
 }

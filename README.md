@@ -1,9 +1,28 @@
-![Logo!](assets/paloma.png)
-
-# Pigeon
+<div align="center">
+  <h1> Pigeon </h1>
+    <img alt="Paloma" src="https://github.com/palomachain/pigeon/blob/master/assets/paloma.png" />
+</div>
 
 > A Golang cross-chain message relayer system
 > for Paloma validators to deliver messages to any blockchain.
+
+<div align="center">
+  <a href="https://github.com/palomachain/pigeon/blob/master/LICENSE">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/palomachain/pigeon.svg" />
+  </a>
+  <a href="https://pkg.go.dev/github.com/palomachain/pigeon">
+    <img src="https://pkg.go.dev/badge/github.com/palomachain/pigeon.svg" alt="Go Reference">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/palomachain/pigeon">
+    <img alt="Go report card" src="https://goreportcard.com/badge/github.com/palomachain/pigeon" />
+  </a>
+  <a href="https://github.com/palomachain/pigeon/blob/master/.github/workflows/ci-test.yml">
+    <img alt="Code Coverage" src="https://github.com/palomachain/pigeon/actions/workflows/ci-test.yml/badge.svg?branch=master" />
+  </a>
+  <a href="https://github.com/palomachain/pigeon/blob/master/.github/workflows/release.yml">
+    <img alt="Code Coverage" src="https://github.com/palomachain/pigeon/actions/workflows/release.yml/badge.svg?branch=master" />
+  </a>
+</div>
 
 For Crosschain software engineers that want simultaneous control of multiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scalable, crosschain, smart contract execution with any data source.
 

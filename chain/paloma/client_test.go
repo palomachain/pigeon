@@ -11,6 +11,7 @@ import (
 	consensus "github.com/palomachain/paloma/x/consensus/types"
 	consensusmocks "github.com/palomachain/paloma/x/consensus/types/mocks"
 	valset "github.com/palomachain/paloma/x/valset/types"
+	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	valsetmocks "github.com/palomachain/paloma/x/valset/types/mocks"
 	"github.com/palomachain/pigeon/chain"
 	clientmocks "github.com/palomachain/pigeon/chain/paloma/mocks"
@@ -339,7 +340,9 @@ func TestKeepValidatorAlive(t *testing.T) {
 				msgSender := clientmocks.NewMessageSender(t)
 				msgSender.On("SendMsg",
 					mock.Anything, &valset.MsgKeepAlive{
-						Creator:       creator,
+						Metadata: valsettypes.MsgMetadata{
+							Creator: creator,
+						},
 						PigeonVersion: "v1.3.0",
 					},
 					"",
@@ -407,7 +410,9 @@ func TestBroadcastingMessageSignatures(t *testing.T) {
 			setup: func() MessageSender {
 				msgSender := clientmocks.NewMessageSender(t)
 				expectedSignaturesMsg := &consensus.MsgAddMessagesSignatures{
-					Creator: creator,
+					Metadata: valsettypes.MsgMetadata{
+						Creator: creator,
+					},
 					SignedMessages: []*consensus.ConsensusMessageSignature{
 						{
 							Id:            123,
