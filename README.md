@@ -1,8 +1,10 @@
 <div align="center">
   <h1> Pigeon </h1>
+    <img alt="Paloma" src="https://github.com/palomachain/pigeon/blob/master/assets/paloma.png" />
 </div>
 
-![Logo!](assets/paloma.png)
+> A Golang cross-chain message relayer system
+> for Paloma validators to deliver messages to any blockchain.
 
 <div align="center">
   <a href="https://github.com/palomachain/pigeon/blob/master/LICENSE">
@@ -21,9 +23,6 @@
     <img alt="Code Coverage" src="https://github.com/palomachain/pigeon/actions/workflows/release.yml/badge.svg?branch=master" />
   </a>
 </div>
-
-> A Golang cross-chain message relayer system
-> for Paloma validators to deliver messages to any blockchain.
 
 For Crosschain software engineers that want simultaneous control of multiple smart contracts, on any blockchain, Paloma is decentralized and consensus-driven message delivery, fast state awareness, low cost state computation, and powerful attestation system that enables scalable, crosschain, smart contract execution with any data source.
 
