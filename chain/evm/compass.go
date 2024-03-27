@@ -62,8 +62,6 @@ type compass struct {
 	smartContractAddr        common.Address
 }
 
-var lastTxHashLkup = make(map[string][]byte) // hack, remove after proper support for ERC20 ownership transfer
-
 func newCompassClient(
 	smartContractAddrStr,
 	compassID,
@@ -522,9 +520,6 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				action.UploadSmartContract,
 				rawMsg,
 			)
-			if tx != nil {
-				lastTxHashLkup[t.ChainReferenceID] = tx.Hash().Bytes()
-			}
 		default:
 			return ErrUnsupportedMessageType.Format(action)
 		}
@@ -770,7 +765,6 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 		"msg-id":             rawMsg.ID,
 		"public-access-data": rawMsg.PublicAccessData,
 	}).Debug("providing proof")
-	lastTxHashLkup[t.ChainReferenceID] = rawMsg.PublicAccessData
 	txHash := common.BytesToHash(rawMsg.PublicAccessData)
 	tx, _, err := t.evm.TransactionByHash(ctx, txHash)
 	if err != nil {
