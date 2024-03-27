@@ -479,26 +479,6 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		logger.Debug("processing")
 
 		switch action := msg.GetAction().(type) {
-		// case *evmtypes.TransferERC20Ownership:
-		// 	logger := logger.WithFields(log.Fields{
-		// 		"chain-reference-id":     t.ChainReferenceID,
-		// 		"msg-id":                 rawMsg.ID,
-		// 		"msg-bytes-to-sign":      rawMsg.BytesToSign,
-		// 		"msg-msg":                rawMsg.Msg,
-		// 		"msg-nonce":              rawMsg.Nonce,
-		// 		"msg-public-access-data": rawMsg.PublicAccessData,
-		// 		"message-type":           "Message_TransferERC20Ownership",
-		// 		"new-compass-address":    string(action.TransferERC20Ownership.NewCompassAddress),
-		// 		"last-tx-hash-lkup":      lastTxHashLkup,
-		// 	})
-		// 	logger.Info("Processing erc20 transfer ownership message")
-		// 	if err := t.paloma.SetPublicAccessData(ctx, queueTypeName, rawMsg.ID, lastTxHashLkup[t.ChainReferenceID]); err != nil {
-		// 		logger.WithError(err).Error("Failed to process erc20 transfer ownership message")
-		// 		gErr.Add(err)
-		// 		return gErr
-		// 	}
-		// 	logger.Info("Processed erc20 transfer ownership message")
-		// 	return nil
 		case *evmtypes.Message_SubmitLogicCall:
 			tx, processingErr = t.submitLogicCall(
 				ctx,
