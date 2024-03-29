@@ -35,6 +35,7 @@ import (
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
+	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	arbcommon "github.com/roodeag/arbitrum/common"
@@ -332,15 +333,20 @@ func callSmartContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = args.signingAddr
 
-		// https://github.com/VolumeFi/paloma/issues/1048
-		value := new(big.Int)
-		gasFeeCap := new(big.Int)
-		if args.txType == 2 {
-			gasFeeCap = gasPrice
+		if !libchain.IsArbitrum(args.chainID) {
+			// Leads to problems with arbitrum:
+			// both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified
+			// Only set this on other chains.
+			// https://github.com/VolumeFi/paloma/issues/1048
+			value := new(big.Int)
+			gasFeeCap := new(big.Int)
+			if args.txType == 2 {
+				gasFeeCap = gasPrice
+			}
+			gasLimit, err := estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, gasTipCap, gasFeeCap, value)
+			whoops.Assert(err)
+			txOpts.GasLimit = uint64(float64(gasLimit) * 1.2)
 		}
-		gasLimit, err := estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, gasTipCap, gasFeeCap, value)
-		whoops.Assert(err)
-		txOpts.GasLimit = uint64(float64(gasLimit) * 1.2)
 
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
