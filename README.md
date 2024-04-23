@@ -51,10 +51,15 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 ## Active Networks
 * Paloma Testnest `paloma-testnet-15` (Jan 20, 2023)
 * Paloma Mainnet `tumbler` (April 22, 2024)
-* Ethereum Mainnet (relay)
-* Binance Smart Chain Mainnet (relay)
-* Polygon Mainnet (relay)
+* Arbitrum Mainnet (relay)
 * Base Mainnet (relay)
+* Blast Mainnet (relay)
+* Binance Smart Chain Mainnet (relay)
+* Ethereum Mainnet (relay)
+* Gnosis Mainnet (relay)
+* Optimism Mainnet (relay)
+* Polygon Mainnet (relay)
+
 
 ## ISSUES
 
@@ -116,21 +121,21 @@ Optimism Mainnet (op-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/op-main
 ```
-Kava Mainnet (kava-main)
-```
-pigeon evm keys generate-new ~/.pigeon/keys/evm/kava-main
-```
 Base Mainnet (base-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/base-main
 ```
-Arbitrum Mainnet (arb-main)
+Arbitrum Mainnet (arbitrum-main)
 ```
-pigeon evm keys generate-new ~/.pigeon/keys/evm/arb-main
+pigeon evm keys generate-new ~/.pigeon/keys/evm/arbitrum-main
 ```
 Gnosis Mainnet (gnosis-main)
 ```
 pigeon evm keys generate-new ~/.pigeon/keys/evm/gnosis-main
+```
+Blast Mainnet (blast-main)
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/blast-main
 ```
 
 ### or import existing you existing Ethereum evm private keys
@@ -151,21 +156,21 @@ Optimism Mainnet (op-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/op-main
 ```
-Kava Mainnet (kava-main)
-```
-pigeon evm keys import ~/.pigeon/keys/evm/kava-main
-```
 Base Mainnet (base-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/base-main
 ```
-Arbitrum Mainnet (arb-main)
+Arbitrum Mainnet (arbitrum-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/arbitrum-main
 ```
 Gnosis Mainnet (gnosis-main)
 ```
 pigeon evm keys import ~/.pigeon/keys/evm/gnosis-main
+```
+Blast Mainnet (blast-main)
+```
+pigeon evm keys import ~/.pigeon/keys/evm/blast-main
 ```
 
 ### Config setup
@@ -205,7 +210,7 @@ loop-timeout: 5s
 health-check-port: 5757
 
 paloma:
-  chain-id: paloma-testnet-15
+  chain-id: tumbler
   call-timeout: 20s
   keyring-dir: ~/.paloma
   keyring-pass-env-name: PALOMA_KEYRING_PASS
@@ -250,15 +255,6 @@ evm:
     keyring-pass-env-name: OP_PASSWORD
     signing-key: ${OP_SIGNING_KEY}
     keyring-dir: /root/.pigeon/keys/evm/op-main
-    gas-adjustment: 2
-    tx-type: 2
-
-  kava-main:
-    chain-id: 2222
-    base-rpc-url: ${KAVA_RPC_URL}
-    keyring-pass-env-name: KAVA_PASSWORD
-    signing-key: ${KAVA_SIGNING_KEY}
-    keyring-dir: /root/.pigeon/keys/evm/kava-main
     gas-adjustment: 2
     tx-type: 2
 
@@ -350,6 +346,15 @@ BASE_SIGNING_KEY=<Your Base SIGNING KEY>
 GNOSIS_RPC_URL=<Your Gnosis mainnet RPC URL>
 GNOSIS_PASSWORD=<Your Gnosis Key Password>
 GNOSIS_SIGNING_KEY=<Your Gnosis SIGNING KEY>
+ARB_RPC_URL=<Your Arbitrum mainnet RPC URL>
+ARB_PASSWORD=<Your Arbitrum Key Password>
+ARB_SIGNING_KEY=<Your Arbitrum SIGNING KEY>
+BLAST_RPC_URL=<Your Blast mainnet RPC URL>
+BLAST_PASSWORD=<Your Blast Key Password>
+BLAST_SIGNING_KEY=<Your Blast SIGNING KEY>
+OP_RPC_URL=<Your Optimism mainnet RPC URL>
+OP_PASSWORD=<Your Optimism Key Password>
+OP_SIGNING_KEY=<Your Optimism SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
