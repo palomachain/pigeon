@@ -50,7 +50,7 @@ See [Release procedure](CONTRIBUTING.md#release-procedure) for more information 
 
 ## Active Networks
 * Paloma Testnest `paloma-testnet-15` (Jan 20, 2023)
-* Paloma Mainnet `messenger` (Feb 8, 2023)
+* Paloma Mainnet `tumbler` (April 22, 2024)
 * Ethereum Mainnet (relay)
 * Binance Smart Chain Mainnet (relay)
 * Polygon Mainnet (relay)
@@ -63,7 +63,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-15` for Testnet or `messenger` for Mainnet (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-15` for Testnet or `tumbler` for Mainnet (see example below).**
 
 > #### Note:
 > If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
@@ -173,7 +173,7 @@ pigeon evm keys import ~/.pigeon/keys/evm/gnosis-main
 **IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type: 2`, `gas-adjustment` is set to `2` except for `bnb-main` chain. However, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
 
 
-#### Paloma supported chains on `messenger` mainnet as of January 5, 2024. 
+#### Paloma supported chains on `tumbler` mainnet as of January 5, 2024. 
 Validators joining the Paloma network for the first time will need to fund the minimum onchain gas-fee balances to be included in the validator set. All validators must support all chains for relaying. All validators must maintain the minimum balance required for each target chain. Below are the list of supported chains and their minimums.
 
 | Chain Name    | Paloma Chain-ID | Native Token | Minimum Balance Required | Governance Proposal|
