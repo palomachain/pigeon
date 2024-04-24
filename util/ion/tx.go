@@ -111,7 +111,6 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 		}
 		return nil
 	}()
-
 	if err != nil {
 		return nil, err
 	}

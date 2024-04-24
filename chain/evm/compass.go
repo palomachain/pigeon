@@ -367,7 +367,6 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 
 		return found
 	})
-
 	if err != nil {
 		return false, err
 	}

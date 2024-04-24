@@ -229,7 +229,12 @@ require (
 )
 
 replace (
+	cosmossdk.io/store v1.0.2 => cosmossdk.io/store v1.1.0
+	github.com/cosmos/iavl => github.com/cosmos/iavl v1.1.2
 	// Link to op-geth, which is built on top of go-ethereum
 	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101308.4-rc.1
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/common => github.com/prometheus/common v0.47.0
 	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
+
 )
