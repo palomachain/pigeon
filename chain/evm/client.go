@@ -351,6 +351,7 @@ func callSmartContract(
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
 			txOpts.GasTipCap = gasTipCap
+			txOpts.GasPrice = nil
 			logger.WithFields(log.Fields{
 				"gas-limit":     txOpts.GasLimit,
 				"gas-max-price": txOpts.GasFeeCap,
@@ -360,6 +361,8 @@ func callSmartContract(
 			}).Debug("executing eip-1559 tx")
 		} else {
 			txOpts.GasPrice = gasPrice
+			txOpts.GasFeeCap = nil
+			txOpts.GasTipCap = nil
 			logger.WithFields(log.Fields{
 				"gas-limit": txOpts.GasLimit,
 				"gas-price": txOpts.GasPrice,
