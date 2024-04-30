@@ -230,6 +230,6 @@ require (
 
 replace (
 	// Link to op-geth, which is built on top of go-ethereum
-	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101308.4-rc.1
+	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101311.0
 	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
 )
