@@ -340,11 +340,15 @@ func callSmartContract(
 			// https://github.com/VolumeFi/paloma/issues/1048
 			value := new(big.Int)
 			gasFeeCap := new(big.Int)
+			var gasLimit uint64
 			if args.txType == 2 {
 				gasFeeCap = gasPrice
+				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, nil, gasTipCap, gasFeeCap, value)
+				whoops.Assert(err)
+			} else {
+				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
+				whoops.Assert(err)
 			}
-			gasLimit, err := estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, gasTipCap, gasFeeCap, value)
-			whoops.Assert(err)
 			txOpts.GasLimit = uint64(float64(gasLimit) * 1.2)
 		}
 
