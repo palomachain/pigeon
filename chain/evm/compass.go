@@ -223,7 +223,7 @@ func (t compass) submitLogicCall(
 	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
 	tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
 	if err != nil {
-		logger.WithError(err).Error("uploadSmartContract: error calling DeployContract")
+		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
 		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
 		if setErr != nil {
 			return nil, setErr
