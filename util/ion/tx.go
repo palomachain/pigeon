@@ -107,7 +107,7 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 		defer done()
 		liblog.WithContext(ctx).WithField("component", "send-msgs").WithField("key", cc.Config.Key).Info("signing transaction")
 		if err = tx.Sign(ctx, txf, cc.Config.Key, txb, false); err != nil {
-			return err
+			return fmt.Errorf("failed to sign tx: %w", err)
 		}
 		return nil
 	}()
@@ -119,13 +119,13 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to encode tx: %w", err)
 	}
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to broadcast tx: %w", err)
 	}
 
 	// transaction was executed, log the success or failure using the tx response code
