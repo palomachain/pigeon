@@ -92,6 +92,8 @@ func (m *PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo str
 		return nil, fmt.Errorf("failed to inject metadata: %w", err)
 	}
 
+	liblog.WithContext(ctx).WithField("msg", msg).Info("sending-msg")
+
 	res, err := m.W.SendMsg(ctx, msg, memo, opts...)
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)
