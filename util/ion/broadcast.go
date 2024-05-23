@@ -11,6 +11,7 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/palomachain/pigeon/internal/liblog"
 )
 
 const (
@@ -67,6 +68,7 @@ func broadcastTx(
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
+	liblog.WithContext(ctx).WithError(err).WithField("result", syncRes).Warn("broastcastTX")
 	if err != nil {
 		if syncRes == nil {
 			// There are some cases where BroadcastTxSync will return an error but the associated
