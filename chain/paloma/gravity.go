@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	gravity "github.com/palomachain/paloma/x/gravity/types"
+	"github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 )
 
@@ -38,6 +39,9 @@ func gravityConfirmBatch(
 			EthSigner:     signedBatch.SignedByAddress,
 			Orchestrator:  creator,
 			Signature:     hex.EncodeToString(signedBatch.Signature),
+			Metadata: types.MsgMetadata{
+				Creator: creator,
+			},
 		}
 		_, err := ms.SendMsg(ctx, msg, "")
 		return err
