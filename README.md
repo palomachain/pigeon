@@ -49,7 +49,7 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
-* Paloma Testnest `paloma-testnet-15` (Jan 20, 2023)
+* Paloma Testnest `paloma-testnet-16` (May 23, 2024)
 * Paloma Mainnet `tumbler` (April 22, 2024)
 * Arbitrum Mainnet (relay)
 * Base Mainnet (relay)
@@ -68,7 +68,7 @@ This repo does not accept issues. Please use https://github.com/palomachain/palo
 
 ## Install
 
-**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-15` for Testnet or `tumbler` for Mainnet (see example below).**
+**If you are upgrading from a prior tesntet confirm that you added the `health-check-port: 5757` to your pigeon yaml configuration file and upgrade the paloma chain-id field to `paloma-testnet-16` for Testnet or `tumbler` for Mainnet (see example below).**
 
 > #### Note:
 > If you're joining while testnet didn't boot up yet you may see a log line saying `not staking. waiting`. That's OK.
