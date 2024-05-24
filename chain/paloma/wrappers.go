@@ -84,7 +84,6 @@ func (m *PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo str
 	signer := m.GetSigner()
 
 	logger.WithField("creator", creator).WithField("signer", signer).Debug("Injecting metadata")
-
 	if err := tryInjectMetadata(msg, vtypes.MsgMetadata{
 		Creator: m.GetCreator(),
 		Signers: []string{signer},
@@ -92,6 +91,7 @@ func (m *PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo str
 		return nil, fmt.Errorf("failed to inject metadata: %w", err)
 	}
 
+	logger.WithField("msg", msg).Debug("Sending message...")
 	res, err := m.W.SendMsg(ctx, msg, memo, opts...)
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)

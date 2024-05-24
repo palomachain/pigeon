@@ -4,52 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/grpc"
 	gravity "github.com/palomachain/paloma/x/gravity/types"
 	"github.com/palomachain/pigeon/chain"
 )
 
 func (c *Client) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
-	return gravityQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
-}
-
-func (c *Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
-	return gravityConfirmBatch(ctx, c.MessageSender, c.creator, signatures...)
-}
-
-func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
-	return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.valAddr, chainReferenceID)
-}
-
-func gravityConfirmBatch(
-	ctx context.Context,
-	ms MessageSender,
-	creator string,
-	signedBatches ...chain.SignedGravityOutgoingTxBatch,
-) error {
-	if len(signedBatches) == 0 {
-		return nil
-	}
-	for _, signedBatch := range signedBatches {
-		msg := &gravity.MsgConfirmBatch{
-			Nonce:         signedBatch.BatchNonce,
-			TokenContract: signedBatch.TokenContract,
-			EthSigner:     signedBatch.SignedByAddress,
-			Orchestrator:  creator,
-			Signature:     hex.EncodeToString(signedBatch.Signature),
-		}
-		_, err := ms.SendMsg(ctx, msg, "")
-		return err
-
-	}
-	return nil
-}
-
-func gravityQueryLastUnsignedBatch(ctx context.Context, grpcClient grpc.ClientConn, address string, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
-	qc := gravity.NewQueryClient(grpcClient)
+	// return gravityQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
+	qc := gravity.NewQueryClient(c.GRPCClient)
 	batches, err := qc.LastPendingBatchRequestByAddr(ctx, &gravity.QueryLastPendingBatchRequestByAddrRequest{
-		Address: address,
+		Address: c.creator,
 	})
 	if err != nil {
 		return nil, err
@@ -65,13 +28,33 @@ func gravityQueryLastUnsignedBatch(ctx context.Context, grpcClient grpc.ClientCo
 	return filtered, nil
 }
 
-func gravityQueryBatchesForRelaying(ctx context.Context, grpcClient grpc.ClientConn, address sdk.ValAddress, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
-	qc := gravity.NewQueryClient(grpcClient)
+func (c *Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
+	if len(signatures) == 0 {
+		return nil
+	}
+	for _, signedBatch := range signatures {
+		msg := &gravity.MsgConfirmBatch{
+			Nonce:         signedBatch.BatchNonce,
+			TokenContract: signedBatch.TokenContract,
+			EthSigner:     signedBatch.SignedByAddress,
+			Orchestrator:  c.creator,
+			Signature:     hex.EncodeToString(signedBatch.Signature),
+		}
+		_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+		return err
+
+	}
+	return nil
+}
+
+func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
+	// return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.valAddr, chainReferenceID)
+	qc := gravity.NewQueryClient(c.GRPCClient)
 
 	// Get batches
 	req := &gravity.QueryOutgoingTxBatchesRequest{
 		ChainReferenceId: chainReferenceID,
-		Assignee:         address.String(),
+		Assignee:         c.valAddr.String(),
 	}
 	batches, err := qc.OutgoingTxBatches(ctx, req)
 	if err != nil {

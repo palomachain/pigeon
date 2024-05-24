@@ -11,6 +11,7 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/palomachain/pigeon/internal/liblog"
 )
 
 const (
@@ -68,6 +69,7 @@ func broadcastTx(
 	// point
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
 	if err != nil {
+		liblog.WithContext(ctx).WithError(err).Warn("Failed to broadcast TX.")
 		if syncRes == nil {
 			// There are some cases where BroadcastTxSync will return an error but the associated
 			// ResultBroadcastTx will be nil.
@@ -84,6 +86,7 @@ func broadcastTx(
 	// This catches all of the sdk errors https://github.com/cosmos/cosmos-sdk/blob/f10f5e5974d2ecbf9efc05bc0bfe1c99fdeed4b6/types/errors/errors.go
 	err = errors.Unwrap(sdkerrors.ABCIError(syncRes.Codespace, syncRes.Code, "error broadcasting transaction"))
 	if err.Error() != errUnknown {
+		liblog.WithContext(ctx).WithError(err).WithField("sync-result", syncRes).Warn("Failed to broadcast TX.")
 		return nil, err
 	}
 	if syncRes.Code != 0 {
