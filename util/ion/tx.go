@@ -116,8 +116,6 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 		return nil, err
 	}
 
-	liblog.WithContext(ctx).WithField("component", "send-msgs").WithField("txf", txf).WithField("calculated-gas", adjusted).Info("Finished building txf")
-
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
@@ -127,7 +125,6 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
 	if err != nil {
-		liblog.WithContext(ctx).WithField("component", "send-msgs").WithField("txf", txf).WithField("calculated-gas", adjusted).WithError(err).Warn("failed")
 		return nil, fmt.Errorf("failed to broadcast tx: %w", err)
 	}
 

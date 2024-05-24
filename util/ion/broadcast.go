@@ -68,8 +68,8 @@ func broadcastTx(
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
-	liblog.WithContext(ctx).WithError(err).WithField("result", syncRes).Warn("broastcastTX")
 	if err != nil {
+		liblog.WithContext(ctx).WithError(err).Warn("Failed to broadcast TX.")
 		if syncRes == nil {
 			// There are some cases where BroadcastTxSync will return an error but the associated
 			// ResultBroadcastTx will be nil.
@@ -86,6 +86,7 @@ func broadcastTx(
 	// This catches all of the sdk errors https://github.com/cosmos/cosmos-sdk/blob/f10f5e5974d2ecbf9efc05bc0bfe1c99fdeed4b6/types/errors/errors.go
 	err = errors.Unwrap(sdkerrors.ABCIError(syncRes.Codespace, syncRes.Code, "error broadcasting transaction"))
 	if err.Error() != errUnknown {
+		liblog.WithContext(ctx).WithError(err).WithField("sync-result", syncRes).Warn("Failed to broadcast TX.")
 		return nil, err
 	}
 	if syncRes.Code != 0 {
