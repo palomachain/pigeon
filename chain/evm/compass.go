@@ -619,12 +619,13 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		return nil, err
 	}
 
-	blockNumber := filter.FromBlock.Int64()
+	currentBlockNumber := filter.FromBlock.Int64()
 	if t.lastObservedBlockHeights.batchSendEvent == 0 {
-		t.lastObservedBlockHeights.batchSendEvent = blockNumber - 10000
+		t.lastObservedBlockHeights.batchSendEvent = currentBlockNumber - 10_000
 	}
 
 	filter.FromBlock = big.NewInt(t.lastObservedBlockHeights.batchSendEvent)
+	filter.ToBlock = big.NewInt(min(t.lastObservedBlockHeights.batchSendEvent+10_000, currentBlockNumber))
 
 	var events []chain.BatchSendEvent
 
@@ -672,7 +673,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		})
 	}
 
-	t.lastObservedBlockHeights.batchSendEvent = blockNumber
+	t.lastObservedBlockHeights.batchSendEvent = filter.ToBlock.Int64()
 
 	return events, err
 }
@@ -688,12 +689,13 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		return nil, err
 	}
 
-	blockNumber := filter.FromBlock.Int64()
+	currentBlockNumber := filter.FromBlock.Int64()
 	if t.lastObservedBlockHeights.sendToPalomaEvent == 0 {
-		t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber - 1000
+		t.lastObservedBlockHeights.sendToPalomaEvent = currentBlockNumber - 10_000
 	}
 
 	filter.FromBlock = big.NewInt(t.lastObservedBlockHeights.sendToPalomaEvent)
+	filter.ToBlock = big.NewInt(min(t.lastObservedBlockHeights.sendToPalomaEvent+10_000, currentBlockNumber))
 
 	var events []chain.SendToPalomaEvent
 
@@ -753,7 +755,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		})
 	}
 
-	t.lastObservedBlockHeights.sendToPalomaEvent = blockNumber
+	t.lastObservedBlockHeights.sendToPalomaEvent = filter.ToBlock.Int64()
 
 	return events, err
 }

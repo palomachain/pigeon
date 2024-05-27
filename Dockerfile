@@ -3,7 +3,7 @@
 ###########################
 ####     Base image    ####
 ###########################
-FROM golang:1.21-bullseye AS base
+FROM golang:1.22-bullseye AS base
 WORKDIR /app
 
 ###########################
@@ -26,9 +26,9 @@ CMD ["/app/scripts/live-reload.sh", "/hack-start-because-cosmos-always-wants-to-
 FROM base AS builder
 COPY . /app
 RUN \
-	--mount=type=cache,target=/go/pkg/mod \
-	--mount=type=cache,target=/root/.cache/go-build \
-	cd /app && go build -o /sparrow ./cmd/sparrow
+  --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  cd /app && go build -o /sparrow ./cmd/sparrow
 
 ###########################
 ####  Local testnet    ####
