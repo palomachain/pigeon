@@ -1,5 +1,5 @@
 run:
-  go: '1.21'
+  go: '1.22.2'
   issues-exit-code: 1
   timeout: 10m
   modules-download-mode: readonly
