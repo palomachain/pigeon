@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/jarcoal/httpmock v1.3.1
-	github.com/onsi/ginkgo/v2 v2.18.0
+	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/palomachain/paloma v1.3.1-next.0.20240227162349-a4b1e22d4363
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
