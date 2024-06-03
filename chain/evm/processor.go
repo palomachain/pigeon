@@ -38,6 +38,7 @@ func (p Processor) SupportedQueues() []string {
 		[]string{
 			queue.QueueSuffixTurnstone,
 			queue.QueueSuffixValidatorsBalances,
+			queue.QueueSuffixReferenceBlock,
 		},
 		func(q string) string {
 			return fmt.Sprintf("%s/%s/%s", p.chainType, p.chainReferenceID, q)
@@ -129,6 +130,14 @@ func (p Processor) GravityRelayBatches(ctx context.Context, batches []chain.Grav
 func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
 	if queueTypeName.IsValidatorsValancesQueue() {
 		return p.compass.provideEvidenceForValidatorBalance(
+			ctx,
+			queueTypeName.String(),
+			msgs,
+		)
+	}
+
+	if queueTypeName.IsReferenceBlockQueue() {
+		return p.compass.provideEvidenceForReferenceBlock(
 			ctx,
 			queueTypeName.String(),
 			msgs,

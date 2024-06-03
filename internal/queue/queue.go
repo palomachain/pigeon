@@ -5,6 +5,7 @@ import "strings"
 const (
 	QueueSuffixTurnstone          = "evm-turnstone-message"
 	QueueSuffixValidatorsBalances = "validators-balances"
+	QueueSuffixReferenceBlock     = "reference-block"
 )
 
 type TypeName string
@@ -23,4 +24,8 @@ func (t TypeName) IsTurnstoneQueue() bool {
 
 func (t TypeName) IsValidatorsValancesQueue() bool {
 	return strings.HasSuffix(string(t), QueueSuffixValidatorsBalances)
+}
+
+func (t TypeName) IsReferenceBlockQueue() bool {
+	return strings.HasSuffix(string(t), QueueSuffixReferenceBlock)
 }

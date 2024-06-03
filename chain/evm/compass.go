@@ -608,6 +608,47 @@ func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTy
 	return g.Return()
 }
 
+func (t compass) provideEvidenceForReferenceBlock(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
+	logger.Debug("start processing reference block request")
+
+	var g whoops.Group
+	for _, msg := range msgs {
+		g.Add(
+			whoops.Try(func() {
+				vb := msg.Msg.(*evmtypes.ReferenceBlockAttestation)
+				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
+
+				logger := logger.WithFields(
+					log.Fields{
+						"height":          height,
+						"nearest-to-time": vb.FromBlockTime,
+					},
+				)
+				logger.Debug("got reference block height for time")
+
+				h, err := t.evm.GetEthClient().HeaderByNumber(ctx, new(big.Int).SetUint64(height))
+				whoops.Assert(err)
+
+				res := &evmtypes.ReferenceBlockAttestationRes{
+					BlockHeight: height,
+					BlockHash:   h.Hash().String(),
+				}
+
+				logger.WithFields(
+					log.Fields{
+						"hash": h.Hash().String(),
+					},
+				).Debug("got reference block hash")
+
+				whoops.Assert(t.paloma.AddMessageEvidence(ctx, queueTypeName, msg.ID, res))
+			}),
+		)
+	}
+
+	return g.Return()
+}
+
 func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
