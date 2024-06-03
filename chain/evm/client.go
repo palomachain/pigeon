@@ -349,7 +349,7 @@ func callSmartContract(
 				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
 				whoops.Assert(err)
 			}
-			txOpts.GasLimit = uint64(float64(gasLimit) * 1.2)
+			txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
 		}
 
 		if args.txType == 2 {
