@@ -82,19 +82,21 @@ type ExternalAccount struct {
 }
 
 type BatchSendEvent struct {
+	TokenContract  string
 	EthBlockHeight uint64
 	EventNonce     uint64
 	BatchNonce     uint64
-	TokenContract  string
+	GravityNonce   uint64
 }
 
 type SendToPalomaEvent struct {
-	EthBlockHeight uint64
-	EventNonce     uint64
-	Amount         uint64
 	EthereumSender string
 	PalomaReceiver string
 	TokenContract  string
+	EthBlockHeight uint64
+	EventNonce     uint64
+	Amount         uint64
+	GravityNonce   uint64
 }
 
 type ChainInfo interface {

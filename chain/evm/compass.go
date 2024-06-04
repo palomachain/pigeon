@@ -679,7 +679,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)"))}).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256,uint256)"))}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -749,7 +749,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256)"))}).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256,uint256)"))}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -802,7 +802,12 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		eventNonce, ok := event[4].(*big.Int)
+		palomaNonce, ok := event[4].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid paloma nonce")
+		}
+
+		eventNonce, ok := event[5].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid event nonce")
 		}
