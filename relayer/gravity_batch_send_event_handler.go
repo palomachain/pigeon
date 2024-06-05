@@ -50,8 +50,11 @@ func (r *Relayer) handleBatchSendEvents(ctx context.Context, processors []chain.
 		}
 
 		logger = logger.WithFields(log.Fields{
-			"event-ids": slice.Map(batchSendEvents, func(event chain.BatchSendEvent) uint64 {
+			"event-nonces": slice.Map(batchSendEvents, func(event chain.BatchSendEvent) uint64 {
 				return event.EventNonce
+			}),
+			"gravity-nonces": slice.Map(batchSendEvents, func(event chain.BatchSendEvent) uint64 {
+				return event.GravityNonce
 			}),
 		})
 

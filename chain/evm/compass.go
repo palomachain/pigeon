@@ -870,6 +870,7 @@ func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.Batc
 		TokenContract:    event.TokenContract,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
+		GravityNonce:     event.GravityNonce,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
 }
@@ -884,6 +885,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		PalomaReceiver:   event.PalomaReceiver,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
+		GravityNonce:     event.GravityNonce,
 	}
 	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }
