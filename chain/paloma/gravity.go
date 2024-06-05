@@ -91,3 +91,14 @@ func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainRefere
 
 	return batchesWithSignatures, nil
 }
+
+// TODO: Combine with below method
+func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBatchSendToEthClaim) error {
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}
+
+func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim gravity.MsgSendToPalomaClaim) error {
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}

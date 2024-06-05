@@ -701,7 +701,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		return nil, err
 	}
 
-	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -732,8 +732,8 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if eventNonce.Uint64() <= lastEventNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+		if gravityNonce.Uint64() <= lastGravityNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 
@@ -777,7 +777,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		return nil, err
 	}
 
-	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -818,8 +818,8 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if eventNonce.Uint64() <= lastEventNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+		if gravityNonce.Uint64() <= lastGravityNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 

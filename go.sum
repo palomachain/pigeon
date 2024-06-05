@@ -951,13 +951,8 @@ github.com/ory/dockertest v3.3.5+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnh
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936 h1:fmQAgxcdYBxCZYczws/uxTVOYHZd4fNrOaoHp35HZMM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936/go.mod h1:B2H2+2I4UiMR4hvAIaGLyYszNfSTYC8fWIw+kgfuFSQ=
-<<<<<<< HEAD
 github.com/palomachain/paloma v1.14.0-b895c4d h1:6+Y1cmS7bA/v7II0diYjiid9is8pshWW865+/xWUu+w=
 github.com/palomachain/paloma v1.14.0-b895c4d/go.mod h1:ZlvNEPClArfnthGqaO69obKXv6GuBpojSt+NzATGPrQ=
-=======
-github.com/palomachain/paloma v1.3.1-next.0.20240604094732-19999df74964 h1:KsCv/Pu/8UJsN+qWDzifnPNhz0ZbjiBFkFMvjLBErdE=
-github.com/palomachain/paloma v1.3.1-next.0.20240604094732-19999df74964/go.mod h1:ZlvNEPClArfnthGqaO69obKXv6GuBpojSt+NzATGPrQ=
->>>>>>> 898b9d7 (feat: add gravity_nonce to event detectoin)
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
@@ -1139,6 +1134,8 @@ github.com/urfave/cli v1.22.1 h1:+mkCCcOFKPnCmVYVcURKps1Xe+3zP90gSYGNfRkjoIY=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli/v2 v2.25.7 h1:VAzn5oq403l5pHjc4OhD54+XGO9cdKVL/7lDjF+iKUs=
 github.com/urfave/cli/v2 v2.25.7/go.mod h1:8qnjx1vcq5s2/wpsqoZFndg2CE5tNFyrTvS6SinrnYQ=
+github.com/volumefi/paloma v1.5.0-next.0.20240605124950-ff77722c1448 h1:sYUNL81/QRHJEjWcn24H4s+A4/kcRzv9VlRyLr3V7rA=
+github.com/volumefi/paloma v1.5.0-next.0.20240605124950-ff77722c1448/go.mod h1:ZlvNEPClArfnthGqaO69obKXv6GuBpojSt+NzATGPrQ=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRTfdpNzjtPYqr8smhKouy9mxVdGPU=
