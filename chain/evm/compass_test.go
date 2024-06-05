@@ -916,6 +916,46 @@ func TestProcessingvalidatorBalancesRequest(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestProcessingReferenceBlockRequest(t *testing.T) {
+	ctx := context.Background()
+	conn := newMockEthClientConn(t)
+	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+	comp := newCompassClient(
+		smartContractAddr.Hex(),
+		"id-123",
+		"internal-chain-id",
+		big.NewInt(5),
+		nil,
+		paloma,
+		evm,
+	)
+	comp.startingBlockHeight = 1233
+
+	paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(1), &types.ReferenceBlockAttestationRes{
+		BlockHeight: 1400,
+		BlockHash:   "0xa6d113404b5b2591c0a98b6ed1c6ca1760421c6fbb3571d942a47b131b88f51b",
+	}).Return(nil)
+
+	evm.On("FindBlockNearestToTime", mock.Anything, uint64(comp.startingBlockHeight), time.Unix(123, 0)).Return(uint64(1400), nil)
+	evm.On("GetEthClient").Return(conn)
+
+	conn.On("HeaderByNumber", mock.Anything, big.NewInt(1400)).
+		Return(&ethtypes.Header{
+			Number: big.NewInt(1400),
+		}, nil)
+	err := comp.provideEvidenceForReferenceBlock(ctx, "queue-name", []chain.MessageWithSignatures{
+		{
+			QueuedMessage: chain.QueuedMessage{
+				ID: 1,
+				Msg: &types.ReferenceBlockAttestation{
+					FromBlockTime: time.Unix(123, 0),
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+}
+
 func TestProvidingEvidenceForAMessage(t *testing.T) {
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
