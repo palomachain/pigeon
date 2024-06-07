@@ -722,7 +722,12 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, fmt.Errorf("invalid batch nonce")
 		}
 
-		eventNonce, ok := event[2].(*big.Int)
+		gravityNonce, ok := event[2].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid gravity nonce")
+		}
+
+		eventNonce, ok := event[3].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid event nonce")
 		}
@@ -737,6 +742,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			EventNonce:     eventNonce.Uint64(),
 			BatchNonce:     batchNonce.Uint64(),
 			TokenContract:  tokenContract.String(),
+			GravityNonce:   gravityNonce.Uint64(),
 		})
 	}
 
@@ -802,7 +808,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		palomaNonce, ok := event[4].(*big.Int)
+		gravityNonce, ok := event[4].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid paloma nonce")
 		}
@@ -824,6 +830,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			EthereumSender: ethSender.String(),
 			PalomaReceiver: palomaReceiver,
 			TokenContract:  tokenContract.String(),
+			GravityNonce:   gravityNonce.Uint64(),
 		})
 	}
 
