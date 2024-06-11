@@ -916,6 +916,80 @@ func TestProcessingvalidatorBalancesRequest(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestProcessingvalidatorBalancesRequestWithError(t *testing.T) {
+	ctx := context.Background()
+	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+	comp := newCompassClient(
+		smartContractAddr.Hex(),
+		"id-123",
+		"internal-chain-id",
+		big.NewInt(5),
+		nil,
+		paloma,
+		evm,
+	)
+	comp.startingBlockHeight = 1233
+
+	paloma.On("AddMessageEvidence", mock.Anything, "queue-name", uint64(1), &types.ValidatorBalancesAttestationRes{
+		BlockHeight: 1212,
+		// The result set should include an empty field
+		Balances: []string{"", "666", "777"},
+	}).Return(nil)
+
+	evm.On("FindBlockNearestToTime", mock.Anything, uint64(comp.startingBlockHeight), time.Unix(123, 0)).Return(uint64(1212), nil)
+
+	// We fail to get the balance of the first validator
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("1"), uint64(1212)).Return(nil, errors.New("an error"))
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("2"), uint64(1212)).Return(big.NewInt(666), nil)
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("3"), uint64(1212)).Return(big.NewInt(777), nil)
+	err := comp.provideEvidenceForValidatorBalance(ctx, "queue-name", []chain.MessageWithSignatures{
+		{
+			QueuedMessage: chain.QueuedMessage{
+				ID: 1,
+				Msg: &types.ValidatorBalancesAttestation{
+					FromBlockTime: time.Unix(123, 0),
+					HexAddresses:  []string{"1", "2", "3"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+}
+
+func TestProcessingvalidatorBalancesRequestWithAllErrors(t *testing.T) {
+	ctx := context.Background()
+	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+	comp := newCompassClient(
+		smartContractAddr.Hex(),
+		"id-123",
+		"internal-chain-id",
+		big.NewInt(5),
+		nil,
+		paloma,
+		evm,
+	)
+	comp.startingBlockHeight = 1233
+
+	evm.On("FindBlockNearestToTime", mock.Anything, uint64(comp.startingBlockHeight), time.Unix(123, 0)).Return(uint64(1212), nil)
+
+	// We fail to get the balance of the first validator
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("1"), uint64(1212)).Return(nil, errors.New("an error"))
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("2"), uint64(1212)).Return(nil, errors.New("an error"))
+	evm.On("BalanceAt", mock.Anything, common.HexToAddress("3"), uint64(1212)).Return(nil, errors.New("an error"))
+	err := comp.provideEvidenceForValidatorBalance(ctx, "queue-name", []chain.MessageWithSignatures{
+		{
+			QueuedMessage: chain.QueuedMessage{
+				ID: 1,
+				Msg: &types.ValidatorBalancesAttestation{
+					FromBlockTime: time.Unix(123, 0),
+					HexAddresses:  []string{"1", "2", "3"},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+}
+
 func TestProcessingReferenceBlockRequest(t *testing.T) {
 	ctx := context.Background()
 	conn := newMockEthClientConn(t)

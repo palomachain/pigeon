@@ -568,44 +568,67 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 }
 
 func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
-	var g whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
 	logger.Debug("start processing validator balance request")
+
 	for _, msg := range msgs {
-		g.Add(
-			whoops.Try(func() {
-				vb := msg.Msg.(*evmtypes.ValidatorBalancesAttestation)
-				height := whoops.Must(t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime))
+		vb := msg.Msg.(*evmtypes.ValidatorBalancesAttestation)
+		height, err := t.evm.FindBlockNearestToTime(ctx, uint64(t.startingBlockHeight), vb.FromBlockTime)
+		if err != nil {
+			logger.WithError(err).Error("failed to find block nearest to time")
+			return err
+		}
 
-				logger := logger.WithFields(
-					log.Fields{
-						"height":          height,
-						"nearest-to-time": vb.FromBlockTime,
-					},
-				)
-				logger.Debug("got height for time")
-
-				res := &evmtypes.ValidatorBalancesAttestationRes{
-					BlockHeight: height,
-					Balances:    make([]string, 0, len(vb.HexAddresses)),
-				}
-
-				for _, addrHex := range vb.HexAddresses {
-					addr := common.HexToAddress(addrHex)
-					balance := whoops.Must(t.evm.BalanceAt(ctx, addr, height))
-					logger.WithFields(log.Fields{
-						"evm-address": addr,
-						"balance":     balance,
-					}).Info("got balance")
-					res.Balances = append(res.Balances, balance.Text(10))
-				}
-
-				whoops.Assert(t.paloma.AddMessageEvidence(ctx, queueTypeName, msg.ID, res))
-			}),
+		logger := logger.WithFields(
+			log.Fields{
+				"height":          height,
+				"nearest-to-time": vb.FromBlockTime,
+			},
 		)
+		logger.Debug("got height for time")
+
+		res := &evmtypes.ValidatorBalancesAttestationRes{
+			BlockHeight: height,
+			Balances:    make([]string, len(vb.HexAddresses)),
+		}
+
+		success := false
+		for i, addrHex := range vb.HexAddresses {
+			addr := common.HexToAddress(addrHex)
+			balance, err := t.evm.BalanceAt(ctx, addr, height)
+			if err != nil {
+				logger.WithError(err).WithFields(log.Fields{
+					"addr": addr,
+				}).Warn("failed to get balance")
+				continue
+			}
+
+			success = true
+
+			logger.WithFields(log.Fields{
+				"evm-address": addr,
+				"balance":     balance,
+			}).Info("got balance")
+
+			res.Balances[i] = balance.Text(10)
+		}
+
+		if !success {
+			// If all requests fail, there may be something wrong with the RPC,
+			// so we return an error to avoid all validators from being jailed
+			err := errors.New("all balance requests failed")
+			logger.WithError(err).Warn("failed to get balances")
+			return err
+		}
+
+		err = t.paloma.AddMessageEvidence(ctx, queueTypeName, msg.ID, res)
+		if err != nil {
+			logger.WithError(err).Error("failed to add message evidence")
+			return err
+		}
 	}
 
-	return g.Return()
+	return nil
 }
 
 func (t compass) provideEvidenceForReferenceBlock(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
