@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/cosmos/gogoproto/proto"
 	consensus "github.com/palomachain/paloma/x/consensus/types"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/util/ion"
@@ -95,17 +94,6 @@ func (c *Client) BlockHeight(ctx context.Context) (int64, error) {
 	}
 
 	return res.SyncInfo.LatestBlockHeight, nil
-}
-
-// TODO Combine with below method
-func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBatchSendToEthClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
-	return err
-}
-
-func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim gravity.MsgSendToPalomaClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
-	return err
 }
 
 type ChainInfoIn struct {

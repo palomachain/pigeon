@@ -102,15 +102,16 @@ func (c *Client) QueryGetLatestPublishedSnapshot(ctx context.Context, chainRefer
 	return res.Snapshot, nil
 }
 
-func (c *Client) QueryGetLastEventNonce(ctx context.Context, orchestrator string) (uint64, error) {
+func (c *Client) QueryLastObservedGravityNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
 	qc := gravity.NewQueryClient(c.GRPCClient)
-	res, err := qc.LastEventNonceByAddr(ctx, &gravity.QueryLastEventNonceByAddrRequest{
-		Address: orchestrator,
+	res, err := qc.LastObservedGravityNonceByAddr(ctx, &gravity.QueryLastObservedGravityNonceByAddrRequest{
+		Address:          orchestrator,
+		ChainReferenceId: chainReferenceID,
 	})
 	if err != nil {
 		return 0, err
 	}
-	return res.EventNonce, nil
+	return res.Nonce, nil
 }
 
 func (c *Client) QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravity.OutgoingTxBatch, error) {

@@ -679,7 +679,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256)"))}).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256,uint256)"))}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -701,7 +701,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		return nil, err
 	}
 
-	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -722,13 +722,18 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, fmt.Errorf("invalid batch nonce")
 		}
 
-		eventNonce, ok := event[2].(*big.Int)
+		gravityNonce, ok := event[2].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid gravity nonce")
+		}
+
+		eventNonce, ok := event[3].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if eventNonce.Uint64() <= lastEventNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+		if gravityNonce.Uint64() <= lastGravityNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 
@@ -737,6 +742,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			EventNonce:     eventNonce.Uint64(),
 			BatchNonce:     batchNonce.Uint64(),
 			TokenContract:  tokenContract.String(),
+			GravityNonce:   gravityNonce.Uint64(),
 		})
 	}
 
@@ -749,7 +755,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256)"))}).
+		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256,uint256)"))}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -771,7 +777,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		return nil, err
 	}
 
-	lastEventNonce, err := t.paloma.QueryGetLastEventNonce(ctx, orchestrator)
+	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -802,13 +808,18 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		eventNonce, ok := event[4].(*big.Int)
+		gravityNonce, ok := event[4].(*big.Int)
+		if !ok {
+			return nil, fmt.Errorf("invalid paloma nonce")
+		}
+
+		eventNonce, ok := event[5].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if eventNonce.Uint64() <= lastEventNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastEventNonce).WithField("event-nonce", eventNonce.Uint64()).Info("Skipping already observed event...")
+		if gravityNonce.Uint64() <= lastGravityNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 
@@ -819,6 +830,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			EthereumSender: ethSender.String(),
 			PalomaReceiver: palomaReceiver,
 			TokenContract:  tokenContract.String(),
+			GravityNonce:   gravityNonce.Uint64(),
 		})
 	}
 
@@ -858,6 +870,7 @@ func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.Batc
 		TokenContract:    event.TokenContract,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
+		GravityNonce:     event.GravityNonce,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
 }
@@ -872,6 +885,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		PalomaReceiver:   event.PalomaReceiver,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
+		GravityNonce:     event.GravityNonce,
 	}
 	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }

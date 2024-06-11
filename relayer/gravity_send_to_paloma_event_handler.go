@@ -50,8 +50,11 @@ func (r *Relayer) handleSendToPalomaEvents(ctx context.Context, processors []cha
 		}
 
 		logger = logger.WithFields(log.Fields{
-			"event-ids": slice.Map(batchSendEvents, func(event chain.SendToPalomaEvent) uint64 {
+			"event-nonces": slice.Map(batchSendEvents, func(event chain.SendToPalomaEvent) uint64 {
 				return event.EventNonce
+			}),
+			"gravity-nonces": slice.Map(batchSendEvents, func(event chain.SendToPalomaEvent) uint64 {
+				return event.GravityNonce
 			}),
 		})
 
