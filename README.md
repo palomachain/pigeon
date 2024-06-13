@@ -48,6 +48,7 @@ We have active, helpful communities on Twitter and Telegram.
 See [Release procedure](CONTRIBUTING.md#release-procedure) for more information about the release model.
 
 ## Active Networks
+
 - Paloma Testnest `paloma-testnet-16` (May 23, 2024)
 - Paloma Mainnet `tumbler` (April 22, 2024)
 - Arbitrum Mainnet (relay)
@@ -81,7 +82,7 @@ This repo does not accept issues. Please use <https://github.com/palomachain/pal
 ### To get the latest prebuilt `pigeon` binary
 
 ```shell
-wget -O - https://github.com/palomachain/pigeon/releases/download/v1.11.3/pigeon_Linux_x86_64.tar.gz  | \
+wget -O - https://github.com/palomachain/pigeon/releases/download/v1.12.0/pigeon_Linux_x86_64.tar.gz  | \
   sudo tar -C /usr/local/bin -xvzf - pigeon
 sudo chmod +x /usr/local/bin/pigeon
 
@@ -93,7 +94,7 @@ mkdir ~/.pigeon
 ```shell
 git clone https://github.com/palomachain/pigeon.git
 cd pigeon
-git checkout v1.11.3
+git checkout v1.12.0
 make build
 sudo mv ./build/pigeon /usr/local/bin/pigeon
 
@@ -438,25 +439,25 @@ journalctl -u pigeond.service -f -n 100
 ### Definitions and Descriptions of Pigeons Variables
 
 - for paloma key:
- 	- keyring-dir
-    - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using its validator (operator) key!
- 	  - it's best to leave it as is
- 	- keyring-pass-env-name
- 	  - this one is super important!
- 	  - it is the name of the ENV variable where password to unlock the keyring is stored!
- 	  - you are not writing password here!! You are writing the ENV variable's name where the password is stored.
- 	  - you should obviously use a bit more advanced method than shown here, but here is the example:
- 	    - if the `keyring-pass-env-name` is set to `MY_SUPER_SECRET_PASS` then you should provide ENV variable `MY_SUPER_SECRET_PASS` and store the password there
- 	    - e.g. `MY_SUPER_SECRET_PASS=abcd pigeon start`
- 	- keyring-type
- 	  - it should be the same as it's defined for paloma's client. Look under the ~/.paloma/config/client.toml
- 	- signing-key
- 	  - right now it's again not important which key we are using. It can be any key that has enough balance to submit TXs to Paloma. It's best to use the same key that's set up for the validator.
- 	- gas-adustment:
- 	  - gas multiplier. The pigeon will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
+  - keyring-dir
+  - right now it's not really super important where this points. The important things for the future is that pigeon needs to send transactions to Paloma using its validator (operator) key!
+    - it's best to leave it as is
+  - keyring-pass-env-name
+    - this one is super important!
+    - it is the name of the ENV variable where password to unlock the keyring is stored!
+    - you are not writing password here!! You are writing the ENV variable's name where the password is stored.
+    - you should obviously use a bit more advanced method than shown here, but here is the example:
+      - if the `keyring-pass-env-name` is set to `MY_SUPER_SECRET_PASS` then you should provide ENV variable `MY_SUPER_SECRET_PASS` and store the password there
+      - e.g. `MY_SUPER_SECRET_PASS=abcd pigeon start`
+  - keyring-type
+    - it should be the same as it's defined for paloma's client. Look under the ~/.paloma/config/client.toml
+  - signing-key
+    - right now it's again not important which key we are using. It can be any key that has enough balance to submit TXs to Paloma. It's best to use the same key that's set up for the validator.
+  - gas-adustment:
+    - gas multiplier. The pigeon will estimate the gas to run a TX and then it will multiply it with gas-adjustment (if it's a positive number)
 - for evm -> eth-main:
- 	- keyring-pass-env-name: same as above for paloma.
- 	- signing-key
- 	  - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `pigeon evm keys generate-new` from the install section)
- 	- keyring-dir:
- 	  - a directory where keys to communicate with the EVM network is stored
+  - keyring-pass-env-name: same as above for paloma.
+  - signing-key
+    - address of the key from the keyring used to sign and send TXs to EVM network (one that you got when running `pigeon evm keys generate-new` from the install section)
+  - keyring-dir:
+    - a directory where keys to communicate with the EVM network is stored
