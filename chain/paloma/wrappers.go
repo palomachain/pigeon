@@ -91,7 +91,7 @@ func (m *PalomaMessageSender) SendMsg(ctx context.Context, msg sdk.Msg, memo str
 		return nil, fmt.Errorf("failed to inject metadata: %w", err)
 	}
 
-	logger.WithField("msg", msg).Debug("Sending message...")
+	logger.WithField("msg", msg.String()).Debug("Sending message...")
 	res, err := m.W.SendMsg(ctx, msg, memo, opts...)
 	if IsPalomaDown(err) {
 		return nil, whoops.Wrap(ErrPalomaIsDown, err)
