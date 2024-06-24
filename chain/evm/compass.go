@@ -254,51 +254,10 @@ func (t compass) submitLogicCall(
 		Payload:              msg.GetPayload(),
 	}
 
-	padding := bytes.Repeat([]byte{0}, 32-len(msg.SenderAddress))
-	paddedSenderAddress := [32]byte(append(padding, msg.SenderAddress...))
-	// We use dummy fee data during estimation. This is not enough
-	// to process the transaction, but the user needs to have enough
-	// funds to cover the fees, even in the estimation.
-	feeArgs := FeeArgs{
-		RelayerFee:            big.NewInt(100_000),
-		CommunityFee:          big.NewInt(100_000),
-		SecurityFee:           big.NewInt(100_000),
-		FeePayerPalomaAddress: paddedSenderAddress,
-	}
-
-	if !opts.estimateOnly {
-		if msg.Fees == nil {
-			return nil, 0, errors.New("fees not provided")
-		}
-
-		feeArgs.RelayerFee = big.NewInt(0).SetUint64(msg.Fees.RelayerFee)
-		feeArgs.CommunityFee = big.NewInt(0).SetUint64(msg.Fees.CommunityFee)
-		feeArgs.SecurityFee = big.NewInt(0).SetUint64(msg.Fees.SecurityFee)
-
-		userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to query user funds: %w", err)
-		}
-
-		gasPrice, err := t.evm.SuggestGasPrice(ctx)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to suggest gas price: %w", err)
-		}
-
-		// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
-		totalFundsNeeded := big.NewInt(0).Add(
-			big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
-			big.NewInt(0).Add(
-				big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
-				big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
-
-		if userFunds.Cmp(totalFundsNeeded) < 0 {
-			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
-			if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
-				err = fmt.Errorf("failed to set error data: %w", sendErr)
-			}
-			return nil, 0, err
-		}
+	feeArgs, err := t.getFeeArgs(ctx, queueTypeName, msg.SenderAddress,
+		msg.Fees, origMessage, opts)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	// TODO: Use generated contract code directly
@@ -390,6 +349,95 @@ func (t compass) uploadSmartContract(
 	return tx, nil
 }
 
+func (t compass) uploadUserSmartContract(
+	ctx context.Context,
+	queueTypeName string,
+	msg *evmtypes.UploadUserSmartContract,
+	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
+	opts callOptions,
+) (*ethtypes.Transaction, uint64, error) {
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
+		"chain-id": t.ChainReferenceID,
+		"msg-id":   origMessage.ID,
+	})
+	logger.Info("upload user smart contract")
+
+	// Skip already executed check in case of estimate only
+	if !opts.estimateOnly {
+		executed, err := t.isUserSmartContractUploaded(ctx, origMessage.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		if executed {
+			return nil, 0, ErrCallAlreadyExecuted
+		}
+	}
+
+	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
+	logger = logger.WithField("last-valset-id", valsetID)
+	if err != nil {
+		if errors.Is(err, errValsetIDMismatch) {
+			logger.Warn("Valset ID mismatch. Swallowing error to retry message...")
+			return nil, 0, nil
+		}
+
+		return nil, 0, err
+	}
+
+	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	consensusReached := isConsensusReached(ctx, valset, origMessage)
+	if !consensusReached {
+		return nil, 0, ErrNoConsensus
+	}
+
+	con := BuildCompassConsensus(valset, origMessage.Signatures)
+
+	feeArgs, err := t.getFeeArgs(ctx, queueTypeName, msg.SenderAddress,
+		msg.Fees, origMessage, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def deploy_contract(consensus: Consensus, _deployer: address, _bytecode: Bytes[24576], fee_args: FeeArgs, message_id: uint256, deadline: uint256, relayer: address)
+	args := []any{
+		con,
+		common.HexToAddress(msg.GetDeployerAddress()),
+		msg.GetBytecode(),
+		feeArgs,
+		new(big.Int).SetInt64(int64(origMessage.ID)),
+		new(big.Int).SetInt64(msg.GetDeadline()),
+		ethSender,
+	}
+
+	logger.WithField("consensus", con).WithField("args", args).
+		Debug("deploying user smart contract")
+	tx, err := t.callCompass(ctx, opts, "deploy_contract", args)
+	if err != nil {
+		logger.WithError(err).Error("deploy_contract: error calling compass")
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
+		}
+
+		return nil, 0, err
+	}
+
+	return tx, valsetID, nil
+}
+
 func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
 	var jsonRpcErr rpc.DataError
 	if !errors.As(errToProcess, &jsonRpcErr) {
@@ -448,6 +496,53 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
 		for _, ethLog := range logs {
 			event, err := t.compassAbi.Unpack("LogicCallEvent", ethLog.Data)
+			if err != nil {
+				found = true
+				return found
+			}
+
+			logMessageID, ok := event[2].(*big.Int)
+			if !ok {
+				found = true
+			}
+			found = messageID == logMessageID.Uint64()
+			if found {
+				return found
+			}
+		}
+
+		return found
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
+}
+
+func (t compass) isUserSmartContractUploaded(ctx context.Context, messageID uint64) (bool, error) {
+	topics := [][]common.Hash{
+		{
+			crypto.Keccak256Hash([]byte("ContractDeployed(address,address,uint256)")),
+			common.Hash{},
+			common.Hash{},
+			crypto.Keccak256Hash(new(big.Int).SetInt64(int64(messageID)).Bytes()),
+		},
+	}
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(9999).
+		WithTopics(topics...).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	var found bool
+	_, err = t.evm.FilterLogs(ctx, filter, nil, func(logs []ethtypes.Log) bool {
+		for _, ethLog := range logs {
+			event, err := t.compassAbi.Unpack("ContractDeployed", ethLog.Data)
 			if err != nil {
 				found = true
 				return found
@@ -628,6 +723,27 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.UploadSmartContract,
 				rawMsg,
+			)
+		case *evmtypes.Message_UploadUserSmartContract:
+			logger := logger.WithFields(log.Fields{
+				"chain-reference-id":     t.ChainReferenceID,
+				"queue-name":             queueTypeName,
+				"msg-id":                 rawMsg.ID,
+				"msg-bytes-to-sign":      rawMsg.BytesToSign,
+				"msg-msg":                rawMsg.Msg,
+				"msg-nonce":              rawMsg.Nonce,
+				"msg-public-access-data": rawMsg.PublicAccessData,
+				"message-type":           "Message_UploadUserSmartContract",
+			})
+			logger.Debug("switch-case-message-upload-user-contract")
+
+			tx, valsetID, processingErr = t.uploadUserSmartContract(
+				ctx,
+				queueTypeName,
+				action.UploadUserSmartContract,
+				rawMsg,
+				ethSender,
+				opts,
 			)
 		default:
 			return res, ErrUnsupportedMessageType.Format(action)
@@ -1389,6 +1505,65 @@ func (t compass) findAssigneeEthAddress(ctx context.Context,
 	}
 
 	return common.Address{}, errors.New("assignee's eth address not found")
+}
+
+func (t compass) getFeeArgs(
+	ctx context.Context,
+	queueTypeName string,
+	senderAddress []byte,
+	fees *evmtypes.Fees,
+	origMessage chain.MessageWithSignatures,
+	opts callOptions,
+) (FeeArgs, error) {
+	padding := bytes.Repeat([]byte{0}, 32-len(senderAddress))
+	paddedSenderAddress := [32]byte(append(padding, senderAddress...))
+
+	// We use dummy fee data during estimation. This is not enough
+	// to process the transaction, but the user needs to have enough
+	// funds to cover the fees, even in the estimation.
+	feeArgs := FeeArgs{
+		RelayerFee:            big.NewInt(100_000),
+		CommunityFee:          big.NewInt(100_000),
+		SecurityFee:           big.NewInt(100_000),
+		FeePayerPalomaAddress: paddedSenderAddress,
+	}
+
+	if !opts.estimateOnly {
+		if fees == nil {
+			return feeArgs, errors.New("fees not provided")
+		}
+
+		feeArgs.RelayerFee = big.NewInt(0).SetUint64(fees.RelayerFee)
+		feeArgs.CommunityFee = big.NewInt(0).SetUint64(fees.CommunityFee)
+		feeArgs.SecurityFee = big.NewInt(0).SetUint64(fees.SecurityFee)
+
+		userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
+		if err != nil {
+			return feeArgs, fmt.Errorf("failed to query user funds: %w", err)
+		}
+
+		gasPrice, err := t.evm.SuggestGasPrice(ctx)
+		if err != nil {
+			return feeArgs, fmt.Errorf("failed to suggest gas price: %w", err)
+		}
+
+		// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
+		totalFundsNeeded := big.NewInt(0).Add(
+			big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
+			big.NewInt(0).Add(
+				big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
+				big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
+
+		if userFunds.Cmp(totalFundsNeeded) < 0 {
+			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
+			if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
+				err = fmt.Errorf("failed to set error data: %w", sendErr)
+			}
+			return feeArgs, err
+		}
+	}
+
+	return feeArgs, nil
 }
 
 func compassBytesToPalomaAddress(b any) (sdk.AccAddress, error) {

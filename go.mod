@@ -232,3 +232,5 @@ replace (
 
 	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
 )
+
+replace github.com/palomachain/paloma => ../paloma

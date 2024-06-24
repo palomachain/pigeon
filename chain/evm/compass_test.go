@@ -357,7 +357,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -452,7 +452,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -589,7 +589,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -648,7 +648,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -745,7 +745,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -836,7 +836,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
