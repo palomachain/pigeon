@@ -9,7 +9,7 @@ require (
 	cosmossdk.io/x/feegrant v0.1.0
 	cosmossdk.io/x/upgrade v0.1.1
 	github.com/VolumeFi/whoops v0.7.2
-	github.com/avast/retry-go/v4 v4.3.3
+	github.com/avast/retry-go/v4 v4.6.0
 	github.com/cometbft/cometbft v0.38.7
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/cosmos/gogoproto v1.4.12
