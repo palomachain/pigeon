@@ -18,8 +18,8 @@ const (
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	skywaySignBatchesLoopInterval       = 5 * time.Second
-	skywayRelayBatchesLoopInterval      = 5 * time.Second
+	skywaySignBatchesLoopInterval        = 5 * time.Second
+	skywayRelayBatchesLoopInterval       = 5 * time.Second
 	batchSendEventWatcherLoopInterval    = 5 * time.Second
 	sendToPalomaEventWatcherLoopInterval = 1 * time.Minute
 )

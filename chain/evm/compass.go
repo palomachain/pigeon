@@ -742,7 +742,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			EventNonce:     eventNonce.Uint64(),
 			BatchNonce:     batchNonce.Uint64(),
 			TokenContract:  tokenContract.String(),
-			SkywayNonce:   skywayNonce.Uint64(),
+			SkywayNonce:    skywayNonce.Uint64(),
 		})
 	}
 
@@ -830,7 +830,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			EthereumSender: ethSender.String(),
 			PalomaReceiver: palomaReceiver,
 			TokenContract:  tokenContract.String(),
-			SkywayNonce:   skywayNonce.Uint64(),
+			SkywayNonce:    skywayNonce.Uint64(),
 		})
 	}
 
@@ -870,7 +870,7 @@ func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.Batc
 		TokenContract:    event.TokenContract,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
-		SkywayNonce:     event.SkywayNonce,
+		SkywayNonce:      event.SkywayNonce,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
 }
@@ -885,7 +885,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		PalomaReceiver:   event.PalomaReceiver,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
-		SkywayNonce:     event.SkywayNonce,
+		SkywayNonce:      event.SkywayNonce,
 	}
 	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }

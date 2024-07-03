@@ -86,7 +86,7 @@ type BatchSendEvent struct {
 	EthBlockHeight uint64
 	EventNonce     uint64
 	BatchNonce     uint64
-	SkywayNonce   uint64
+	SkywayNonce    uint64
 }
 
 type SendToPalomaEvent struct {
@@ -96,7 +96,7 @@ type SendToPalomaEvent struct {
 	EthBlockHeight uint64
 	EventNonce     uint64
 	Amount         uint64
-	SkywayNonce   uint64
+	SkywayNonce    uint64
 }
 
 type ChainInfo interface {
