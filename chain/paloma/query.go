@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 	consensus "github.com/palomachain/paloma/x/consensus/types"
 	evm "github.com/palomachain/paloma/x/evm/types"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
+	skyway "github.com/palomachain/paloma/x/skyway/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/liblog"
@@ -102,9 +102,9 @@ func (c *Client) QueryGetLatestPublishedSnapshot(ctx context.Context, chainRefer
 	return res.Snapshot, nil
 }
 
-func (c *Client) QueryLastObservedGravityNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
-	qc := gravity.NewQueryClient(c.GRPCClient)
-	res, err := qc.LastObservedGravityNonceByAddr(ctx, &gravity.QueryLastObservedGravityNonceByAddrRequest{
+func (c *Client) QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
+	qc := skyway.NewQueryClient(c.GRPCClient)
+	res, err := qc.LastObservedSkywayNonceByAddr(ctx, &skyway.QueryLastObservedSkywayNonceByAddrRequest{
 		Address:          orchestrator,
 		ChainReferenceId: chainReferenceID,
 	})
@@ -114,14 +114,14 @@ func (c *Client) QueryLastObservedGravityNonceByAddr(ctx context.Context, chainR
 	return res.Nonce, nil
 }
 
-func (c *Client) QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravity.OutgoingTxBatch, error) {
-	qc := gravity.NewQueryClient(c.GRPCClient)
-	res, err := qc.BatchRequestByNonce(ctx, &gravity.QueryBatchRequestByNonceRequest{
+func (c *Client) QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (skyway.OutgoingTxBatch, error) {
+	qc := skyway.NewQueryClient(c.GRPCClient)
+	res, err := qc.BatchRequestByNonce(ctx, &skyway.QueryBatchRequestByNonceRequest{
 		Nonce:           nonce,
 		ContractAddress: contract,
 	})
 	if err != nil {
-		return gravity.OutgoingTxBatch{}, err
+		return skyway.OutgoingTxBatch{}, err
 	}
 	return res.Batch, nil
 }

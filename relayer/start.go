@@ -18,8 +18,8 @@ const (
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	gravitySignBatchesLoopInterval       = 5 * time.Second
-	gravityRelayBatchesLoopInterval      = 5 * time.Second
+	skywaySignBatchesLoopInterval       = 5 * time.Second
+	skywayRelayBatchesLoopInterval      = 5 * time.Second
 	batchSendEventWatcherLoopInterval    = 5 * time.Second
 	sendToPalomaEventWatcherLoopInterval = 1 * time.Minute
 )
@@ -86,11 +86,11 @@ func (r *Relayer) Start(ctx context.Context) error {
 		go r.startProcess(ctx, "[MEV] Client heartbeat", &locker, r.mevClient.GetHealthprobeInterval(), false, r.mevClient.KeepAlive)
 	}
 
-	// Start gravity background goroutines to run separately from each other
-	go r.startProcess(ctx, "[Gravity] Sign batches", &locker, gravitySignBatchesLoopInterval, true, r.GravitySignBatches)
-	go r.startProcess(ctx, "[Gravity] Relay batches", &locker, gravityRelayBatchesLoopInterval, true, r.GravityRelayBatches)
-	go r.startProcess(ctx, "[Gravity] Handle Batch Send Event", &locker, batchSendEventWatcherLoopInterval, true, r.GravityHandleBatchSendEvent)
-	go r.startProcess(ctx, "[Gravity] Handle Send to Paloma Event", &locker, sendToPalomaEventWatcherLoopInterval, true, r.GravityHandleSendToPalomaEvent)
+	// Start skyway background goroutines to run separately from each other
+	go r.startProcess(ctx, "[Skyway] Sign batches", &locker, skywaySignBatchesLoopInterval, true, r.SkywaySignBatches)
+	go r.startProcess(ctx, "[Skyway] Relay batches", &locker, skywayRelayBatchesLoopInterval, true, r.SkywayRelayBatches)
+	go r.startProcess(ctx, "[Skyway] Handle Batch Send Event", &locker, batchSendEventWatcherLoopInterval, true, r.SkywayHandleBatchSendEvent)
+	go r.startProcess(ctx, "[Skyway] Handle Send to Paloma Event", &locker, sendToPalomaEventWatcherLoopInterval, true, r.SkywayHandleSendToPalomaEvent)
 
 	// Setup heartbeat to Paloma
 	heart := heartbeat.New(

@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensustypes "github.com/palomachain/paloma/x/consensus/types"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
+	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	palomatypes "github.com/palomachain/paloma/x/paloma/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	"github.com/palomachain/pigeon/chain/evm"
@@ -189,12 +189,12 @@ func palomaClientConfig(palomaConfig config.Paloma) *ion.ChainClientConfig {
 					&consensustypes.MsgSetPublicAccessData{},
 					&consensustypes.MsgSetErrorData{},
 					&palomatypes.MsgAddStatusUpdate{},
-					&gravitytypes.MsgSendToEth{},
-					&gravitytypes.MsgConfirmBatch{},
-					&gravitytypes.MsgSendToPalomaClaim{},
-					&gravitytypes.MsgBatchSendToEthClaim{},
-					&gravitytypes.MsgCancelSendToEth{},
-					&gravitytypes.MsgSubmitBadSignatureEvidence{},
+					&skywaytypes.MsgSendToEth{},
+					&skywaytypes.MsgConfirmBatch{},
+					&skywaytypes.MsgSendToPalomaClaim{},
+					&skywaytypes.MsgBatchSendToEthClaim{},
+					&skywaytypes.MsgCancelSendToEth{},
+					&skywaytypes.MsgSubmitBadSignatureEvidence{},
 				},
 			},
 			{

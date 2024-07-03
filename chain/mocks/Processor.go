@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	types "github.com/palomachain/paloma/x/gravity/types"
+	types "github.com/palomachain/paloma/x/skyway/types"
 	chain "github.com/palomachain/pigeon/chain"
 	queue "github.com/palomachain/pigeon/internal/queue"
 	mock "github.com/stretchr/testify/mock"
@@ -96,12 +96,12 @@ func (_m *Processor) GetSendToPalomaEvents(_a0 context.Context, _a1 string) ([]c
 	return r0, r1
 }
 
-// GravityRelayBatches provides a mock function with given fields: _a0, _a1
-func (_m *Processor) GravityRelayBatches(_a0 context.Context, _a1 []chain.GravityBatchWithSignatures) error {
+// SkywayRelayBatches provides a mock function with given fields: _a0, _a1
+func (_m *Processor) SkywayRelayBatches(_a0 context.Context, _a1 []chain.SkywayBatchWithSignatures) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []chain.GravityBatchWithSignatures) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []chain.SkywayBatchWithSignatures) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
@@ -110,8 +110,8 @@ func (_m *Processor) GravityRelayBatches(_a0 context.Context, _a1 []chain.Gravit
 	return r0
 }
 
-// GravitySignBatches provides a mock function with given fields: _a0, _a1
-func (_m *Processor) GravitySignBatches(_a0 context.Context, _a1 ...types.OutgoingTxBatch) ([]chain.SignedGravityOutgoingTxBatch, error) {
+// SkywaySignBatches provides a mock function with given fields: _a0, _a1
+func (_m *Processor) SkywaySignBatches(_a0 context.Context, _a1 ...types.OutgoingTxBatch) ([]chain.SignedSkywayOutgoingTxBatch, error) {
 	_va := make([]interface{}, len(_a1))
 	for _i := range _a1 {
 		_va[_i] = _a1[_i]
@@ -121,16 +121,16 @@ func (_m *Processor) GravitySignBatches(_a0 context.Context, _a1 ...types.Outgoi
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 []chain.SignedGravityOutgoingTxBatch
+	var r0 []chain.SignedSkywayOutgoingTxBatch
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.OutgoingTxBatch) ([]chain.SignedGravityOutgoingTxBatch, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...types.OutgoingTxBatch) ([]chain.SignedSkywayOutgoingTxBatch, error)); ok {
 		return rf(_a0, _a1...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.OutgoingTxBatch) []chain.SignedGravityOutgoingTxBatch); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...types.OutgoingTxBatch) []chain.SignedSkywayOutgoingTxBatch); ok {
 		r0 = rf(_a0, _a1...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.SignedGravityOutgoingTxBatch)
+			r0 = ret.Get(0).([]chain.SignedSkywayOutgoingTxBatch)
 		}
 	}
 

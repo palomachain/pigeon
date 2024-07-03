@@ -29,7 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palomachain/paloma/x/evm/types"
-	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
+	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/chain/paloma"
@@ -109,10 +109,10 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
-	SendBatchSendToEVMClaim(ctx context.Context, claim gravitytypes.MsgBatchSendToEthClaim) error
-	SendSendToPalomaClaim(ctx context.Context, claim gravitytypes.MsgSendToPalomaClaim) error
-	QueryLastObservedGravityNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error)
-	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (gravitytypes.OutgoingTxBatch, error)
+	SendBatchSendToEVMClaim(ctx context.Context, claim skywaytypes.MsgBatchSendToEthClaim) error
+	SendSendToPalomaClaim(ctx context.Context, claim skywaytypes.MsgSendToPalomaClaim) error
+	QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error)
+	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (skywaytypes.OutgoingTxBatch, error)
 	QueryGetLatestPublishedSnapshot(ctx context.Context, chainReferenceID string) (*valset.Snapshot, error)
 }
 

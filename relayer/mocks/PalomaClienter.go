@@ -9,7 +9,7 @@ import (
 	types "github.com/cosmos/cosmos-sdk/x/staking/types"
 	proto "github.com/cosmos/gogoproto/proto"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
+	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	chain "github.com/palomachain/pigeon/chain"
 	paloma "github.com/palomachain/pigeon/chain/paloma"
@@ -185,8 +185,8 @@ func (_m *PalomaClienter) GetValidatorAddress() cosmos_sdktypes.ValAddress {
 	return r0
 }
 
-// GravityConfirmBatches provides a mock function with given fields: ctx, signatures
-func (_m *PalomaClienter) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
+// SkywayConfirmBatches provides a mock function with given fields: ctx, signatures
+func (_m *PalomaClienter) SkywayConfirmBatches(ctx context.Context, signatures ...chain.SignedSkywayOutgoingTxBatch) error {
 	_va := make([]interface{}, len(signatures))
 	for _i := range signatures {
 		_va[_i] = signatures[_i]
@@ -197,11 +197,11 @@ func (_m *PalomaClienter) GravityConfirmBatches(ctx context.Context, signatures 
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GravityConfirmBatches")
+		panic("no return value specified for SkywayConfirmBatches")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...chain.SignedGravityOutgoingTxBatch) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...chain.SignedSkywayOutgoingTxBatch) error); ok {
 		r0 = rf(ctx, signatures...)
 	} else {
 		r0 = ret.Error(0)
@@ -210,24 +210,24 @@ func (_m *PalomaClienter) GravityConfirmBatches(ctx context.Context, signatures 
 	return r0
 }
 
-// GravityQueryBatchesForRelaying provides a mock function with given fields: ctx, chainReferenceID
-func (_m *PalomaClienter) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
+// SkywayQueryBatchesForRelaying provides a mock function with given fields: ctx, chainReferenceID
+func (_m *PalomaClienter) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error) {
 	ret := _m.Called(ctx, chainReferenceID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GravityQueryBatchesForRelaying")
+		panic("no return value specified for SkywayQueryBatchesForRelaying")
 	}
 
-	var r0 []chain.GravityBatchWithSignatures
+	var r0 []chain.SkywayBatchWithSignatures
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.GravityBatchWithSignatures, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.SkywayBatchWithSignatures, error)); ok {
 		return rf(ctx, chainReferenceID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.GravityBatchWithSignatures); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.SkywayBatchWithSignatures); ok {
 		r0 = rf(ctx, chainReferenceID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.GravityBatchWithSignatures)
+			r0 = ret.Get(0).([]chain.SkywayBatchWithSignatures)
 		}
 	}
 
@@ -240,24 +240,24 @@ func (_m *PalomaClienter) GravityQueryBatchesForRelaying(ctx context.Context, ch
 	return r0, r1
 }
 
-// GravityQueryLastUnsignedBatch provides a mock function with given fields: ctx, chainReferenceID
-func (_m *PalomaClienter) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravitytypes.OutgoingTxBatch, error) {
+// SkywayQueryLastUnsignedBatch provides a mock function with given fields: ctx, chainReferenceID
+func (_m *PalomaClienter) SkywayQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]skywaytypes.OutgoingTxBatch, error) {
 	ret := _m.Called(ctx, chainReferenceID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GravityQueryLastUnsignedBatch")
+		panic("no return value specified for SkywayQueryLastUnsignedBatch")
 	}
 
-	var r0 []gravitytypes.OutgoingTxBatch
+	var r0 []skywaytypes.OutgoingTxBatch
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gravitytypes.OutgoingTxBatch, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]skywaytypes.OutgoingTxBatch, error)); ok {
 		return rf(ctx, chainReferenceID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []gravitytypes.OutgoingTxBatch); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []skywaytypes.OutgoingTxBatch); ok {
 		r0 = rf(ctx, chainReferenceID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gravitytypes.OutgoingTxBatch)
+			r0 = ret.Get(0).([]skywaytypes.OutgoingTxBatch)
 		}
 	}
 

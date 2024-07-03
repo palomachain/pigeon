@@ -4,21 +4,21 @@ import (
 	"context"
 	"encoding/hex"
 
-	gravity "github.com/palomachain/paloma/x/gravity/types"
+	skyway "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 )
 
-func (c *Client) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]gravity.OutgoingTxBatch, error) {
-	// return gravityQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
-	qc := gravity.NewQueryClient(c.GRPCClient)
-	batches, err := qc.LastPendingBatchRequestByAddr(ctx, &gravity.QueryLastPendingBatchRequestByAddrRequest{
+func (c *Client) SkywayQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]skyway.OutgoingTxBatch, error) {
+	// return skywayQueryLastUnsignedBatch(ctx, c.GRPCClient, c.creator, chainReferenceID)
+	qc := skyway.NewQueryClient(c.GRPCClient)
+	batches, err := qc.LastPendingBatchRequestByAddr(ctx, &skyway.QueryLastPendingBatchRequestByAddrRequest{
 		Address: c.creator,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	filtered := make([]gravity.OutgoingTxBatch, 0, len(batches.Batch))
+	filtered := make([]skyway.OutgoingTxBatch, 0, len(batches.Batch))
 	for _, v := range batches.Batch {
 		if v.GetChainReferenceID() == chainReferenceID {
 			filtered = append(filtered, v)
@@ -28,12 +28,12 @@ func (c *Client) GravityQueryLastUnsignedBatch(ctx context.Context, chainReferen
 	return filtered, nil
 }
 
-func (c *Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.SignedGravityOutgoingTxBatch) error {
+func (c *Client) SkywayConfirmBatches(ctx context.Context, signatures ...chain.SignedSkywayOutgoingTxBatch) error {
 	if len(signatures) == 0 {
 		return nil
 	}
 	for _, signedBatch := range signatures {
-		msg := &gravity.MsgConfirmBatch{
+		msg := &skyway.MsgConfirmBatch{
 			Nonce:         signedBatch.BatchNonce,
 			TokenContract: signedBatch.TokenContract,
 			EthSigner:     signedBatch.SignedByAddress,
@@ -47,12 +47,12 @@ func (c *Client) GravityConfirmBatches(ctx context.Context, signatures ...chain.
 	return nil
 }
 
-func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.GravityBatchWithSignatures, error) {
-	// return gravityQueryBatchesForRelaying(ctx, c.GRPCClient, c.valAddr, chainReferenceID)
-	qc := gravity.NewQueryClient(c.GRPCClient)
+func (c *Client) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error) {
+	// return skywayQueryBatchesForRelaying(ctx, c.GRPCClient, c.valAddr, chainReferenceID)
+	qc := skyway.NewQueryClient(c.GRPCClient)
 
 	// Get batches
-	req := &gravity.QueryOutgoingTxBatchesRequest{
+	req := &skyway.QueryOutgoingTxBatchesRequest{
 		ChainReferenceId: chainReferenceID,
 		Assignee:         c.valAddr.String(),
 	}
@@ -61,9 +61,9 @@ func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainRefere
 		return nil, err
 	}
 
-	batchesWithSignatures := make([]chain.GravityBatchWithSignatures, len(batches.Batches))
+	batchesWithSignatures := make([]chain.SkywayBatchWithSignatures, len(batches.Batches))
 	for i, batch := range batches.Batches {
-		confirms, err := qc.BatchConfirms(ctx, &gravity.QueryBatchConfirmsRequest{
+		confirms, err := qc.BatchConfirms(ctx, &skyway.QueryBatchConfirmsRequest{
 			Nonce:           batch.BatchNonce,
 			ContractAddress: batch.TokenContract,
 		})
@@ -82,7 +82,7 @@ func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainRefere
 				SignedByAddress: confirm.EthSigner,
 			})
 		}
-		batchesWithSignatures[i] = chain.GravityBatchWithSignatures{
+		batchesWithSignatures[i] = chain.SkywayBatchWithSignatures{
 			OutgoingTxBatch: batch,
 			Signatures:      signatures,
 		}
@@ -93,12 +93,12 @@ func (c *Client) GravityQueryBatchesForRelaying(ctx context.Context, chainRefere
 }
 
 // TODO: Combine with below method
-func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim gravity.MsgBatchSendToEthClaim) error {
+func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim skyway.MsgBatchSendToEthClaim) error {
 	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }
 
-func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim gravity.MsgSendToPalomaClaim) error {
+func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim skyway.MsgSendToPalomaClaim) error {
 	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }
