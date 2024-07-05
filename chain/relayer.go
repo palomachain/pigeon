@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gravity "github.com/palomachain/paloma/x/gravity/types"
+	skyway "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/internal/queue"
 )
@@ -24,8 +24,8 @@ type SignedQueuedMessage struct {
 	SignedByAddress string
 }
 
-type SignedGravityOutgoingTxBatch struct {
-	gravity.OutgoingTxBatch
+type SignedSkywayOutgoingTxBatch struct {
+	skyway.OutgoingTxBatch
 	Signature       []byte
 	SignedByAddress string
 }
@@ -60,16 +60,16 @@ func (msg MessageWithSignatures) GetBytes() []byte {
 	return msg.BytesToSign
 }
 
-type GravityBatchWithSignatures struct {
-	gravity.OutgoingTxBatch
+type SkywayBatchWithSignatures struct {
+	skyway.OutgoingTxBatch
 	Signatures []ValidatorSignature
 }
 
-func (gb GravityBatchWithSignatures) GetSignatures() []ValidatorSignature {
+func (gb SkywayBatchWithSignatures) GetSignatures() []ValidatorSignature {
 	return gb.Signatures
 }
 
-func (gb GravityBatchWithSignatures) GetBytes() []byte {
+func (gb SkywayBatchWithSignatures) GetBytes() []byte {
 	return gb.GetBytesToSign()
 }
 
@@ -86,7 +86,7 @@ type BatchSendEvent struct {
 	EthBlockHeight uint64
 	EventNonce     uint64
 	BatchNonce     uint64
-	GravityNonce   uint64
+	SkywayNonce    uint64
 }
 
 type SendToPalomaEvent struct {
@@ -96,7 +96,7 @@ type SendToPalomaEvent struct {
 	EthBlockHeight uint64
 	EventNonce     uint64
 	Amount         uint64
-	GravityNonce   uint64
+	SkywayNonce    uint64
 }
 
 type ChainInfo interface {
@@ -133,8 +133,8 @@ type Processor interface {
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
 
-	GravitySignBatches(context.Context, ...gravity.OutgoingTxBatch) ([]SignedGravityOutgoingTxBatch, error)
-	GravityRelayBatches(context.Context, []GravityBatchWithSignatures) error
+	SkywaySignBatches(context.Context, ...skyway.OutgoingTxBatch) ([]SignedSkywayOutgoingTxBatch, error)
+	SkywayRelayBatches(context.Context, []SkywayBatchWithSignatures) error
 
 	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
 	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)

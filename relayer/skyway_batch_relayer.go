@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) GravityRelayBatches(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) SkywayRelayBatches(ctx context.Context, locker sync.Locker) error {
 	logger := liblog.WithContext(ctx)
 	logger.Info("relayer loop")
 	if ctx.Err() != nil {
@@ -24,13 +24,13 @@ func (r *Relayer) GravityRelayBatches(ctx context.Context, locker sync.Locker) e
 	}
 
 	locker.Lock()
-	err = r.gravityRelayBatches(ctx, r.processors)
+	err = r.skywayRelayBatches(ctx, r.processors)
 	locker.Unlock()
 
 	return handleProcessError(ctx, err)
 }
 
-func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Processor) error {
+func (r *Relayer) skywayRelayBatches(ctx context.Context, processors []chain.Processor) error {
 	if len(processors) == 0 {
 		return nil
 	}
@@ -40,13 +40,13 @@ func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Pr
 
 		logger := liblog.WithContext(ctx).WithFields(log.Fields{
 			"chain-reference-id": chainReferenceID,
-			"action":             "relay-gravity-batches",
+			"action":             "relay-skyway-batches",
 		})
 
-		batchesForRelaying, err := r.palomaClient.GravityQueryBatchesForRelaying(ctx, chainReferenceID)
+		batchesForRelaying, err := r.palomaClient.SkywayQueryBatchesForRelaying(ctx, chainReferenceID)
 
 		logger = logger.WithFields(log.Fields{
-			"batch-nonces": slice.Map(batchesForRelaying, func(batch chain.GravityBatchWithSignatures) uint64 {
+			"batch-nonces": slice.Map(batchesForRelaying, func(batch chain.SkywayBatchWithSignatures) uint64 {
 				return batch.BatchNonce
 			}),
 		})
@@ -59,7 +59,7 @@ func (r *Relayer) gravityRelayBatches(ctx context.Context, processors []chain.Pr
 
 		if len(batchesForRelaying) > 0 {
 			logger.Info("relaying ", len(batchesForRelaying), " batches")
-			err := p.GravityRelayBatches(ctx, batchesForRelaying)
+			err := p.SkywayRelayBatches(ctx, batchesForRelaying)
 			if err != nil {
 				logger.WithError(err).Error("error relaying batches")
 				return err

@@ -4,13 +4,13 @@ import (
 	"context"
 	"sync"
 
-	gravity "github.com/palomachain/paloma/x/gravity/types"
+	skyway "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *Relayer) GravitySignBatches(ctx context.Context, locker sync.Locker) error {
+func (r *Relayer) SkywaySignBatches(ctx context.Context, locker sync.Locker) error {
 	log.Info("signer loop")
 	if ctx.Err() != nil {
 		log.Info("exiting signer loop as context has ended")
@@ -24,13 +24,13 @@ func (r *Relayer) GravitySignBatches(ctx context.Context, locker sync.Locker) er
 	}
 
 	locker.Lock()
-	err = r.gravitySignBatches(ctx, r.processors)
+	err = r.skywaySignBatches(ctx, r.processors)
 	locker.Unlock()
 
 	return handleProcessError(ctx, err)
 }
 
-func (r *Relayer) gravitySignBatches(ctx context.Context, processors []chain.Processor) error {
+func (r *Relayer) skywaySignBatches(ctx context.Context, processors []chain.Processor) error {
 	if len(processors) == 0 {
 		return nil
 	}
@@ -40,31 +40,31 @@ func (r *Relayer) gravitySignBatches(ctx context.Context, processors []chain.Pro
 
 		logger := log.WithFields(log.Fields{
 			"chain-reference-id": chainReferenceID,
-			"action":             "sign-gravity-batches",
+			"action":             "sign-skyway-batches",
 		})
 
 		// Get all batches that we haven't signed
-		batchesForSigning, err := r.palomaClient.GravityQueryLastUnsignedBatch(ctx, chainReferenceID)
+		batchesForSigning, err := r.palomaClient.SkywayQueryLastUnsignedBatch(ctx, chainReferenceID)
 		if err != nil {
 			logger.WithError(err).Error("failed getting batches to sign")
 			return err
 		}
 
 		logger = logger.WithFields(log.Fields{
-			"batch-nonces": slice.Map(batchesForSigning, func(batch gravity.OutgoingTxBatch) uint64 {
+			"batch-nonces": slice.Map(batchesForSigning, func(batch skyway.OutgoingTxBatch) uint64 {
 				return batch.BatchNonce
 			}),
 		})
 
 		if len(batchesForSigning) > 0 {
 			logger.Info("signing ", len(batchesForSigning), " batches")
-			signedBatches, err := p.GravitySignBatches(ctx, batchesForSigning...)
+			signedBatches, err := p.SkywaySignBatches(ctx, batchesForSigning...)
 			if err != nil {
 				logger.WithError(err).Error("unable to sign batches")
 				return err
 			}
 			logger = logger.WithFields(log.Fields{
-				"signed-batches": slice.Map(signedBatches, func(batch chain.SignedGravityOutgoingTxBatch) log.Fields {
+				"signed-batches": slice.Map(signedBatches, func(batch chain.SignedSkywayOutgoingTxBatch) log.Fields {
 					return log.Fields{
 						"nonce": batch.BatchNonce,
 					}
@@ -72,7 +72,7 @@ func (r *Relayer) gravitySignBatches(ctx context.Context, processors []chain.Pro
 			})
 			logger.Info("signed batches")
 
-			if err = r.gravityConfirmBatches(ctx, signedBatches); err != nil {
+			if err = r.skywayConfirmBatches(ctx, signedBatches); err != nil {
 				logger.WithError(err).Error("couldn't broadcast signatures and process attestation")
 				return err
 			}
@@ -83,6 +83,6 @@ func (r *Relayer) gravitySignBatches(ctx context.Context, processors []chain.Pro
 	return nil
 }
 
-func (r *Relayer) gravityConfirmBatches(ctx context.Context, sigs []chain.SignedGravityOutgoingTxBatch) error {
-	return r.palomaClient.GravityConfirmBatches(ctx, sigs...)
+func (r *Relayer) skywayConfirmBatches(ctx context.Context, sigs []chain.SignedSkywayOutgoingTxBatch) error {
+	return r.palomaClient.SkywayConfirmBatches(ctx, sigs...)
 }

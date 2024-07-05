@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	gravitytypes "github.com/palomachain/paloma/x/gravity/types"
+	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
@@ -367,7 +367,6 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 
 		return found
 	})
-
 	if err != nil {
 		return false, err
 	}
@@ -375,7 +374,7 @@ func (t compass) isArbitraryCallAlreadyExecuted(ctx context.Context, messageID u
 	return found, nil
 }
 
-func (t compass) gravityIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
+func (t compass) skywayIsBatchAlreadyRelayed(ctx context.Context, batchNonce uint64) (bool, error) {
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(9999).
@@ -701,7 +700,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 		return nil, err
 	}
 
-	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
+	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -722,9 +721,9 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, fmt.Errorf("invalid batch nonce")
 		}
 
-		gravityNonce, ok := event[2].(*big.Int)
+		skywayNonce, ok := event[2].(*big.Int)
 		if !ok {
-			return nil, fmt.Errorf("invalid gravity nonce")
+			return nil, fmt.Errorf("invalid skyway nonce")
 		}
 
 		eventNonce, ok := event[3].(*big.Int)
@@ -732,8 +731,8 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if gravityNonce.Uint64() <= lastGravityNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
+		if skywayNonce.Uint64() <= lastSkywayNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastSkywayNonce).WithField("skyway-nonce", skywayNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 
@@ -742,7 +741,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 			EventNonce:     eventNonce.Uint64(),
 			BatchNonce:     batchNonce.Uint64(),
 			TokenContract:  tokenContract.String(),
-			GravityNonce:   gravityNonce.Uint64(),
+			SkywayNonce:    skywayNonce.Uint64(),
 		})
 	}
 
@@ -777,7 +776,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 		return nil, err
 	}
 
-	lastGravityNonce, err := t.paloma.QueryLastObservedGravityNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
+	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
 		return nil, err
 	}
@@ -808,7 +807,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid amount")
 		}
 
-		gravityNonce, ok := event[4].(*big.Int)
+		skywayNonce, ok := event[4].(*big.Int)
 		if !ok {
 			return nil, fmt.Errorf("invalid paloma nonce")
 		}
@@ -818,8 +817,8 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			return nil, fmt.Errorf("invalid event nonce")
 		}
 
-		if gravityNonce.Uint64() <= lastGravityNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastGravityNonce).WithField("gravity-nonce", gravityNonce.Uint64()).Info("Skipping already observed event...")
+		if skywayNonce.Uint64() <= lastSkywayNonce {
+			liblog.WithContext(ctx).WithField("last-event-nonce", lastSkywayNonce).WithField("skyway-nonce", skywayNonce.Uint64()).Info("Skipping already observed event...")
 			continue
 		}
 
@@ -830,7 +829,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 			EthereumSender: ethSender.String(),
 			PalomaReceiver: palomaReceiver,
 			TokenContract:  tokenContract.String(),
-			GravityNonce:   gravityNonce.Uint64(),
+			SkywayNonce:    skywayNonce.Uint64(),
 		})
 	}
 
@@ -863,20 +862,20 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 }
 
 func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.BatchSendEvent, orchestrator string) error {
-	msg := gravitytypes.MsgBatchSendToEthClaim{
+	msg := skywaytypes.MsgBatchSendToEthClaim{
 		EventNonce:       event.EventNonce,
 		EthBlockHeight:   event.EthBlockHeight,
 		BatchNonce:       event.BatchNonce,
 		TokenContract:    event.TokenContract,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
-		GravityNonce:     event.GravityNonce,
+		SkywayNonce:      event.SkywayNonce,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
 }
 
 func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendToPalomaEvent, orchestrator string) error {
-	msg := gravitytypes.MsgSendToPalomaClaim{
+	msg := skywaytypes.MsgSendToPalomaClaim{
 		EventNonce:       event.EventNonce,
 		EthBlockHeight:   event.EthBlockHeight,
 		TokenContract:    event.TokenContract,
@@ -885,7 +884,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		PalomaReceiver:   event.PalomaReceiver,
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
-		GravityNonce:     event.GravityNonce,
+		SkywayNonce:      event.SkywayNonce,
 	}
 	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }
@@ -986,7 +985,7 @@ func (c compass) callCompass(
 	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
 }
 
-func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.GravityBatchWithSignatures) error {
+func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) error {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("chainReferenceID", t.ChainReferenceID)
 	for _, batch := range batches {
@@ -1003,7 +1002,7 @@ func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.Gravit
 		})
 		logger.Debug("relaying")
 
-		_, processingErr = t.gravityRelayBatch(ctx, batch)
+		_, processingErr = t.skywayRelayBatch(ctx, batch)
 
 		processingErr = whoops.Enrich(
 			processingErr,
@@ -1024,19 +1023,19 @@ func (t compass) gravityRelayBatches(ctx context.Context, batches []chain.Gravit
 	return gErr.Return()
 }
 
-func (t compass) gravityRelayBatch(
+func (t compass) skywayRelayBatch(
 	ctx context.Context,
-	batch chain.GravityBatchWithSignatures,
+	batch chain.SkywayBatchWithSignatures,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
 		logger := liblog.WithContext(ctx).
-			WithField("component", "gravity-relay-batch").
-			WithField("gravity-batch-nonce", batch.BatchNonce).
+			WithField("component", "skyway-relay-batch").
+			WithField("skyway-batch-nonce", batch.BatchNonce).
 			WithField("chain-reference-id", batch.ChainReferenceId)
-		executed, err := t.gravityIsBatchAlreadyRelayed(ctx, batch.BatchNonce)
+		executed, err := t.skywayIsBatchAlreadyRelayed(ctx, batch.BatchNonce)
 		whoops.Assert(err)
 		if executed {
-			logger.Warn("gravity batch already executed!")
+			logger.Warn("skyway batch already executed!")
 			return nil
 		}
 

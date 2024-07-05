@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/cosmos/gogoproto/proto"
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	types "github.com/palomachain/paloma/x/gravity/types"
+	types "github.com/palomachain/paloma/x/skyway/types"
 	valsettypes "github.com/palomachain/paloma/x/valset/types"
 	paloma "github.com/palomachain/pigeon/chain/paloma"
 	mock "github.com/stretchr/testify/mock"
@@ -144,12 +144,12 @@ func (_m *PalomaClienter) QueryGetLatestPublishedSnapshot(ctx context.Context, c
 	return r0, r1
 }
 
-// QueryLastObservedGravityNonceByAddr provides a mock function with given fields: ctx, chainReferenceID, orchestrator
-func (_m *PalomaClienter) QueryLastObservedGravityNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
+// QueryLastObservedSkywayNonceByAddr provides a mock function with given fields: ctx, chainReferenceID, orchestrator
+func (_m *PalomaClienter) QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
 	ret := _m.Called(ctx, chainReferenceID, orchestrator)
 
 	if len(ret) == 0 {
-		panic("no return value specified for QueryLastObservedGravityNonceByAddr")
+		panic("no return value specified for QueryLastObservedSkywayNonceByAddr")
 	}
 
 	var r0 uint64
