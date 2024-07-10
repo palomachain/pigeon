@@ -370,8 +370,8 @@ github.com/cosmos/gogogateway v1.2.0/go.mod h1:iQpLkGWxYcnCdz5iAdLcRBSw3h7NXeOkZ
 github.com/cosmos/gogoproto v1.4.2/go.mod h1:cLxOsn1ljAHSV527CHOtaIP91kK6cCrZETRBrkzItWU=
 github.com/cosmos/gogoproto v1.4.12 h1:vB6Lbe/rtnYGjQuFxkPiPYiCybqFT8QvLipDZP8JpFE=
 github.com/cosmos/gogoproto v1.4.12/go.mod h1:LnZob1bXRdUoqMMtwYlcR3wjiElmlC+FkjaZRv1/eLY=
-github.com/cosmos/iavl v1.1.2 h1:zL9FK7C4L/P4IF1Dm5fIwz0WXCnn7Bp1M2FxH0ayM7Y=
-github.com/cosmos/iavl v1.1.2/go.mod h1:jLeUvm6bGT1YutCaL2fIar/8vGUE8cPZvh/gXEWDaDM=
+github.com/cosmos/iavl v1.1.4 h1:Z0cVVjeQqOUp78/nWt/uhQy83vYluWlAMGQ4zbH9G34=
+github.com/cosmos/iavl v1.1.4/go.mod h1:vCYmRQUJU1wwj0oRD3wMEtOM9sJNDP+GFMaXmIxZ/rU=
 github.com/cosmos/ibc-go/modules/capability v1.0.0 h1:r/l++byFtn7jHYa09zlAdSeevo8ci1mVZNO9+V0xsLE=
 github.com/cosmos/ibc-go/modules/capability v1.0.0/go.mod h1:D81ZxzjZAe0ZO5ambnvn1qedsFQ8lOwtqicG6liLBco=
 github.com/cosmos/ibc-go/v8 v8.2.0 h1:7oCzyy1sZCcgpeQLnHxC56brsSz3KWwQGKXalXwXFzE=
@@ -949,8 +949,8 @@ github.com/ory/dockertest v3.3.5+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnh
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936 h1:fmQAgxcdYBxCZYczws/uxTVOYHZd4fNrOaoHp35HZMM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936/go.mod h1:B2H2+2I4UiMR4hvAIaGLyYszNfSTYC8fWIw+kgfuFSQ=
-github.com/palomachain/paloma v1.15.2 h1:0zsbbp8EZXUeDi4Oyng9c70RofaRch5UI2sFWMfvASE=
-github.com/palomachain/paloma v1.15.2/go.mod h1:/p6BnMCvoCRs2RNzjB2hrcldxEaBJXhA2tMf4TrYxAA=
+github.com/palomachain/paloma v1.15.3 h1:8Fc1owzrICw4umjpDtVZx+FyxLjBDuMOwaBmvZgN+D0=
+github.com/palomachain/paloma v1.15.3/go.mod h1:DoV4uEfnCumFTtRHkdie2usqDCxAqexXFl2HmIOWlhQ=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
