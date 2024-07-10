@@ -106,7 +106,7 @@ func StoredContracts() map[string]StoredContract {
 type PalomaClienter interface {
 	NewStatus() paloma.StatusUpdater
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
-	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
+	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, valsetID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
 	SendBatchSendToEVMClaim(ctx context.Context, claim skywaytypes.MsgBatchSendToEthClaim) error
