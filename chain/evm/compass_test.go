@@ -373,7 +373,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -483,7 +483,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -614,7 +614,7 @@ func TestMessageProcessing(t *testing.T) {
 
 				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, false, "update_valset", mock.Anything).Return(tx, nil)
 
-				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
@@ -720,7 +720,7 @@ func TestMessageProcessing(t *testing.T) {
 
 				evm.On("DeployContract", mock.Anything, chainID, string(StoredContracts()["simple"].Source), []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
-				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), tx.Hash().Bytes()).Return(nil)
+				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(0), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},

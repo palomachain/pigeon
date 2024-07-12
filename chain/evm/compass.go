@@ -121,10 +121,10 @@ func (t compass) updateValset(
 	queueTypeName string,
 	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
-) (*ethtypes.Transaction, error) {
+) (*ethtypes.Transaction, uint64, error) {
 	currentValsetID, err := t.findLastValsetMessageID(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	logger := liblog.WithContext(ctx).WithFields(log.Fields{
 		"chain-reference-id": t.ChainReferenceID,
@@ -134,16 +134,16 @@ func (t compass) updateValset(
 
 	currentValset, err := t.paloma.QueryGetEVMValsetByID(ctx, currentValsetID, t.ChainReferenceID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if currentValset == nil {
 		logger.Error("current valset is empty")
-		return nil, fmt.Errorf("current valset is empty")
+		return nil, 0, fmt.Errorf("current valset is empty")
 	}
 
 	consensusReached := isConsensusReached(ctx, currentValset, origMessage)
 	if !consensusReached {
-		return nil, ErrNoConsensus
+		return nil, 0, ErrNoConsensus
 	}
 
 	tx, err := t.callCompass(ctx, false, "update_valset", []any{
@@ -154,16 +154,16 @@ func (t compass) updateValset(
 		logger.WithError(err).Error("call_compass error")
 		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
 		if setErr != nil {
-			return nil, setErr
+			return nil, 0, setErr
 		}
 		if isSmartContractError {
 			logger.Debug("smart contract error. recovering...")
-			return nil, nil
+			return nil, 0, nil
 		}
 		whoops.Assert(err)
 	}
 
-	return tx, nil
+	return tx, currentValsetID, nil
 }
 
 func (t compass) submitLogicCall(
@@ -171,7 +171,7 @@ func (t compass) submitLogicCall(
 	queueTypeName string,
 	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
-) (*ethtypes.Transaction, error) {
+) (*ethtypes.Transaction, uint64, error) {
 	logger := liblog.WithContext(ctx).WithFields(log.Fields{
 		"chain-id": t.ChainReferenceID,
 		"msg-id":   origMessage.ID,
@@ -180,10 +180,10 @@ func (t compass) submitLogicCall(
 
 	executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if executed {
-		return nil, ErrCallAlreadyExecuted
+		return nil, 0, ErrCallAlreadyExecuted
 	}
 
 	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
@@ -191,20 +191,20 @@ func (t compass) submitLogicCall(
 	if err != nil {
 		if errors.Is(err, errValsetIDMismatch) {
 			logger.Warn("Valset ID mismatch. Swallowing error to retry message...")
-			return nil, nil
+			return nil, 0, nil
 		}
 
-		return nil, err
+		return nil, 0, err
 	}
 
 	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	consensusReached := isConsensusReached(ctx, valset, origMessage)
 	if !consensusReached {
-		return nil, ErrNoConsensus
+		return nil, 0, ErrNoConsensus
 	}
 
 	con := BuildCompassConsensus(valset, origMessage.Signatures)
@@ -226,17 +226,17 @@ func (t compass) submitLogicCall(
 		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
 		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
 		if setErr != nil {
-			return nil, setErr
+			return nil, 0, setErr
 		}
 		if isSmartContractError {
 			logger.Debug("smart contract error. recovering...")
-			return nil, nil
+			return nil, 0, nil
 		}
 
-		return nil, err
+		return nil, 0, err
 	}
 
-	return tx, nil
+	return tx, valsetID, nil
 }
 
 func (t compass) uploadSmartContract(
@@ -466,6 +466,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		var processingErr error
 		var tx *ethtypes.Transaction
+		var valsetID uint64
 		msg := rawMsg.Msg.(*evmtypes.Message)
 		logger := logger.WithFields(log.Fields{
 			"chain-reference-id": t.ChainReferenceID,
@@ -477,7 +478,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 
 		switch action := msg.GetAction().(type) {
 		case *evmtypes.Message_SubmitLogicCall:
-			tx, processingErr = t.submitLogicCall(
+			tx, valsetID, processingErr = t.submitLogicCall(
 				ctx,
 				queueTypeName,
 				action.SubmitLogicCall,
@@ -495,7 +496,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				"message-type":           "Message_UpdateValset",
 			})
 			logger.Debug("switch-case-message-update-valset")
-			tx, processingErr = t.updateValset(
+			tx, valsetID, processingErr = t.updateValset(
 				ctx,
 				queueTypeName,
 				action.UpdateValset.Valset,
@@ -533,7 +534,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		case processingErr == nil:
 			if tx != nil {
 				logger.Debug("setting public access data")
-				if err := t.paloma.SetPublicAccessData(ctx, queueTypeName, rawMsg.ID, tx.Hash().Bytes()); err != nil {
+				err := t.paloma.SetPublicAccessData(ctx, queueTypeName,
+					rawMsg.ID, valsetID, tx.Hash().Bytes())
+				if err != nil {
 					gErr.Add(err)
 					return gErr
 				}

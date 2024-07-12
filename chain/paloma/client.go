@@ -152,9 +152,10 @@ func (c *Client) AddMessageEvidence(ctx context.Context, queueTypeName string, m
 	return err
 }
 
-func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error {
+func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, messageID, valsetID uint64, data []byte) error {
 	msg := &consensus.MsgSetPublicAccessData{
 		Data:          data,
+		ValsetID:      valsetID,
 		MessageID:     messageID,
 		QueueTypeName: queueTypeName,
 		Metadata: valset.MsgMetadata{
