@@ -102,3 +102,8 @@ func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim skyway.MsgSend
 	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }
+
+func (c *Client) SendLightNodeSaleClaim(ctx context.Context, claim skyway.MsgLightNodeSaleClaim) error {
+	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}

@@ -99,6 +99,15 @@ type SendToPalomaEvent struct {
 	SkywayNonce    uint64
 }
 
+type LightNodeSaleEvent struct {
+	ClientAddress        string
+	SmartContractAddress string
+	Amount               uint64
+	EthBlockHeight       uint64
+	EventNonce           uint64
+	SkywayNonce          uint64
+}
+
 type ChainInfo interface {
 	ChainReferenceID() string
 	ChainID() string
@@ -129,6 +138,7 @@ type Processor interface {
 
 	SubmitBatchSendToRemoteClaims(context.Context, []BatchSendEvent, string) error
 	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
+	SubmitLightNodeSaleClaims(context.Context, []LightNodeSaleEvent, string) error
 
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
@@ -138,6 +148,7 @@ type Processor interface {
 
 	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
 	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)
+	GetLightNodeSaleEvents(context.Context, string) ([]LightNodeSaleEvent, error)
 }
 
 type ProcessorBuilder interface {

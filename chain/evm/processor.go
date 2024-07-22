@@ -224,6 +224,10 @@ func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator strin
 	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
 }
 
+func (p Processor) GetLightNodeSaleEvents(ctx context.Context, orchestrator string) ([]chain.LightNodeSaleEvent, error) {
+	return p.compass.GetLightNodeSaleEvents(ctx, orchestrator)
+}
+
 func (p Processor) SubmitBatchSendToRemoteClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
 	for _, batchSendEvent := range batchSendEvents {
 		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
@@ -236,6 +240,15 @@ func (p Processor) SubmitBatchSendToRemoteClaims(ctx context.Context, batchSendE
 func (p Processor) SubmitSendToPalomaClaims(ctx context.Context, batchSendEvents []chain.SendToPalomaEvent, orchestrator string) error {
 	for _, batchSendEvent := range batchSendEvents {
 		if err := p.compass.submitSendToPalomaClaim(ctx, batchSendEvent, orchestrator); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p Processor) SubmitLightNodeSaleClaims(ctx context.Context, batchSaleEvents []chain.LightNodeSaleEvent, orchestrator string) error {
+	for _, batchSaleEvent := range batchSaleEvents {
+		if err := p.compass.submitLightNodeSaleClaim(ctx, batchSaleEvent, orchestrator); err != nil {
 			return err
 		}
 	}
