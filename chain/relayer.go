@@ -127,7 +127,7 @@ type Processor interface {
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
-	SubmitBatchSendToEthClaims(context.Context, []BatchSendEvent, string) error
+	SubmitBatchSendToRemoteClaims(context.Context, []BatchSendEvent, string) error
 	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
 
 	// it verifies if it's being connected to the right chain

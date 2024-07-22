@@ -109,7 +109,7 @@ type PalomaClienter interface {
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID uint64, valsetID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*types.Valset, error)
-	SendBatchSendToEVMClaim(ctx context.Context, claim skywaytypes.MsgBatchSendToEthClaim) error
+	SendBatchSendToEVMClaim(ctx context.Context, claim skywaytypes.MsgBatchSendToRemoteClaim) error
 	SendSendToPalomaClaim(ctx context.Context, claim skywaytypes.MsgSendToPalomaClaim) error
 	QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error)
 	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (skywaytypes.OutgoingTxBatch, error)

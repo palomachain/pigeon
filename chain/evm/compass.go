@@ -865,7 +865,7 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 }
 
 func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.BatchSendEvent, orchestrator string) error {
-	msg := skywaytypes.MsgBatchSendToEthClaim{
+	msg := skywaytypes.MsgBatchSendToRemoteClaim{
 		EventNonce:       event.EventNonce,
 		EthBlockHeight:   event.EthBlockHeight,
 		BatchNonce:       event.BatchNonce,

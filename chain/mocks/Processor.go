@@ -232,8 +232,8 @@ func (_m *Processor) SignMessages(ctx context.Context, messages ...chain.QueuedM
 	return r0, r1
 }
 
-// SubmitBatchSendToEthClaims provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Processor) SubmitBatchSendToEthClaims(_a0 context.Context, _a1 []chain.BatchSendEvent, _a2 string) error {
+// SubmitBatchSendToRemoteClaims provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Processor) SubmitBatchSendToRemoteClaims(_a0 context.Context, _a1 []chain.BatchSendEvent, _a2 string) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
