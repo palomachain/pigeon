@@ -224,7 +224,7 @@ func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator strin
 	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
 }
 
-func (p Processor) SubmitBatchSendToEthClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
+func (p Processor) SubmitBatchSendToRemoteClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
 	for _, batchSendEvent := range batchSendEvents {
 		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
 			return err

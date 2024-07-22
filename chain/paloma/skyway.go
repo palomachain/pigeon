@@ -93,7 +93,7 @@ func (c *Client) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferen
 }
 
 // TODO: Combine with below method
-func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim skyway.MsgBatchSendToEthClaim) error {
+func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim skyway.MsgBatchSendToRemoteClaim) error {
 	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
 	return err
 }

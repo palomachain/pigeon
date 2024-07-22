@@ -178,7 +178,7 @@ func (_m *PalomaClienter) QueryLastObservedSkywayNonceByAddr(ctx context.Context
 }
 
 // SendBatchSendToEVMClaim provides a mock function with given fields: ctx, claim
-func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim types.MsgBatchSendToEthClaim) error {
+func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim types.MsgBatchSendToRemoteClaim) error {
 	ret := _m.Called(ctx, claim)
 
 	if len(ret) == 0 {
@@ -186,7 +186,7 @@ func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim typ
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.MsgBatchSendToEthClaim) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, types.MsgBatchSendToRemoteClaim) error); ok {
 		r0 = rf(ctx, claim)
 	} else {
 		r0 = ret.Error(0)
@@ -254,7 +254,8 @@ func (_m *PalomaClienter) SetPublicAccessData(ctx context.Context, queueTypeName
 func NewPalomaClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *PalomaClienter {
+},
+) *PalomaClienter {
 	mock := &PalomaClienter{}
 	mock.Mock.Test(t)
 
