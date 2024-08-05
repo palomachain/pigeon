@@ -868,9 +868,17 @@ func (t *compass) parseLightNodeSaleEvent(
 		return evt, fmt.Errorf("invalid smart contract address")
 	}
 
-	clientAddress, ok := event[2].(sdk.Address)
-	if !ok {
-		return evt, fmt.Errorf("invalid client address")
+	addrBytes := removeLeftPad(event[2].([]byte))
+
+	// The Unmarshal function below does not check for errors, so we need to do
+	// it beforehand
+	if err := sdk.VerifyAddressFormat(addrBytes); err != nil {
+		return evt, err
+	}
+
+	var clientAddress sdk.AccAddress
+	if err := clientAddress.Unmarshal(addrBytes); err != nil {
+		return evt, err
 	}
 
 	amount, ok := event[4].(*big.Int)
@@ -1194,4 +1202,15 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 	}
 
 	return valsetID, nil
+}
+
+// removeLeftPad removes 0 bytes from the left side
+func removeLeftPad(addr []byte) []byte {
+	for i := range addr {
+		if addr[i] != 0 {
+			return addr[i:]
+		}
+	}
+
+	return addr
 }
