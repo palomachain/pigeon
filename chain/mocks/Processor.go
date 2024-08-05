@@ -37,36 +37,6 @@ func (_m *Processor) ExternalAccount() chain.ExternalAccount {
 	return r0
 }
 
-// GetBatchSendEvents provides a mock function with given fields: _a0, _a1
-func (_m *Processor) GetBatchSendEvents(_a0 context.Context, _a1 string) ([]chain.BatchSendEvent, error) {
-	ret := _m.Called(_a0, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetBatchSendEvents")
-	}
-
-	var r0 []chain.BatchSendEvent
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.BatchSendEvent, error)); ok {
-		return rf(_a0, _a1)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.BatchSendEvent); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.BatchSendEvent)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetChainReferenceID provides a mock function with given fields:
 func (_m *Processor) GetChainReferenceID() string {
 	ret := _m.Called()
@@ -83,66 +53,6 @@ func (_m *Processor) GetChainReferenceID() string {
 	}
 
 	return r0
-}
-
-// GetLightNodeSaleEvents provides a mock function with given fields: _a0, _a1
-func (_m *Processor) GetLightNodeSaleEvents(_a0 context.Context, _a1 string) ([]chain.LightNodeSaleEvent, error) {
-	ret := _m.Called(_a0, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLightNodeSaleEvents")
-	}
-
-	var r0 []chain.LightNodeSaleEvent
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.LightNodeSaleEvent, error)); ok {
-		return rf(_a0, _a1)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.LightNodeSaleEvent); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.LightNodeSaleEvent)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetSendToPalomaEvents provides a mock function with given fields: _a0, _a1
-func (_m *Processor) GetSendToPalomaEvents(_a0 context.Context, _a1 string) ([]chain.SendToPalomaEvent, error) {
-	ret := _m.Called(_a0, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetSendToPalomaEvents")
-	}
-
-	var r0 []chain.SendToPalomaEvent
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.SendToPalomaEvent, error)); ok {
-		return rf(_a0, _a1)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.SendToPalomaEvent); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]chain.SendToPalomaEvent)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetSkywayEvents provides a mock function with given fields: _a0, _a1
@@ -339,24 +249,6 @@ func (_m *Processor) SkywaySignBatches(_a0 context.Context, _a1 ...types.Outgoin
 	return r0, r1
 }
 
-// SubmitBatchSendToRemoteClaims provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Processor) SubmitBatchSendToRemoteClaims(_a0 context.Context, _a1 []chain.BatchSendEvent, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SubmitBatchSendToRemoteClaims")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []chain.BatchSendEvent, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SubmitEventClaims provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Processor) SubmitEventClaims(_a0 context.Context, _a1 []chain.SkywayEventer, _a2 string) error {
 	ret := _m.Called(_a0, _a1, _a2)
@@ -367,42 +259,6 @@ func (_m *Processor) SubmitEventClaims(_a0 context.Context, _a1 []chain.SkywayEv
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []chain.SkywayEventer, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SubmitLightNodeSaleClaims provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Processor) SubmitLightNodeSaleClaims(_a0 context.Context, _a1 []chain.LightNodeSaleEvent, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SubmitLightNodeSaleClaims")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []chain.LightNodeSaleEvent, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SubmitSendToPalomaClaims provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Processor) SubmitSendToPalomaClaims(_a0 context.Context, _a1 []chain.SendToPalomaEvent, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SubmitSendToPalomaClaims")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []chain.SendToPalomaEvent, string) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)

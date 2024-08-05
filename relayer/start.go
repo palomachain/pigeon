@@ -18,11 +18,9 @@ const (
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	skywaySignBatchesLoopInterval         = 5 * time.Second
-	skywayRelayBatchesLoopInterval        = 5 * time.Second
-	batchSendEventWatcherLoopInterval     = 5 * time.Second
-	sendToPalomaEventWatcherLoopInterval  = 1 * time.Minute
-	lightNodeSaleEventWatcherLoopInterval = 1 * time.Minute
+	skywaySignBatchesLoopInterval  = 5 * time.Second
+	skywayRelayBatchesLoopInterval = 5 * time.Second
+	skywayEventWatcherLoopInterval = 1 * time.Minute
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
@@ -90,9 +88,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 	// Start skyway background goroutines to run separately from each other
 	go r.startProcess(ctx, "[Skyway] Sign batches", &locker, skywaySignBatchesLoopInterval, true, r.SkywaySignBatches)
 	go r.startProcess(ctx, "[Skyway] Relay batches", &locker, skywayRelayBatchesLoopInterval, true, r.SkywayRelayBatches)
-	go r.startProcess(ctx, "[Skyway] Handle Batch Send Event", &locker, batchSendEventWatcherLoopInterval, true, r.SkywayHandleBatchSendEvent)
-	go r.startProcess(ctx, "[Skyway] Handle Send to Paloma Event", &locker, sendToPalomaEventWatcherLoopInterval, true, r.SkywayHandleSendToPalomaEvent)
-	go r.startProcess(ctx, "[Skyway] Handle Light Node Sale Event", &locker, lightNodeSaleEventWatcherLoopInterval, true, r.SkywayHandleLightNodeSaleEvent)
+	go r.startProcess(ctx, "[Skyway] Handle Events", &locker, skywayEventWatcherLoopInterval, true, r.SkywayHandleEvents)
 
 	// Setup heartbeat to Paloma
 	heart := heartbeat.New(

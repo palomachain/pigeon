@@ -150,9 +150,6 @@ type Processor interface {
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
-	SubmitBatchSendToRemoteClaims(context.Context, []BatchSendEvent, string) error
-	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
-	SubmitLightNodeSaleClaims(context.Context, []LightNodeSaleEvent, string) error
 	SubmitEventClaims(context.Context, []SkywayEventer, string) error
 
 	// it verifies if it's being connected to the right chain
@@ -161,9 +158,6 @@ type Processor interface {
 	SkywaySignBatches(context.Context, ...skyway.OutgoingTxBatch) ([]SignedSkywayOutgoingTxBatch, error)
 	SkywayRelayBatches(context.Context, []SkywayBatchWithSignatures) error
 
-	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
-	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)
-	GetLightNodeSaleEvents(context.Context, string) ([]LightNodeSaleEvent, error)
 	GetSkywayEvents(context.Context, string) ([]SkywayEventer, error)
 }
 

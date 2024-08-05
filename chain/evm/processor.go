@@ -217,47 +217,8 @@ func (p Processor) isRightChain(blockHash common.Hash) error {
 	return nil
 }
 
-func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
-	return p.compass.GetBatchSendEvents(ctx, orchestrator)
-}
-
-func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
-	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
-}
-
-func (p Processor) GetLightNodeSaleEvents(ctx context.Context, orchestrator string) ([]chain.LightNodeSaleEvent, error) {
-	return p.compass.GetLightNodeSaleEvents(ctx, orchestrator)
-}
-
 func (p Processor) GetSkywayEvents(ctx context.Context, orchestrator string) ([]chain.SkywayEventer, error) {
 	return p.compass.GetSkywayEvents(ctx, orchestrator)
-}
-
-func (p Processor) SubmitBatchSendToRemoteClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
-	for _, batchSendEvent := range batchSendEvents {
-		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (p Processor) SubmitSendToPalomaClaims(ctx context.Context, batchSendEvents []chain.SendToPalomaEvent, orchestrator string) error {
-	for _, batchSendEvent := range batchSendEvents {
-		if err := p.compass.submitSendToPalomaClaim(ctx, batchSendEvent, orchestrator); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (p Processor) SubmitLightNodeSaleClaims(ctx context.Context, batchSaleEvents []chain.LightNodeSaleEvent, orchestrator string) error {
-	for _, batchSaleEvent := range batchSaleEvents {
-		if err := p.compass.submitLightNodeSaleClaim(ctx, batchSaleEvent, orchestrator); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // Submit all gathered events to Paloma. Events need to be sent in order to
