@@ -145,6 +145,36 @@ func (_m *Processor) GetSendToPalomaEvents(_a0 context.Context, _a1 string) ([]c
 	return r0, r1
 }
 
+// GetSkywayEvents provides a mock function with given fields: _a0, _a1
+func (_m *Processor) GetSkywayEvents(_a0 context.Context, _a1 string) ([]chain.SkywayEventer, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSkywayEvents")
+	}
+
+	var r0 []chain.SkywayEventer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.SkywayEventer, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.SkywayEventer); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.SkywayEventer)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // HealthCheck provides a mock function with given fields: ctx
 func (_m *Processor) HealthCheck(ctx context.Context) error {
 	ret := _m.Called(ctx)
@@ -319,6 +349,24 @@ func (_m *Processor) SubmitBatchSendToRemoteClaims(_a0 context.Context, _a1 []ch
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []chain.BatchSendEvent, string) error); ok {
+		r0 = rf(_a0, _a1, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubmitEventClaims provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Processor) SubmitEventClaims(_a0 context.Context, _a1 []chain.SkywayEventer, _a2 string) error {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SubmitEventClaims")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []chain.SkywayEventer, string) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)

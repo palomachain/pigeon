@@ -28,10 +28,21 @@ import (
 const (
 	SignedMessagePrefix             = "\x19Ethereum Signed Message:\n32"
 	cEventQueryBlockHeightMinWindow = 10
+)
+
+var (
 	// Node sale event fields:
 	//   contract_addr, buyer_addr, paloma_addr, node_count, grain_amount,
 	//   skyway_nonce, event_id
-	nodeSaleEvent = "NodeSaleEvent(address,address,bytes32,uint256,uint25,uint2566,uint256)"
+	nodeSaleEvent = crypto.Keccak256Hash([]byte(
+		"NodeSaleEvent(address,address,bytes32,uint256,uint25,uint2566,uint256)",
+	))
+	batchSendEvent = crypto.Keccak256Hash([]byte(
+		"BatchSendEvent(address,uint256,uint256,uint256)",
+	))
+	sendToPalomaEvent = crypto.Keccak256Hash([]byte(
+		"SendToPalomaEvent(address,address,string,uint256,uint256,uint256)",
+	))
 )
 
 var errValsetIDMismatch = errors.New("valset id mismatch")
@@ -64,6 +75,7 @@ type compass struct {
 	CompassID                string
 	ChainReferenceID         string
 	lastObservedBlockHeights observedHeights
+	lastObservedBlockHeight  int64
 	startingBlockHeight      int64
 	smartContractAddr        common.Address
 }
@@ -687,7 +699,7 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("BatchSendEvent(address,uint256,uint256,uint256)"))}).
+		WithTopics([]common.Hash{batchSendEvent}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -715,43 +727,20 @@ func (t *compass) GetBatchSendEvents(ctx context.Context, orchestrator string) (
 	}
 
 	for _, ethLog := range logs {
-		event, err := t.compassAbi.Unpack("BatchSendEvent", ethLog.Data)
+		evt, err := t.parseBatchSendEvent(ethLog.Data, ethLog.BlockNumber)
 		if err != nil {
 			return nil, err
 		}
 
-		tokenContract, ok := event[0].(common.Address)
-		if !ok {
-			return nil, fmt.Errorf("invalid token contract")
-		}
-
-		batchNonce, ok := event[1].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid batch nonce")
-		}
-
-		skywayNonce, ok := event[2].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid skyway nonce")
-		}
-
-		eventNonce, ok := event[3].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid event nonce")
-		}
-
-		if skywayNonce.Uint64() <= lastSkywayNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastSkywayNonce).WithField("skyway-nonce", skywayNonce.Uint64()).Info("Skipping already observed event...")
+		if evt.GetSkywayNonce() <= lastSkywayNonce {
+			liblog.WithContext(ctx).
+				WithField("last-event-nonce", lastSkywayNonce).
+				WithField("skyway-nonce", evt.GetSkywayNonce()).
+				Info("Skipping already observed event...")
 			continue
 		}
 
-		events = append(events, chain.BatchSendEvent{
-			EthBlockHeight: ethLog.BlockNumber,
-			EventNonce:     eventNonce.Uint64(),
-			BatchNonce:     batchNonce.Uint64(),
-			TokenContract:  tokenContract.String(),
-			SkywayNonce:    skywayNonce.Uint64(),
-		})
+		events = append(events, evt)
 	}
 
 	t.lastObservedBlockHeights.batchSendEvent = filter.ToBlock.Int64()
@@ -763,7 +752,7 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte("SendToPalomaEvent(address,address,string,uint256,uint256,uint256)"))}).
+		WithTopics([]common.Hash{sendToPalomaEvent}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -791,55 +780,20 @@ func (t *compass) GetSendToPalomaEvents(ctx context.Context, orchestrator string
 	}
 
 	for _, ethLog := range logs {
-		event, err := t.compassAbi.Unpack("SendToPalomaEvent", ethLog.Data)
+		evt, err := t.parseSendToPalomaEvent(ethLog.Data, ethLog.BlockNumber)
 		if err != nil {
 			return nil, err
 		}
 
-		tokenContract, ok := event[0].(common.Address)
-		if !ok {
-			return nil, fmt.Errorf("invalid token contract")
-		}
-
-		ethSender, ok := event[1].(common.Address)
-		if !ok {
-			return nil, fmt.Errorf("invalid sender address")
-		}
-
-		palomaReceiver := event[2].(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid paloma receiver")
-		}
-
-		amount, ok := event[3].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid amount")
-		}
-
-		skywayNonce, ok := event[4].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid paloma nonce")
-		}
-
-		eventNonce, ok := event[5].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid event nonce")
-		}
-
-		if skywayNonce.Uint64() <= lastSkywayNonce {
-			liblog.WithContext(ctx).WithField("last-event-nonce", lastSkywayNonce).WithField("skyway-nonce", skywayNonce.Uint64()).Info("Skipping already observed event...")
+		if evt.GetSkywayNonce() <= lastSkywayNonce {
+			liblog.WithContext(ctx).
+				WithField("last-event-nonce", lastSkywayNonce).
+				WithField("skyway-nonce", evt.GetSkywayNonce()).
+				Info("Skipping already observed event...")
 			continue
 		}
 
-		events = append(events, chain.SendToPalomaEvent{
-			EthBlockHeight: ethLog.BlockNumber,
-			EventNonce:     eventNonce.Uint64(),
-			Amount:         amount.Uint64(),
-			EthereumSender: ethSender.String(),
-			PalomaReceiver: palomaReceiver,
-			TokenContract:  tokenContract.String(),
-			SkywayNonce:    skywayNonce.Uint64(),
-		})
+		events = append(events, evt)
 	}
 
 	t.lastObservedBlockHeights.sendToPalomaEvent = filter.ToBlock.Int64()
@@ -851,7 +805,7 @@ func (t *compass) GetLightNodeSaleEvents(ctx context.Context, orchestrator strin
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{crypto.Keccak256Hash([]byte(nodeSaleEvent))}).
+		WithTopics([]common.Hash{nodeSaleEvent}).
 		WithAddresses(t.smartContractAddr).
 		Filter(ctx)
 	if err != nil {
@@ -879,57 +833,229 @@ func (t *compass) GetLightNodeSaleEvents(ctx context.Context, orchestrator strin
 	}
 
 	for _, ethLog := range logs {
-		event, err := t.compassAbi.Unpack("NodeSaleEvent", ethLog.Data)
+		evt, err := t.parseLightNodeSaleEvent(ethLog.Data, ethLog.BlockNumber)
 		if err != nil {
 			return nil, err
 		}
 
-		contractAddress, ok := event[0].(common.Address)
-		if !ok {
-			return nil, fmt.Errorf("invalid smart contract address")
-		}
-
-		clientAddress, ok := event[2].(sdk.Address)
-		if !ok {
-			return nil, fmt.Errorf("invalid client address")
-		}
-
-		amount, ok := event[4].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid amount")
-		}
-
-		skywayNonce, ok := event[5].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid paloma nonce")
-		}
-
-		eventNonce, ok := event[6].(*big.Int)
-		if !ok {
-			return nil, fmt.Errorf("invalid event nonce")
-		}
-
-		if skywayNonce.Uint64() <= lastSkywayNonce {
+		if evt.SkywayNonce <= lastSkywayNonce {
 			liblog.WithContext(ctx).
 				WithField("last-event-nonce", lastSkywayNonce).
-				WithField("skyway-nonce", skywayNonce.Uint64()).
+				WithField("skyway-nonce", evt.SkywayNonce).
 				Info("Skipping already observed event...")
 			continue
 		}
 
-		events = append(events, chain.LightNodeSaleEvent{
-			EthBlockHeight:       ethLog.BlockNumber,
-			EventNonce:           eventNonce.Uint64(),
-			Amount:               amount.Uint64(),
-			ClientAddress:        clientAddress.String(),
-			SkywayNonce:          skywayNonce.Uint64(),
-			SmartContractAddress: contractAddress.String(),
-		})
+		events = append(events, evt)
 	}
 
 	t.lastObservedBlockHeights.lightNodeSaleEvent = filter.ToBlock.Int64()
 
 	return events, err
+}
+
+func (t *compass) GetSkywayEvents(
+	ctx context.Context,
+	orchestrator string,
+) ([]chain.SkywayEventer, error) {
+	filter, err := ethfilter.Factory().
+		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+		WithFromBlockNumberSafetyMargin(1).
+		WithTopics([]common.Hash{
+			batchSendEvent,
+			sendToPalomaEvent,
+			nodeSaleEvent,
+		}).
+		WithAddresses(t.smartContractAddr).
+		Filter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	currentBlockNumber := filter.FromBlock.Int64()
+	if t.lastObservedBlockHeight == 0 {
+		t.lastObservedBlockHeight = currentBlockNumber - 10_000
+	}
+
+	filter.FromBlock = big.NewInt(t.lastObservedBlockHeight)
+	filter.ToBlock = big.NewInt(min(t.lastObservedBlockHeight+10_000, currentBlockNumber))
+
+	var events []chain.SkywayEventer
+
+	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
+	if err != nil {
+		return nil, err
+	}
+
+	var evt chain.SkywayEventer
+
+	for _, ethLog := range logs {
+		switch ethLog.Topics[0] {
+		case nodeSaleEvent:
+			evt, err = t.parseLightNodeSaleEvent(ethLog.Data, ethLog.BlockNumber)
+		case batchSendEvent:
+			evt, err = t.parseBatchSendEvent(ethLog.Data, ethLog.BlockNumber)
+		case sendToPalomaEvent:
+			evt, err = t.parseSendToPalomaEvent(ethLog.Data, ethLog.BlockNumber)
+		default:
+			continue
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if evt.GetSkywayNonce() <= lastSkywayNonce {
+			liblog.WithContext(ctx).
+				WithField("last-event-nonce", lastSkywayNonce).
+				WithField("skyway-nonce", evt.GetSkywayNonce()).
+				Info("Skipping already observed event...")
+			continue
+		}
+
+		events = append(events, evt)
+	}
+
+	t.lastObservedBlockHeight = filter.ToBlock.Int64()
+
+	return events, err
+}
+
+func (t *compass) parseSendToPalomaEvent(
+	data []byte,
+	blockHeight uint64,
+) (evt chain.SendToPalomaEvent, err error) {
+	event, err := t.compassAbi.Unpack("SendToPalomaEvent", data)
+	if err != nil {
+		return evt, err
+	}
+
+	tokenContract, ok := event[0].(common.Address)
+	if !ok {
+		return evt, fmt.Errorf("invalid token contract")
+	}
+
+	ethSender, ok := event[1].(common.Address)
+	if !ok {
+		return evt, fmt.Errorf("invalid sender address")
+	}
+
+	palomaReceiver := event[2].(string)
+	if !ok {
+		return evt, fmt.Errorf("invalid paloma receiver")
+	}
+
+	amount, ok := event[3].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid amount")
+	}
+
+	skywayNonce, ok := event[4].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid paloma nonce")
+	}
+
+	eventNonce, ok := event[5].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid event nonce")
+	}
+
+	return chain.SendToPalomaEvent{
+		EthBlockHeight: blockHeight,
+		EventNonce:     eventNonce.Uint64(),
+		Amount:         amount.Uint64(),
+		EthereumSender: ethSender.String(),
+		PalomaReceiver: palomaReceiver,
+		TokenContract:  tokenContract.String(),
+		SkywayNonce:    skywayNonce.Uint64(),
+	}, nil
+}
+
+func (t *compass) parseBatchSendEvent(
+	data []byte,
+	blockHeight uint64,
+) (evt chain.BatchSendEvent, err error) {
+	event, err := t.compassAbi.Unpack("BatchSendEvent", data)
+	if err != nil {
+		return evt, err
+	}
+
+	tokenContract, ok := event[0].(common.Address)
+	if !ok {
+		return evt, fmt.Errorf("invalid token contract")
+	}
+
+	batchNonce, ok := event[1].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid batch nonce")
+	}
+
+	skywayNonce, ok := event[2].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid skyway nonce")
+	}
+
+	eventNonce, ok := event[3].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid event nonce")
+	}
+
+	return chain.BatchSendEvent{
+		EthBlockHeight: blockHeight,
+		EventNonce:     eventNonce.Uint64(),
+		BatchNonce:     batchNonce.Uint64(),
+		TokenContract:  tokenContract.String(),
+		SkywayNonce:    skywayNonce.Uint64(),
+	}, nil
+}
+
+func (t *compass) parseLightNodeSaleEvent(
+	data []byte,
+	blockHeight uint64,
+) (evt chain.LightNodeSaleEvent, err error) {
+	event, err := t.compassAbi.Unpack("NodeSaleEvent", data)
+	if err != nil {
+		return evt, err
+	}
+
+	contractAddress, ok := event[0].(common.Address)
+	if !ok {
+		return evt, fmt.Errorf("invalid smart contract address")
+	}
+
+	clientAddress, ok := event[2].(sdk.Address)
+	if !ok {
+		return evt, fmt.Errorf("invalid client address")
+	}
+
+	amount, ok := event[4].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid amount")
+	}
+
+	skywayNonce, ok := event[5].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid paloma nonce")
+	}
+
+	eventNonce, ok := event[6].(*big.Int)
+	if !ok {
+		return evt, fmt.Errorf("invalid event nonce")
+	}
+
+	return chain.LightNodeSaleEvent{
+		EthBlockHeight:       blockHeight,
+		EventNonce:           eventNonce.Uint64(),
+		Amount:               amount.Uint64(),
+		ClientAddress:        clientAddress.String(),
+		SkywayNonce:          skywayNonce.Uint64(),
+		SmartContractAddress: contractAddress.String(),
+	}, nil
 }
 
 // provideTxProof provides a very simple proof which is a transaction object
