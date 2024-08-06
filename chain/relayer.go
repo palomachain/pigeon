@@ -81,6 +81,11 @@ type ExternalAccount struct {
 	PubKey  []byte
 }
 
+type SkywayEventer interface {
+	GetEventNonce() uint64
+	GetSkywayNonce() uint64
+}
+
 type BatchSendEvent struct {
 	TokenContract  string
 	EthBlockHeight uint64
@@ -88,6 +93,9 @@ type BatchSendEvent struct {
 	BatchNonce     uint64
 	SkywayNonce    uint64
 }
+
+func (e BatchSendEvent) GetEventNonce() uint64  { return e.EventNonce }
+func (e BatchSendEvent) GetSkywayNonce() uint64 { return e.SkywayNonce }
 
 type SendToPalomaEvent struct {
 	EthereumSender string
@@ -98,6 +106,21 @@ type SendToPalomaEvent struct {
 	Amount         uint64
 	SkywayNonce    uint64
 }
+
+func (e SendToPalomaEvent) GetEventNonce() uint64  { return e.EventNonce }
+func (e SendToPalomaEvent) GetSkywayNonce() uint64 { return e.SkywayNonce }
+
+type LightNodeSaleEvent struct {
+	ClientAddress        string
+	SmartContractAddress string
+	Amount               uint64
+	EthBlockHeight       uint64
+	EventNonce           uint64
+	SkywayNonce          uint64
+}
+
+func (e LightNodeSaleEvent) GetEventNonce() uint64  { return e.EventNonce }
+func (e LightNodeSaleEvent) GetSkywayNonce() uint64 { return e.SkywayNonce }
 
 type ChainInfo interface {
 	ChainReferenceID() string
@@ -127,8 +150,7 @@ type Processor interface {
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
 
-	SubmitBatchSendToEthClaims(context.Context, []BatchSendEvent, string) error
-	SubmitSendToPalomaClaims(context.Context, []SendToPalomaEvent, string) error
+	SubmitEventClaims(context.Context, []SkywayEventer, string) error
 
 	// it verifies if it's being connected to the right chain
 	IsRightChain(ctx context.Context) error
@@ -136,8 +158,7 @@ type Processor interface {
 	SkywaySignBatches(context.Context, ...skyway.OutgoingTxBatch) ([]SignedSkywayOutgoingTxBatch, error)
 	SkywayRelayBatches(context.Context, []SkywayBatchWithSignatures) error
 
-	GetBatchSendEvents(context.Context, string) ([]BatchSendEvent, error)
-	GetSendToPalomaEvents(context.Context, string) ([]SendToPalomaEvent, error)
+	GetSkywayEvents(context.Context, string) ([]SkywayEventer, error)
 }
 
 type ProcessorBuilder interface {

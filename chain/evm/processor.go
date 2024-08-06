@@ -2,6 +2,7 @@ package evm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	skyway "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
-	"github.com/palomachain/pigeon/errors"
+	pigeonerrors "github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/queue"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
@@ -204,7 +205,7 @@ func (p Processor) IsRightChain(ctx context.Context) error {
 
 func (p Processor) isRightChain(blockHash common.Hash) error {
 	if blockHash != p.blockHeightHash {
-		return errors.Unrecoverable(chain.ErrNotConnectedToRightChain.WrapS(
+		return pigeonerrors.Unrecoverable(chain.ErrNotConnectedToRightChain.WrapS(
 			"chain %s hash at block height %d should be %s, while it is %s. Check the rpc-url of the chain in the config.",
 			p.chainReferenceID,
 			p.blockHeight,
@@ -216,28 +217,41 @@ func (p Processor) isRightChain(blockHash common.Hash) error {
 	return nil
 }
 
-func (p Processor) GetBatchSendEvents(ctx context.Context, orchestrator string) ([]chain.BatchSendEvent, error) {
-	return p.compass.GetBatchSendEvents(ctx, orchestrator)
+func (p Processor) GetSkywayEvents(ctx context.Context, orchestrator string) ([]chain.SkywayEventer, error) {
+	return p.compass.GetSkywayEvents(ctx, orchestrator)
 }
 
-func (p Processor) GetSendToPalomaEvents(ctx context.Context, orchestrator string) ([]chain.SendToPalomaEvent, error) {
-	return p.compass.GetSendToPalomaEvents(ctx, orchestrator)
-}
+// Submit all gathered events to Paloma. Events need to be sent in order to
+// preserve skyway nonce order.
+func (p Processor) SubmitEventClaims(
+	ctx context.Context,
+	events []chain.SkywayEventer,
+	orchestrator string,
+) error {
+	var err error
 
-func (p Processor) SubmitBatchSendToEthClaims(ctx context.Context, batchSendEvents []chain.BatchSendEvent, orchestrator string) error {
-	for _, batchSendEvent := range batchSendEvents {
-		if err := p.compass.submitBatchSendToEVMClaim(ctx, batchSendEvent, orchestrator); err != nil {
+	log.Debug("Submitting event claims")
+
+	for _, event := range events {
+		switch evt := event.(type) {
+		case chain.BatchSendEvent:
+			log.Debug("Submitting batch send event")
+			err = p.compass.submitBatchSendToEVMClaim(ctx, evt, orchestrator)
+		case chain.SendToPalomaEvent:
+			log.Debug("Submitting send to paloma event")
+			err = p.compass.submitSendToPalomaClaim(ctx, evt, orchestrator)
+		case chain.LightNodeSaleEvent:
+			log.Debug("Submitting light node sale event")
+			err = p.compass.submitLightNodeSaleClaim(ctx, evt, orchestrator)
+		default:
+			err = errors.New("unknown event type")
+		}
+
+		if err != nil {
+			log.WithError(err).Warn("Failed to submit claims")
 			return err
 		}
 	}
-	return nil
-}
 
-func (p Processor) SubmitSendToPalomaClaims(ctx context.Context, batchSendEvents []chain.SendToPalomaEvent, orchestrator string) error {
-	for _, batchSendEvent := range batchSendEvents {
-		if err := p.compass.submitSendToPalomaClaim(ctx, batchSendEvent, orchestrator); err != nil {
-			return err
-		}
-	}
 	return nil
 }

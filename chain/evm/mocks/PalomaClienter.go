@@ -178,7 +178,7 @@ func (_m *PalomaClienter) QueryLastObservedSkywayNonceByAddr(ctx context.Context
 }
 
 // SendBatchSendToEVMClaim provides a mock function with given fields: ctx, claim
-func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim types.MsgBatchSendToEthClaim) error {
+func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim types.MsgBatchSendToRemoteClaim) error {
 	ret := _m.Called(ctx, claim)
 
 	if len(ret) == 0 {
@@ -186,7 +186,25 @@ func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim typ
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.MsgBatchSendToEthClaim) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, types.MsgBatchSendToRemoteClaim) error); ok {
+		r0 = rf(ctx, claim)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SendLightNodeSaleClaim provides a mock function with given fields: ctx, claim
+func (_m *PalomaClienter) SendLightNodeSaleClaim(ctx context.Context, claim types.MsgLightNodeSaleClaim) error {
+	ret := _m.Called(ctx, claim)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendLightNodeSaleClaim")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, types.MsgLightNodeSaleClaim) error); ok {
 		r0 = rf(ctx, claim)
 	} else {
 		r0 = ret.Error(0)
