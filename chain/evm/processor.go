@@ -230,19 +230,25 @@ func (p Processor) SubmitEventClaims(
 ) error {
 	var err error
 
+	log.Debug("Submitting event claims")
+
 	for _, event := range events {
 		switch evt := event.(type) {
 		case chain.BatchSendEvent:
+			log.Debug("Submitting batch send event")
 			err = p.compass.submitBatchSendToEVMClaim(ctx, evt, orchestrator)
 		case chain.SendToPalomaEvent:
+			log.Debug("Submitting send to paloma event")
 			err = p.compass.submitSendToPalomaClaim(ctx, evt, orchestrator)
 		case chain.LightNodeSaleEvent:
+			log.Debug("Submitting light node sale event")
 			err = p.compass.submitLightNodeSaleClaim(ctx, evt, orchestrator)
 		default:
 			err = errors.New("unknown event type")
 		}
 
 		if err != nil {
+			log.WithError(err).Warn("Failed to submit claims")
 			return err
 		}
 	}

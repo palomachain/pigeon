@@ -35,7 +35,7 @@ var (
 	//   contract_addr, buyer_addr, paloma_addr, node_count, grain_amount,
 	//   skyway_nonce, event_id
 	nodeSaleEvent = crypto.Keccak256Hash([]byte(
-		"NodeSaleEvent(address,address,bytes32,uint256,uint25,uint2566,uint256)",
+		"NodeSaleEvent(address,address,bytes32,uint256,uint256,uint256,uint256)",
 	))
 	batchSendEvent = crypto.Keccak256Hash([]byte(
 		"BatchSendEvent(address,uint256,uint256,uint256)",
@@ -692,6 +692,10 @@ func (t *compass) GetSkywayEvents(
 	ctx context.Context,
 	orchestrator string,
 ) ([]chain.SkywayEventer, error) {
+	logger := liblog.WithContext(ctx)
+
+	logger.Debug("Querying compass events")
+
 	filter, err := ethfilter.Factory().
 		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
 		WithFromBlockNumberSafetyMargin(1).
@@ -716,17 +720,25 @@ func (t *compass) GetSkywayEvents(
 
 	var events []chain.SkywayEventer
 
+	logger.WithField("from", filter.FromBlock).
+		WithField("to", filter.ToBlock).
+		Debug("Filter is ready")
+
 	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
 	if err != nil {
+		logger.WithError(err).Warn("Failed to filter events")
 		return nil, err
 	}
 
 	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
+		logger.WithError(err).Warn("Failed to query last observed nonce")
 		return nil, err
 	}
 
-	logger := liblog.WithContext(ctx)
+	logger.WithField("skwyway_nonce", lastSkywayNonce).
+		WithField("logs", len(logs)).
+		Debug("Ready to parse events")
 
 	var evt chain.SkywayEventer
 
@@ -868,7 +880,13 @@ func (t *compass) parseLightNodeSaleEvent(
 		return evt, fmt.Errorf("invalid smart contract address")
 	}
 
-	addrBytes := removeLeftPad(event[2].([]byte))
+	rawBytes, ok := event[2].([32]byte)
+	if !ok {
+		return evt, fmt.Errorf("invalid paloma address bytes")
+	}
+
+	// Keep only the last 20 bytes, removing the first 12 zeroes
+	addrBytes := rawBytes[12:]
 
 	// The Unmarshal function below does not check for errors, so we need to do
 	// it beforehand
@@ -1202,15 +1220,4 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 	}
 
 	return valsetID, nil
-}
-
-// removeLeftPad removes 0 bytes from the left side
-func removeLeftPad(addr []byte) []byte {
-	for i := range addr {
-		if addr[i] != 0 {
-			return addr[i:]
-		}
-	}
-
-	return addr
 }
