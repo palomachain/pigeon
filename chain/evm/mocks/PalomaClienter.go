@@ -195,6 +195,24 @@ func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim typ
 	return r0
 }
 
+// SendLightNodeSaleClaim provides a mock function with given fields: ctx, claim
+func (_m *PalomaClienter) SendLightNodeSaleClaim(ctx context.Context, claim types.MsgLightNodeSaleClaim) error {
+	ret := _m.Called(ctx, claim)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendLightNodeSaleClaim")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, types.MsgLightNodeSaleClaim) error); ok {
+		r0 = rf(ctx, claim)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SendSendToPalomaClaim provides a mock function with given fields: ctx, claim
 func (_m *PalomaClienter) SendSendToPalomaClaim(ctx context.Context, claim types.MsgSendToPalomaClaim) error {
 	ret := _m.Called(ctx, claim)
@@ -254,8 +272,7 @@ func (_m *PalomaClienter) SetPublicAccessData(ctx context.Context, queueTypeName
 func NewPalomaClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *PalomaClienter {
+}) *PalomaClienter {
 	mock := &PalomaClienter{}
 	mock.Mock.Test(t)
 

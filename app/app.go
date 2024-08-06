@@ -192,6 +192,7 @@ func palomaClientConfig(palomaConfig config.Paloma) *ion.ChainClientConfig {
 					&skywaytypes.MsgSendToRemote{},
 					&skywaytypes.MsgConfirmBatch{},
 					&skywaytypes.MsgSendToPalomaClaim{},
+					&skywaytypes.MsgLightNodeSaleClaim{},
 					&skywaytypes.MsgBatchSendToRemoteClaim{},
 					&skywaytypes.MsgCancelSendToRemote{},
 					&skywaytypes.MsgSubmitBadSignatureEvidence{},
