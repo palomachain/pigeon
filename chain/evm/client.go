@@ -240,6 +240,7 @@ type executeSmartContractIn struct {
 
 	method    string
 	arguments []any
+	opts      callOptions
 }
 
 func callSmartContract(
@@ -376,8 +377,16 @@ func callSmartContract(
 			}).Debug("executing legacy tx")
 		}
 
+		// In case we only want to estimate, now is the time to return.
+		if args.opts.estimateOnly {
+			return ethtypes.NewTx(
+				&ethtypes.LegacyTx{
+					Gas: txOpts.GasLimit,
+				})
+		}
+
 		// In case we want to relay, don't actually send the constructed TX
-		if args.mevClient != nil {
+		if args.opts.useMevRelay && args.mevClient != nil {
 			logger.Info("MEV Client set - setting TX to not execute")
 			txOpts.NoSend = true
 		}
@@ -644,12 +653,12 @@ func (c *Client) ExecuteSmartContract(
 	chainID *big.Int,
 	contractAbi abi.ABI,
 	addr common.Address,
-	useMevRelay bool,
+	opts callOptions,
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
 	var mevClient mevClient = nil
-	if useMevRelay {
+	if opts.useMevRelay {
 		mevClient = c.mevClient
 		logrus.WithContext(ctx).WithField("mevClient", mevClient).WithField("c.mevClient", c.mevClient).Info("Using MEV relay")
 	}
@@ -666,6 +675,7 @@ func (c *Client) ExecuteSmartContract(
 			contract:      addr,
 			signingAddr:   c.addr,
 			keystore:      c.keystore,
+			opts:          opts,
 
 			method:    method,
 			arguments: arguments,

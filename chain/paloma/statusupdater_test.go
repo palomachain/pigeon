@@ -38,7 +38,7 @@ func TestStatusUpdater(t *testing.T) {
 	}
 	t.Run("with error during sending", func(t *testing.T) {
 		m := mocks.NewMessageSender(t)
-		client := Client{MessageSender: m}
+		client := Client{messageSender: m}
 		m.On("SendMsg", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("fail"))
 		err := client.NewStatus().Debug(context.Background())
 		require.Error(t, err)
@@ -201,7 +201,7 @@ func TestStatusUpdater(t *testing.T) {
 					msg := tt.setup()
 					msg.Level = cfg.level
 					ms.On("SendMsg", mock.Anything, mock.MatchedBy(matchArgs(msg)), mock.Anything).Return(nil, nil)
-					client := Client{MessageSender: ms}
+					client := Client{messageSender: ms}
 					cfg.exec(tt.exec(&client))
 				})
 			}

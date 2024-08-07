@@ -50,7 +50,7 @@ var errValsetIDMismatch = errors.New("valset id mismatch")
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*ethtypes.Transaction, error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, opts callOptions, method string, arguments []any) (*ethtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 
@@ -132,6 +132,7 @@ func (t compass) updateValset(
 	queueTypeName string,
 	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
+	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	currentValsetID, err := t.findLastValsetMessageID(ctx)
 	if err != nil {
@@ -157,19 +158,21 @@ func (t compass) updateValset(
 		return nil, 0, ErrNoConsensus
 	}
 
-	tx, err := t.callCompass(ctx, false, "update_valset", []any{
+	tx, err := t.callCompass(ctx, opts, "update_valset", []any{
 		BuildCompassConsensus(currentValset, origMessage.Signatures),
 		TransformValsetToCompassValset(newValset),
 	})
 	if err != nil {
 		logger.WithError(err).Error("call_compass error")
-		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-		if setErr != nil {
-			return nil, 0, setErr
-		}
-		if isSmartContractError {
-			logger.Debug("smart contract error. recovering...")
-			return nil, 0, nil
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
 		}
 		whoops.Assert(err)
 	}
@@ -182,6 +185,7 @@ func (t compass) submitLogicCall(
 	queueTypeName string,
 	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
+	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	logger := liblog.WithContext(ctx).WithFields(log.Fields{
 		"chain-id": t.ChainReferenceID,
@@ -189,12 +193,15 @@ func (t compass) submitLogicCall(
 	})
 	logger.Info("submit logic call")
 
-	executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
-	if err != nil {
-		return nil, 0, err
-	}
-	if executed {
-		return nil, 0, ErrCallAlreadyExecuted
+	// Skip already executed check in case of estimate only
+	if !opts.estimateOnly {
+		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		if executed {
+			return nil, 0, ErrCallAlreadyExecuted
+		}
 	}
 
 	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
@@ -231,17 +238,22 @@ func (t compass) submitLogicCall(
 		new(big.Int).SetInt64(msg.GetDeadline()),
 	}
 
+	if msg.ExecutionRequirements.EnforceMEVRelay {
+		opts.useMevRelay = true
+	}
 	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
-	tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
+	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args)
 	if err != nil {
 		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
-		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-		if setErr != nil {
-			return nil, 0, setErr
-		}
-		if isSmartContractError {
-			logger.Debug("smart contract error. recovering...")
-			return nil, 0, nil
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
 		}
 
 		return nil, 0, err
@@ -464,9 +476,10 @@ func BuildCompassConsensus(
 	return con
 }
 
-func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]ethtypes.Transaction, error) {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
+	res := make([]ethtypes.Transaction, 0, len(msgs))
 	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
@@ -494,6 +507,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.SubmitLogicCall,
 				rawMsg,
+				opts,
 			)
 		case *evmtypes.Message_UpdateValset:
 			logger := logger.WithFields(log.Fields{
@@ -512,6 +526,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.UpdateValset.Valset,
 				rawMsg,
+				opts,
 			)
 		case *evmtypes.Message_UploadSmartContract:
 			logger := logger.WithFields(log.Fields{
@@ -532,7 +547,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		default:
-			return ErrUnsupportedMessageType.Format(action)
+			return res, ErrUnsupportedMessageType.Format(action)
 		}
 
 		processingErr = whoops.Enrich(
@@ -541,15 +556,19 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			FieldMessageType.Val(msg.GetAction()),
 		)
 
+		if tx != nil {
+			res = append(res, *tx)
+		}
+
 		switch {
 		case processingErr == nil:
-			if tx != nil {
+			if tx != nil && opts.estimateOnly == false {
 				logger.Debug("setting public access data")
 				err := t.paloma.SetPublicAccessData(ctx, queueTypeName,
 					rawMsg.ID, valsetID, tx.Hash().Bytes())
 				if err != nil {
 					gErr.Add(err)
-					return gErr
+					return res, gErr
 				}
 			}
 		case errors.Is(processingErr, ErrNoConsensus):
@@ -577,7 +596,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		}
 	}
 
-	return gErr.Return()
+	return res, gErr.Return()
 }
 
 func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
@@ -1073,16 +1092,21 @@ func isConsensusReached(ctx context.Context, val *evmtypes.Valset, msg chain.Sig
 	return s >= powerThreshold
 }
 
+type callOptions struct {
+	useMevRelay  bool
+	estimateOnly bool
+}
+
 func (c compass) callCompass(
 	ctx context.Context,
-	useMevRelay bool,
+	opts callOptions,
 	method string,
 	arguments []any,
 ) (*ethtypes.Transaction, error) {
 	if c.compassAbi == nil {
 		return nil, ErrABINotInitialized
 	}
-	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
+	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, opts, method, arguments)
 }
 
 func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) error {
@@ -1102,8 +1126,7 @@ func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayB
 		})
 		logger.Debug("relaying")
 
-		_, processingErr = t.skywayRelayBatch(ctx, batch)
-
+		_, processingErr = t.skywayRelayBatch(ctx, batch, callOptions{})
 		processingErr = whoops.Enrich(
 			processingErr,
 			FieldMessageID.Val(batch.BatchNonce),
@@ -1123,9 +1146,39 @@ func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayB
 	return gErr.Return()
 }
 
+func (t compass) skywayEstimateBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) ([]uint64, error) {
+	estimates := make([]uint64, 0, len(batches))
+	logger := liblog.WithContext(ctx).WithField("chainReferenceID", t.ChainReferenceID)
+	for _, batch := range batches {
+		logger = logger.WithField("batch-nonce", batch.BatchNonce)
+
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing batch context")
+			break
+		}
+
+		logger := logger.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+		logger.Debug("estimating")
+
+		tx, err := t.skywayRelayBatch(ctx, batch, callOptions{estimateOnly: true})
+		if err != nil {
+			logger.WithError(err).Error("failed to estimate batch")
+			return nil, fmt.Errorf("failed to estimate batch: %w", err)
+		}
+
+		logger.WithField("estimate", tx.Gas()).Debug("Estimated gas for batch")
+		estimates = append(estimates, tx.Gas())
+	}
+
+	return estimates, nil
+}
+
 func (t compass) skywayRelayBatch(
 	ctx context.Context,
 	batch chain.SkywayBatchWithSignatures,
+	opts callOptions,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
 		logger := liblog.WithContext(ctx).
@@ -1174,7 +1227,7 @@ func (t compass) skywayRelayBatch(
 
 		tx, err := t.callCompass(
 			ctx,
-			false,
+			opts,
 			"submit_batch",
 			[]any{
 				con,

@@ -272,10 +272,11 @@ func TestMessageProcessing(t *testing.T) {
 	)
 
 	for _, tt := range []struct {
-		name   string
-		msgs   []chain.MessageWithSignatures
-		setup  func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
-		expErr error
+		name         string
+		estimateOnly bool
+		msgs         []chain.MessageWithSignatures
+		setup        func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter)
+		expErr       error
 	}{
 		{
 			name: "submit_logic_call/message is already executed then it returns an error",
@@ -363,7 +364,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, false, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "submit_logic_call", mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -374,6 +375,58 @@ func TestMessageProcessing(t *testing.T) {
 				)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
+				return evm, paloma
+			},
+		},
+		{
+			name:         "estimate/submit_logic_call/happy path",
+			estimateOnly: true,
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{testPowerThreshold + 1},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "submit_logic_call", mock.Anything).Return(
+					tx,
+					nil,
+				)
+
 				return evm, paloma
 			},
 		},
@@ -411,6 +464,43 @@ func TestMessageProcessing(t *testing.T) {
 					big.NewInt(0),
 					nil,
 				)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(56)}, nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
+				return evm, paloma
+			},
+		},
+		{
+			name:         "estimate/submit_logic_call/with target chain valset id not matching expected valset id, it should NOT return an error, but report log to Paloma",
+			estimateOnly: true,
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 
 				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
 					big.NewInt(55),
@@ -473,7 +563,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, true, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true}, "submit_logic_call", mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -484,6 +574,61 @@ func TestMessageProcessing(t *testing.T) {
 				)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
+				return evm, paloma
+			},
+		},
+		{
+			name:         "estimate/submit_logic_call/happy path with mev relaying",
+			estimateOnly: true,
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+									ExecutionRequirements: types.SubmitLogicCall_ExecutionRequirements{
+										EnforceMEVRelay: true,
+									},
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{testPowerThreshold + 1},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true, estimateOnly: true}, "submit_logic_call", mock.Anything).Return(
+					tx,
+					nil,
+				)
+
 				return evm, paloma
 			},
 		},
@@ -527,6 +672,61 @@ func TestMessageProcessing(t *testing.T) {
 
 				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
 					big.NewInt(0),
+					nil,
+				)
+
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{
+							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+						},
+						Powers: []uint64{
+							powerFromPercentage(0.65),
+							powerFromPercentage(0.35),
+						},
+						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				return evm, paloma
+			},
+		},
+		{
+			name:         "estimate/submit_logic_call/without a consensus it returns",
+			estimateOnly: true,
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
 					nil,
 				)
 
@@ -612,14 +812,145 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, false, "update_valset", mock.Anything).Return(tx, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "update_valset", mock.Anything).Return(tx, nil)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
 			},
 		},
 		{
+			name:         "estimate/update_valset/happy path",
+			estimateOnly: true,
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UpdateValset{
+								UpdateValset: &types.UpdateValset{
+									Valset: &types.Valset{
+										Validators: []string{
+											crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+											crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+											crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+										},
+										Powers: []uint64{
+											powerFromPercentage(0.4),
+											powerFromPercentage(0.2),
+											powerFromPercentage(0.1),
+										},
+										ValsetID: 123,
+									},
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+						addValidSignature(alicePK),
+						// frank's signature is getting ignored but putting it
+						// here just in case if there is a bug in the code
+						addValidSignature(frankPK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{
+							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+						},
+						Powers: []uint64{
+							powerFromPercentage(0.5),
+							powerFromPercentage(0.3),
+						},
+						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "update_valset", mock.Anything).Return(tx, nil)
+				return evm, paloma
+			},
+		},
+		{
 			name: "update_valset/without a consensus it returns",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Action: &types.Message_UpdateValset{
+								UpdateValset: &types.UpdateValset{
+									Valset: &types.Valset{
+										Validators: []string{
+											crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+											crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+											crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+										},
+										Powers: []uint64{
+											powerFromPercentage(0.4),
+											powerFromPercentage(0.2),
+											powerFromPercentage(0.1),
+										},
+										ValsetID: 123,
+									},
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+						addValidSignature(alicePK),
+					},
+				},
+			},
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				paloma.On("NewStatus").Return(&StatusUpdater{})
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{
+							crypto.PubkeyToAddress(bobPK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(alicePK.PublicKey).Hex(),
+							crypto.PubkeyToAddress(frankPK.PublicKey).Hex(),
+						},
+						Powers: []uint64{
+							powerFromPercentage(0.3),
+							powerFromPercentage(0.3),
+							powerFromPercentage(0.4),
+						},
+						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+
+				return evm, paloma
+			},
+		},
+		{
+			name:         "estimate/update_valset/without a consensus it returns",
+			estimateOnly: true,
 			msgs: []chain.MessageWithSignatures{
 				{
 					QueuedMessage: chain.QueuedMessage{
@@ -868,7 +1199,7 @@ func TestMessageProcessing(t *testing.T) {
 				ethClienter,
 			)
 
-			err := comp.processMessages(ctx, "queue-name", tt.msgs)
+			_, err := comp.processMessages(ctx, "queue-name", tt.msgs, callOptions{estimateOnly: tt.estimateOnly})
 			if tt.expErr != nil {
 				require.ErrorContains(t, err, tt.expErr.Error())
 			} else {

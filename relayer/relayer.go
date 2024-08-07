@@ -27,10 +27,12 @@ type PalomaClienter interface {
 	QueryValidatorInfo(ctx context.Context) ([]*valset.ExternalChainInfo, error)
 	BroadcastMessageSignatures(ctx context.Context, signatures ...paloma.BroadcastMessageSignatureIn) error
 	QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
+	QueryMessagesForEstimating(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error)
 	QueryMessagesForSigning(ctx context.Context, queueTypeName string) ([]chain.QueuedMessage, error)
 	QueryGetEVMChainInfos(ctx context.Context) ([]*evmtypes.ChainInfo, error)
 	AddMessageEvidence(ctx context.Context, queueTypeName string, messageID uint64, proof proto.Message) error
+	AddMessagesGasEstimate(ctx context.Context, queueTypeName string, msgs ...chain.MessageWithEstimate) error
 	SetPublicAccessData(ctx context.Context, queueTypeName string, messageID, valsetID uint64, data []byte) error
 	SetErrorData(ctx context.Context, queueTypeName string, messageID uint64, data []byte) error
 	QueryGetEVMValsetByID(ctx context.Context, id uint64, chainID string) (*evmtypes.Valset, error)
@@ -46,6 +48,8 @@ type PalomaClienter interface {
 	SkywayQueryLastUnsignedBatch(ctx context.Context, chainReferenceID string) ([]skyway.OutgoingTxBatch, error)
 	SkywayConfirmBatches(ctx context.Context, signatures ...chain.SignedSkywayOutgoingTxBatch) error
 	SkywayQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error)
+	SkywayQueryLastPendingBatchForGasEstimation(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error)
+	SkywayEstimateBatchGas(ctx context.Context, estimates ...chain.EstimatedSkywayBatch) error
 }
 
 //go:generate mockery --name=EvmFactorier

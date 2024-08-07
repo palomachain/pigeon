@@ -19,6 +19,36 @@ type Processor struct {
 	mock.Mock
 }
 
+// EstimateMessages provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Processor) EstimateMessages(_a0 context.Context, _a1 queue.TypeName, _a2 []chain.MessageWithSignatures) ([]chain.MessageWithEstimate, error) {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EstimateMessages")
+	}
+
+	var r0 []chain.MessageWithEstimate
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, queue.TypeName, []chain.MessageWithSignatures) ([]chain.MessageWithEstimate, error)); ok {
+		return rf(_a0, _a1, _a2)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, queue.TypeName, []chain.MessageWithSignatures) []chain.MessageWithEstimate); ok {
+		r0 = rf(_a0, _a1, _a2)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.MessageWithEstimate)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, queue.TypeName, []chain.MessageWithSignatures) error); ok {
+		r1 = rf(_a0, _a1, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ExternalAccount provides a mock function with given fields:
 func (_m *Processor) ExternalAccount() chain.ExternalAccount {
 	ret := _m.Called()
@@ -194,6 +224,36 @@ func (_m *Processor) SignMessages(ctx context.Context, messages ...chain.QueuedM
 	return r0, r1
 }
 
+// SkywayEstimateBatches provides a mock function with given fields: _a0, _a1
+func (_m *Processor) SkywayEstimateBatches(_a0 context.Context, _a1 []chain.SkywayBatchWithSignatures) ([]chain.EstimatedSkywayBatch, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SkywayEstimateBatches")
+	}
+
+	var r0 []chain.EstimatedSkywayBatch
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []chain.SkywayBatchWithSignatures) ([]chain.EstimatedSkywayBatch, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []chain.SkywayBatchWithSignatures) []chain.EstimatedSkywayBatch); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.EstimatedSkywayBatch)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []chain.SkywayBatchWithSignatures) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SkywayRelayBatches provides a mock function with given fields: _a0, _a1
 func (_m *Processor) SkywayRelayBatches(_a0 context.Context, _a1 []chain.SkywayBatchWithSignatures) error {
 	ret := _m.Called(_a0, _a1)
@@ -292,7 +352,8 @@ func (_m *Processor) SupportedQueues() []string {
 func NewProcessor(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Processor {
+},
+) *Processor {
 	mock := &Processor{}
 	mock.Mock.Test(t)
 

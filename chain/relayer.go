@@ -52,6 +52,12 @@ type MessageWithSignatures struct {
 	Signatures []ValidatorSignature
 }
 
+type MessageWithEstimate struct {
+	MessageWithSignatures
+	Estimate           uint64
+	EstimatedByAddress string
+}
+
 func (msg MessageWithSignatures) GetSignatures() []ValidatorSignature {
 	return msg.Signatures
 }
@@ -63,6 +69,12 @@ func (msg MessageWithSignatures) GetBytes() []byte {
 type SkywayBatchWithSignatures struct {
 	skyway.OutgoingTxBatch
 	Signatures []ValidatorSignature
+}
+
+type EstimatedSkywayBatch struct {
+	skyway.OutgoingTxBatch
+	EstimatedByAddress string
+	Value              uint64
 }
 
 func (gb SkywayBatchWithSignatures) GetSignatures() []ValidatorSignature {
@@ -146,6 +158,8 @@ type Processor interface {
 	// to ensure that there are enough signatures for consensus.
 	ProcessMessages(context.Context, queue.TypeName, []MessageWithSignatures) error
 
+	EstimateMessages(context.Context, queue.TypeName, []MessageWithSignatures) ([]MessageWithEstimate, error)
+
 	// ProvideEvidence takes a queue name and a list of messages that have already been executed. This
 	// takes the "public evidence" from the message and gets the information back to the Paloma.
 	ProvideEvidence(context.Context, queue.TypeName, []MessageWithSignatures) error
@@ -156,6 +170,7 @@ type Processor interface {
 	IsRightChain(ctx context.Context) error
 
 	SkywaySignBatches(context.Context, ...skyway.OutgoingTxBatch) ([]SignedSkywayOutgoingTxBatch, error)
+	SkywayEstimateBatches(context.Context, []SkywayBatchWithSignatures) ([]EstimatedSkywayBatch, error)
 	SkywayRelayBatches(context.Context, []SkywayBatchWithSignatures) error
 
 	GetSkywayEvents(context.Context, string) ([]SkywayEventer, error)

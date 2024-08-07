@@ -114,11 +114,44 @@ func (p Processor) ProcessMessages(ctx context.Context, queueTypeName queue.Type
 		return chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
 	}
 
-	return p.compass.processMessages(
+	_, err := p.compass.processMessages(
 		ctx,
 		queueTypeName.String(),
 		msgs,
+		callOptions{},
 	)
+	return err
+}
+
+func (p Processor) EstimateMessages(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) ([]chain.MessageWithEstimate, error) {
+	if !queueTypeName.IsTurnstoneQueue() {
+		return nil, chain.ErrProcessorDoesNotSupportThisQueue.Format(queueTypeName)
+	}
+
+	txs, err := p.compass.processMessages(
+		ctx,
+		queueTypeName.String(),
+		msgs,
+		callOptions{},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("processor::EstimateMessages: %w", err)
+	}
+
+	if len(txs) != len(msgs) {
+		return nil, fmt.Errorf("processor::EstimateMessages: estimated %d messages, but got %d", len(msgs), len(txs))
+	}
+
+	res := make([]chain.MessageWithEstimate, 0, len(txs))
+	for i, tx := range txs {
+		res = append(res, chain.MessageWithEstimate{
+			MessageWithSignatures: msgs[i],
+			Estimate:              tx.Gas(),
+			EstimatedByAddress:    p.evmClient.addr.Hex(),
+		})
+	}
+
+	return res, nil
 }
 
 func (p Processor) SkywayRelayBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) error {
@@ -126,6 +159,31 @@ func (p Processor) SkywayRelayBatches(ctx context.Context, batches []chain.Skywa
 		ctx,
 		batches,
 	)
+}
+
+func (p Processor) SkywayEstimateBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) ([]chain.EstimatedSkywayBatch, error) {
+	res := make([]chain.EstimatedSkywayBatch, 0, len(batches))
+	estimates, err := p.compass.skywayEstimateBatches(
+		ctx,
+		batches,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("processor::SkywayEstimateBatches: %w", err)
+	}
+
+	if len(estimates) != len(batches) {
+		return nil, fmt.Errorf("processor::SkywayEstimateBatches: estimated %d batches, but got %d", len(batches), len(estimates))
+	}
+
+	for i, estimate := range estimates {
+		res = append(res, chain.EstimatedSkywayBatch{
+			OutgoingTxBatch:    batches[i].OutgoingTxBatch,
+			EstimatedByAddress: p.evmClient.addr.Hex(),
+			Value:              estimate,
+		})
+	}
+
+	return res, nil
 }
 
 func (p Processor) ProvideEvidence(ctx context.Context, queueTypeName queue.TypeName, msgs []chain.MessageWithSignatures) error {
