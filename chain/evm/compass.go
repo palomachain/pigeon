@@ -956,6 +956,7 @@ func (t compass) submitBatchSendToEVMClaim(ctx context.Context, event chain.Batc
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
 		SkywayNonce:      event.SkywayNonce,
+		CompassId:        t.CompassID,
 	}
 	return t.paloma.SendBatchSendToEVMClaim(ctx, msg)
 }
@@ -971,6 +972,7 @@ func (t compass) submitSendToPalomaClaim(ctx context.Context, event chain.SendTo
 		ChainReferenceId: t.ChainReferenceID,
 		Orchestrator:     orchestrator,
 		SkywayNonce:      event.SkywayNonce,
+		CompassId:        t.CompassID,
 	}
 	return t.paloma.SendSendToPalomaClaim(ctx, msg)
 }
@@ -985,6 +987,7 @@ func (t compass) submitLightNodeSaleClaim(ctx context.Context, event chain.Light
 		Orchestrator:         orchestrator,
 		SkywayNonce:          event.SkywayNonce,
 		SmartContractAddress: event.SmartContractAddress,
+		CompassId:            t.CompassID,
 	}
 	return t.paloma.SendLightNodeSaleClaim(ctx, msg)
 }
