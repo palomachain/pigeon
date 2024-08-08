@@ -140,56 +140,6 @@ func TestEstimateMessages(t *testing.T) {
 				)
 			},
 		},
-		// {
-		// 	name: "if the processor is connected to the wrong chain it returns the error",
-		// 	setup: func(t *testing.T) *Relayer {
-		// 		keyringPass := "abcd"
-		//
-		// 		dir := t.TempDir()
-		// 		keyring := evm.OpenKeystore(dir)
-		// 		acc, err := keyring.NewAccount(keyringPass)
-		// 		require.NoError(t, err)
-		//
-		// 		p := chainmocks.NewProcessor(t)
-		// 		p.On("IsRightChain", mock.Anything).Return(chain.ErrNotConnectedToRightChain)
-		//
-		// 		pal := mocks.NewPalomaClienter(t)
-		// 		pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
-		// 			{
-		// 				ChainReferenceID:      "main",
-		// 				ChainID:               5,
-		// 				SmartContractUniqueID: []byte("5"),
-		// 				SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
-		// 				ReferenceBlockHeight:  5,
-		// 				ReferenceBlockHash:    "0x12",
-		// 				MinOnChainBalance:     "10000",
-		// 			},
-		// 		}, nil)
-		//
-		// 		factory := mocks.NewEvmFactorier(t)
-		//
-		// 		factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
-		//
-		// 		return New(
-		// 			&config.Config{
-		// 				EVM: map[string]config.EVM{
-		// 					"main": {
-		// 						ChainClientConfig: config.ChainClientConfig{
-		// 							KeyringPassEnvName: "TEST_PASS",
-		// 							SigningKey:         acc.Address.Hex(),
-		// 							KeyringDirectory:   config.Filepath(dir),
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 			pal,
-		// 			factory,
-		// 			timemocks.NewTime(t),
-		// 			Config{},
-		// 		)
-		// 	},
-		// 	expErr: chain.ErrNotConnectedToRightChain,
-		// },
 	}
 
 	for _, tt := range testcases {
