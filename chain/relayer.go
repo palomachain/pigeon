@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	skyway "github.com/palomachain/paloma/x/skyway/types"
@@ -16,6 +17,7 @@ type QueuedMessage struct {
 	PublicAccessData []byte
 	ErrorData        []byte
 	Msg              any
+	Estimate         *big.Int
 }
 
 type SignedQueuedMessage struct {

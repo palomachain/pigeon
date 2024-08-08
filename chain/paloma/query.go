@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+	"math/big"
 	"strings"
 
 	"github.com/VolumeFi/whoops"
@@ -246,6 +247,10 @@ func toMessagesWithSignature(msgs []consensus.MessageWithSignatures, unpacker co
 		if err != nil {
 			return nil, err
 		}
+		var estimate *big.Int = nil
+		if msg.GasEstimate > 0 {
+			estimate = big.NewInt(0).SetUint64(msg.GasEstimate)
+		}
 		msgsWithSig[i] = chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
 				ID:               msg.Id,
@@ -254,6 +259,7 @@ func toMessagesWithSignature(msgs []consensus.MessageWithSignatures, unpacker co
 				BytesToSign:      msg.GetBytesToSign(),
 				PublicAccessData: msg.GetPublicAccessData(),
 				ErrorData:        msg.GetErrorData(),
+				Estimate:         estimate,
 			},
 			Signatures: valSigs,
 		}

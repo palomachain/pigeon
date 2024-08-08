@@ -20,9 +20,9 @@ type EvmFactorier struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient
-func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartContractID string, smartContractABIJson string, smartContractAddress string, chainID *big.Int, blockHeight int64, blockHeightHash common.Hash, minOnChainBalance *big.Int, mevClient mev.Client) (chain.Processor, error) {
-	ret := _m.Called(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
+// Build provides a mock function with given fields: cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, feeMgrContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient
+func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartContractID string, smartContractABIJson string, smartContractAddress string, feeMgrContractAddress string, chainID *big.Int, blockHeight int64, blockHeightHash common.Hash, minOnChainBalance *big.Int, mevClient mev.Client) (chain.Processor, error) {
+	ret := _m.Called(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, feeMgrContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -30,19 +30,19 @@ func (_m *EvmFactorier) Build(cfg config.EVM, chainReferenceID string, smartCont
 
 	var r0 chain.Processor
 	var r1 error
-	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) (chain.Processor, error)); ok {
-		return rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
+	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) (chain.Processor, error)); ok {
+		return rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, feeMgrContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
 	}
-	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) chain.Processor); ok {
-		r0 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
+	if rf, ok := ret.Get(0).(func(config.EVM, string, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) chain.Processor); ok {
+		r0 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, feeMgrContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chain.Processor)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(config.EVM, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) error); ok {
-		r1 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
+	if rf, ok := ret.Get(1).(func(config.EVM, string, string, string, string, string, *big.Int, int64, common.Hash, *big.Int, mev.Client) error); ok {
+		r1 = rf(cfg, chainReferenceID, smartContractID, smartContractABIJson, smartContractAddress, feeMgrContractAddress, chainID, blockHeight, blockHeightHash, minOnChainBalance, mevClient)
 	} else {
 		r1 = ret.Error(1)
 	}

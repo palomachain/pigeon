@@ -87,6 +87,7 @@ func (r *Relayer) processorFactory(chainInfo *evmtypes.ChainInfo) (chain.Process
 		string(chainInfo.GetSmartContractUniqueID()),
 		chainInfo.GetAbi(),
 		chainInfo.GetSmartContractAddr(),
+		chainInfo.GetFeeManagerAddr(),
 		chainID,
 		int64(chainInfo.GetReferenceBlockHeight()),
 		common.HexToHash(chainInfo.GetReferenceBlockHash()),

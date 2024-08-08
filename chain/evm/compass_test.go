@@ -1,17 +1,19 @@
 package evm
 
 import (
+	"bufio"
 	"context"
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/VolumeFi/whoops"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	etherumtypes "github.com/ethereum/go-ethereum/core/types"
@@ -54,6 +56,7 @@ func (s *StatusUpdater) Debug(ctx context.Context) error                        
 
 var (
 	smartContractAddr        = common.HexToAddress("0xDEF")
+	feeMgrContractAddr       = common.HexToAddress("0xDEADBEEF")
 	ethCompatibleBytesToSign = crypto.Keccak256([]byte("sign me"))
 
 	bobPK, _   = crypto.GenerateKey()
@@ -92,8 +95,11 @@ func powerFromPercentage(p float64) uint64 {
 }
 
 func getCompassABI(t *testing.T) *abi.ABI {
-	compassABI, err := abi.JSON(strings.NewReader(`[{"name": "ValsetUpdated", "inputs": [{"name": "checkpoint", "type": "bytes32", "indexed": false}, {"name": "valset_id", "type": "uint256", "indexed": false}, {"name": "event_id", "type": "uint256", "indexed": false}], "anonymous": false, "type": "event"}, {"name": "LogicCallEvent", "inputs": [{"name": "logic_contract_address", "type": "address", "indexed": false}, {"name": "payload", "type": "bytes", "indexed": false}, {"name": "message_id", "type": "uint256", "indexed": false}, {"name": "event_id", "type": "uint256", "indexed": false}], "anonymous": false, "type": "event"}, {"name": "SendToPalomaEvent", "inputs": [{"name": "token", "type": "address", "indexed": false}, {"name": "sender", "type": "address", "indexed": false}, {"name": "receiver", "type": "string", "indexed": false}, {"name": "amount", "type": "uint256", "indexed": false}, {"name": "event_id", "type": "uint256", "indexed": false}], "anonymous": false, "type": "event"}, {"name": "BatchSendEvent", "inputs": [{"name": "token", "type": "address", "indexed": false}, {"name": "batch_id", "type": "uint256", "indexed": false}, {"name": "event_id", "type": "uint256", "indexed": false}], "anonymous": false, "type": "event"}, {"name": "ERC20DeployedEvent", "inputs": [{"name": "paloma_denom", "type": "string", "indexed": false}, {"name": "token_contract", "type": "address", "indexed": false}, {"name": "name", "type": "string", "indexed": false}, {"name": "symbol", "type": "string", "indexed": false}, {"name": "decimals", "type": "uint8", "indexed": false}, {"name": "event_id", "type": "uint256", "indexed": false}], "anonymous": false, "type": "event"}, {"stateMutability": "nonpayable", "type": "constructor", "inputs": [{"name": "_compass_id", "type": "bytes32"}, {"name": "valset", "type": "tuple", "components": [{"name": "validators", "type": "address[]"}, {"name": "powers", "type": "uint256[]"}, {"name": "valset_id", "type": "uint256"}]}], "outputs": []}, {"stateMutability": "nonpayable", "type": "function", "name": "update_valset", "inputs": [{"name": "consensus", "type": "tuple", "components": [{"name": "valset", "type": "tuple", "components": [{"name": "validators", "type": "address[]"}, {"name": "powers", "type": "uint256[]"}, {"name": "valset_id", "type": "uint256"}]}, {"name": "signatures", "type": "tuple[]", "components": [{"name": "v", "type": "uint256"}, {"name": "r", "type": "uint256"}, {"name": "s", "type": "uint256"}]}]}, {"name": "new_valset", "type": "tuple", "components": [{"name": "validators", "type": "address[]"}, {"name": "powers", "type": "uint256[]"}, {"name": "valset_id", "type": "uint256"}]}], "outputs": []}, {"stateMutability": "nonpayable", "type": "function", "name": "submit_logic_call", "inputs": [{"name": "consensus", "type": "tuple", "components": [{"name": "valset", "type": "tuple", "components": [{"name": "validators", "type": "address[]"}, {"name": "powers", "type": "uint256[]"}, {"name": "valset_id", "type": "uint256"}]}, {"name": "signatures", "type": "tuple[]", "components": [{"name": "v", "type": "uint256"}, {"name": "r", "type": "uint256"}, {"name": "s", "type": "uint256"}]}]}, {"name": "args", "type": "tuple", "components": [{"name": "logic_contract_address", "type": "address"}, {"name": "payload", "type": "bytes"}]}, {"name": "message_id", "type": "uint256"}, {"name": "deadline", "type": "uint256"}], "outputs": []}, {"stateMutability": "nonpayable", "type": "function", "name": "send_token_to_paloma", "inputs": [{"name": "token", "type": "address"}, {"name": "receiver", "type": "string"}, {"name": "amount", "type": "uint256"}], "outputs": []}, {"stateMutability": "nonpayable", "type": "function", "name": "submit_batch", "inputs": [{"name": "consensus", "type": "tuple", "components": [{"name": "valset", "type": "tuple", "components": [{"name": "validators", "type": "address[]"}, {"name": "powers", "type": "uint256[]"}, {"name": "valset_id", "type": "uint256"}]}, {"name": "signatures", "type": "tuple[]", "components": [{"name": "v", "type": "uint256"}, {"name": "r", "type": "uint256"}, {"name": "s", "type": "uint256"}]}]}, {"name": "token", "type": "address"}, {"name": "args", "type": "tuple", "components": [{"name": "receiver", "type": "address[]"}, {"name": "amount", "type": "uint256[]"}]}, {"name": "batch_id", "type": "uint256"}, {"name": "deadline", "type": "uint256"}], "outputs": []}, {"stateMutability": "nonpayable", "type": "function", "name": "deploy_erc20", "inputs": [{"name": "_paloma_denom", "type": "string"}, {"name": "_name", "type": "string"}, {"name": "_symbol", "type": "string"}, {"name": "_decimals", "type": "uint8"}, {"name": "_blueprint", "type": "address"}], "outputs": []}, {"stateMutability": "view", "type": "function", "name": "compass_id", "inputs": [], "outputs": [{"name": "", "type": "bytes32"}]}, {"stateMutability": "view", "type": "function", "name": "last_checkpoint", "inputs": [], "outputs": [{"name": "", "type": "bytes32"}]}, {"stateMutability": "view", "type": "function", "name": "last_valset_id", "inputs": [], "outputs": [{"name": "", "type": "uint256"}]}, {"stateMutability": "view", "type": "function", "name": "last_event_id", "inputs": [], "outputs": [{"name": "", "type": "uint256"}]}, {"stateMutability": "view", "type": "function", "name": "last_batch_id", "inputs": [{"name": "arg0", "type": "address"}], "outputs": [{"name": "", "type": "uint256"}]}, {"stateMutability": "view", "type": "function", "name": "message_id_used", "inputs": [{"name": "arg0", "type": "uint256"}], "outputs": [{"name": "", "type": "bool"}]}]`))
+	file, err := os.Open("abi/compass/compass.abi")
 	require.NoError(t, err)
+	compassABI, err := abi.JSON(bufio.NewReader(file))
+	require.NoError(t, err)
+
 	return &compassABI
 }
 
@@ -238,6 +244,7 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 			evmClienter, palomaClienter := tt.setup(t)
 			comp := newCompassClient(
 				smartContractAddr.Hex(),
+				feeMgrContractAddr.Hex(),
 				"id-123",
 				"internal-chain-id",
 				big.NewInt(1),
@@ -285,6 +292,7 @@ func TestMessageProcessing(t *testing.T) {
 					QueuedMessage: chain.QueuedMessage{
 						ID: 666,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{},
 							},
@@ -312,6 +320,24 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+
 				return evm, paloma
 			},
 			expErr: ErrCallAlreadyExecuted,
@@ -324,12 +350,19 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
 								},
 							},
 						},
@@ -354,12 +387,37 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
+				evm.On("QueryUserFunds", mock.Anything, mock.Anything, mock.Anything).Return(
+					big.NewInt(10_000_000),
+					nil,
+				)
+				evm.On("SuggestGasPrice", mock.Anything).Return(
+					big.NewInt(10),
+					nil,
+				)
+
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -387,12 +445,19 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
 								},
 							},
 						},
@@ -412,12 +477,28 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -438,6 +519,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
@@ -470,7 +552,23 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(56)}, nil)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 56,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				paloma.On("NewStatus").Return(&StatusUpdater{})
 				return evm, paloma
 			},
@@ -484,12 +582,19 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
 								},
 							},
 						},
@@ -507,7 +612,23 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(56)}, nil)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 56,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				paloma.On("NewStatus").Return(&StatusUpdater{})
 				return evm, paloma
 			},
@@ -520,12 +641,19 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
 									ExecutionRequirements: types.SubmitLogicCall_ExecutionRequirements{
 										EnforceMEVRelay: true,
 									},
@@ -553,12 +681,37 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
+				evm.On("QueryUserFunds", mock.Anything, mock.Anything, mock.Anything).Return(
+					big.NewInt(10_000_000),
+					nil,
+				)
+				evm.On("SuggestGasPrice", mock.Anything).Return(
+					big.NewInt(10),
+					nil,
+				)
+
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -578,6 +731,96 @@ func TestMessageProcessing(t *testing.T) {
 			},
 		},
 		{
+			name: "submit_logic_call/insufficient funds",
+			msgs: []chain.MessageWithSignatures{
+				{
+					QueuedMessage: chain.QueuedMessage{
+						ID:          555,
+						BytesToSign: ethCompatibleBytesToSign,
+						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
+							Action: &types.Message_SubmitLogicCall{
+								SubmitLogicCall: &types.SubmitLogicCall{
+									HexContractAddress: "0xABC",
+									Abi:                []byte("abi"),
+									Payload:            []byte("payload"),
+									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
+								},
+							},
+						},
+					},
+					Signatures: []chain.ValidatorSignature{
+						addValidSignature(bobPK),
+					},
+				},
+			},
+			expErr: fmt.Errorf("insufficient funds for fees: 500000 < 54000"),
+			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
+				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
+
+				evm.On("FilterLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(1).Return(false, nil).Run(func(args mock.Arguments) {
+					fn := args.Get(3).(func([]etherumtypes.Log) bool)
+					fn([]etherumtypes.Log{})
+				})
+
+				currentValsetID := int64(55)
+
+				evm.On("LastValsetID", mock.Anything, mock.Anything).Return(
+					big.NewInt(55),
+					nil,
+				)
+
+				evm.On("QueryUserFunds", mock.Anything, mock.Anything, mock.Anything).Return(
+					big.NewInt(500_000),
+					nil,
+				)
+				evm.On("SuggestGasPrice", mock.Anything).Return(
+					big.NewInt(10),
+					nil,
+				)
+
+				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
+					&types.Valset{
+						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
+						Powers:     []uint64{testPowerThreshold + 1},
+						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
+					big.NewInt(0),
+					nil,
+				)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
+				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				return evm, paloma
+			},
+		},
+		{
 			name:         "estimate/submit_logic_call/happy path with mev relaying",
 			estimateOnly: true,
 			msgs: []chain.MessageWithSignatures{
@@ -586,12 +829,19 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
+									Fees: &types.SubmitLogicCall_Fees{
+										RelayerFee:   50_000,
+										CommunityFee: 3_000,
+										SecurityFee:  1_000,
+									},
+									SenderAddress: sdk.AccAddress("message-sender").Bytes(),
 									ExecutionRequirements: types.SubmitLogicCall_ExecutionRequirements{
 										EnforceMEVRelay: true,
 									},
@@ -614,12 +864,28 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
 					&types.Valset{
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -640,6 +906,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
@@ -675,7 +942,6 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("NewStatus").Return(&StatusUpdater{})
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
@@ -692,6 +958,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				return evm, paloma
 			},
@@ -705,6 +988,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_SubmitLogicCall{
 								SubmitLogicCall: &types.SubmitLogicCall{
 									HexContractAddress: "0xABC",
@@ -730,7 +1014,6 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, mock.Anything).Return(&valsettypes.Snapshot{Id: uint64(55)}, nil)
 				paloma.On("NewStatus").Return(&StatusUpdater{})
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(currentValsetID), "internal-chain-id").Return(
@@ -747,6 +1030,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				return evm, paloma
 			},
@@ -759,6 +1059,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UpdateValset{
 								UpdateValset: &types.UpdateValset{
 									Valset: &types.Valset{
@@ -808,6 +1109,22 @@ func TestMessageProcessing(t *testing.T) {
 							powerFromPercentage(0.3),
 						},
 						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -827,6 +1144,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UpdateValset{
 								UpdateValset: &types.UpdateValset{
 									Valset: &types.Valset{
@@ -879,6 +1197,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "update_valset", mock.Anything).Return(tx, nil)
 				return evm, paloma
@@ -892,6 +1226,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UpdateValset{
 								UpdateValset: &types.UpdateValset{
 									Valset: &types.Valset{
@@ -941,6 +1276,22 @@ func TestMessageProcessing(t *testing.T) {
 							powerFromPercentage(0.4),
 						},
 						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -957,6 +1308,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UpdateValset{
 								UpdateValset: &types.UpdateValset{
 									Valset: &types.Valset{
@@ -1009,7 +1361,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				return evm, paloma
 			},
 		},
@@ -1021,6 +1388,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
@@ -1048,6 +1416,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				evm.On("DeployContract", mock.Anything, chainID, string(StoredContracts()["simple"].Source), []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
@@ -1063,6 +1447,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
@@ -1100,6 +1485,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				return evm, paloma
 			},
 		},
@@ -1111,6 +1512,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
@@ -1137,6 +1539,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
 				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return evm, paloma
@@ -1151,6 +1569,7 @@ func TestMessageProcessing(t *testing.T) {
 						ID:          555,
 						BytesToSign: ethCompatibleBytesToSign,
 						Msg: &types.Message{
+							Assignee: sdk.ValAddress("validator-1").String(),
 							Action: &types.Message_UploadSmartContract{
 								UploadSmartContract: &types.UploadSmartContract{
 									Bytecode:         []byte("bytecode"),
@@ -1178,6 +1597,22 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
 				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(dummyErr)
 				return evm, paloma
@@ -1191,6 +1626,7 @@ func TestMessageProcessing(t *testing.T) {
 			ethClienter, palomaClienter := tt.setup(t)
 			comp := newCompassClient(
 				smartContractAddr.Hex(),
+				feeMgrContractAddr.Hex(),
 				"id-123",
 				"internal-chain-id",
 				chainID,
@@ -1214,6 +1650,7 @@ func TestProcessingvalidatorBalancesRequest(t *testing.T) {
 	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 	comp := newCompassClient(
 		smartContractAddr.Hex(),
+		feeMgrContractAddr.Hex(),
 		"id-123",
 		"internal-chain-id",
 		big.NewInt(5),
@@ -1252,6 +1689,7 @@ func TestProcessingvalidatorBalancesRequestWithError(t *testing.T) {
 	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 	comp := newCompassClient(
 		smartContractAddr.Hex(),
+		feeMgrContractAddr.Hex(),
 		"id-123",
 		"internal-chain-id",
 		big.NewInt(5),
@@ -1292,6 +1730,7 @@ func TestProcessingvalidatorBalancesRequestWithAllErrors(t *testing.T) {
 	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 	comp := newCompassClient(
 		smartContractAddr.Hex(),
+		feeMgrContractAddr.Hex(),
 		"id-123",
 		"internal-chain-id",
 		big.NewInt(5),
@@ -1327,6 +1766,7 @@ func TestProcessingReferenceBlockRequest(t *testing.T) {
 	evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 	comp := newCompassClient(
 		smartContractAddr.Hex(),
+		feeMgrContractAddr.Hex(),
 		"id-123",
 		"internal-chain-id",
 		big.NewInt(5),
@@ -1434,6 +1874,7 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 			ethClienter, palomaClienter := tt.setup(t)
 			comp := newCompassClient(
 				smartContractAddr.Hex(),
+				feeMgrContractAddr.Hex(),
 				"id-123",
 				"internal-chain-id",
 				chainID,

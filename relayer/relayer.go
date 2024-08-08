@@ -60,6 +60,7 @@ type EvmFactorier interface {
 		smartContractID,
 		smartContractABIJson,
 		smartContractAddress string,
+		feeMgrContractAddress string,
 		chainID *big.Int,
 		blockHeight int64,
 		blockHeightHash common.Hash,

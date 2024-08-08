@@ -32,6 +32,7 @@ import (
 	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
+	feemgrABI "github.com/palomachain/pigeon/chain/evm/abi/feemgr"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
@@ -155,12 +156,12 @@ type CompassBindingCaller interface {
 	LastCheckpoint(opts *bind.CallOpts) ([32]byte, error)
 	LastValsetId(opts *bind.CallOpts) (*big.Int, error)
 	MessageIdUsed(opts *bind.CallOpts, arg0 *big.Int) (bool, error)
-	TurnstoneId(opts *bind.CallOpts) ([32]byte, error)
+	CompassId(opts *bind.CallOpts) ([32]byte, error)
 }
 
 type CompassBindingTransactor interface {
-	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, messageId *big.Int, deadline *big.Int) (*ethtypes.Transaction, error)
-	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0) (*ethtypes.Transaction, error)
+	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, fee_args compassABI.Struct4, messageId *big.Int, deadline *big.Int, relayer common.Address) (*ethtypes.Transaction, error)
+	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0, relayer common.Address, gas_estimate *big.Int) (*ethtypes.Transaction, error)
 }
 
 type CompassBindingFilterer interface {
@@ -763,4 +764,25 @@ func (c *Client) LastValsetID(ctx context.Context, addr common.Address) (*big.In
 		Context: ctx,
 	}
 	return cmps.LastValsetId(callOpts)
+}
+
+func (c *Client) QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error) {
+	logger := liblog.WithContext(ctx).WithField("address", feemgraddr.String())
+	logger.Debug("called LastValsetID in EVM client")
+
+	fm, err := feemgrABI.NewFeemgr(feemgraddr, c.conn)
+	if err != nil {
+		logger.WithError(err).Error("QueryUserFunds: error instantiating feemgr")
+		return nil, fmt.Errorf("error instantiating feemgr binding: %w", err)
+	}
+
+	callOpts := &bind.CallOpts{
+		Pending: false,
+		Context: ctx,
+	}
+	return fm.Funds(callOpts, palomaAddress)
+}
+
+func (c *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+	return c.conn.SuggestGasPrice(ctx)
 }

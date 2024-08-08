@@ -260,6 +260,66 @@ func (_m *mockEvmClienter) LastValsetID(ctx context.Context, addr common.Address
 	return r0, r1
 }
 
+// QueryUserFunds provides a mock function with given fields: ctx, feemgraddr, palomaAddress
+func (_m *mockEvmClienter) QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error) {
+	ret := _m.Called(ctx, feemgraddr, palomaAddress)
+
+	if len(ret) == 0 {
+		panic("no return value specified for QueryUserFunds")
+	}
+
+	var r0 *big.Int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, common.Address, [32]byte) (*big.Int, error)); ok {
+		return rf(ctx, feemgraddr, palomaAddress)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, common.Address, [32]byte) *big.Int); ok {
+		r0 = rf(ctx, feemgraddr, palomaAddress)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*big.Int)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, common.Address, [32]byte) error); ok {
+		r1 = rf(ctx, feemgraddr, palomaAddress)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SuggestGasPrice provides a mock function with given fields: ctx
+func (_m *mockEvmClienter) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SuggestGasPrice")
+	}
+
+	var r0 *big.Int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*big.Int, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *big.Int); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*big.Int)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // TransactionByHash provides a mock function with given fields: ctx, txHash
 func (_m *mockEvmClienter) TransactionByHash(ctx context.Context, txHash common.Hash) (*types.Transaction, bool, error) {
 	ret := _m.Called(ctx, txHash)

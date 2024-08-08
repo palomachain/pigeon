@@ -1,9 +1,11 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	gomath "math"
 	"math/big"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
+	cabi "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
@@ -58,6 +61,8 @@ type evmClienter interface {
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
 	LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error)
+	QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error)
+	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	GetEthClient() ethClientConn
 }
 
@@ -71,10 +76,12 @@ type compass struct {
 	lastObservedBlockHeight int64
 	startingBlockHeight     int64
 	smartContractAddr       common.Address
+	feeMgrContractAddr      common.Address
 }
 
 func newCompassClient(
 	smartContractAddrStr,
+	feeMgrContractAddrStr,
 	compassID,
 	chainReferenceID string,
 	chainID *big.Int,
@@ -86,13 +93,14 @@ func newCompassClient(
 	// 	whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
 	// }
 	return compass{
-		CompassID:         compassID,
-		ChainReferenceID:  chainReferenceID,
-		smartContractAddr: common.HexToAddress(smartContractAddrStr),
-		chainID:           chainID,
-		compassAbi:        compassAbi,
-		paloma:            paloma,
-		evm:               evm,
+		CompassID:          compassID,
+		ChainReferenceID:   chainReferenceID,
+		smartContractAddr:  common.HexToAddress(smartContractAddrStr),
+		feeMgrContractAddr: common.HexToAddress(feeMgrContractAddrStr),
+		chainID:            chainID,
+		compassAbi:         compassAbi,
+		paloma:             paloma,
+		evm:                evm,
 	}
 }
 
@@ -118,6 +126,8 @@ type CompassLogicCallArgs struct {
 	LogicContractAddress common.Address
 }
 
+type FeeArgs cabi.Struct4
+
 type CompassTokenSendArgs struct {
 	Receiver []common.Address
 	Amount   []*big.Int
@@ -132,6 +142,8 @@ func (t compass) updateValset(
 	queueTypeName string,
 	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
+	estimate *big.Int,
 	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	currentValsetID, err := t.findLastValsetMessageID(ctx)
@@ -158,9 +170,19 @@ func (t compass) updateValset(
 		return nil, 0, ErrNoConsensus
 	}
 
+	if opts.estimateOnly {
+		// Simulate maximum gas estimate to ensure the transaction is not rejected
+		estimate = big.NewInt(gomath.MaxInt64)
+	}
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def update_valset(consensus: Consensus, new_valset: Valset, relayer: address, gas_estimate: uint256)
 	tx, err := t.callCompass(ctx, opts, "update_valset", []any{
 		BuildCompassConsensus(currentValset, origMessage.Signatures),
 		TransformValsetToCompassValset(newValset),
+		ethSender,
+		estimate,
 	})
 	if err != nil {
 		logger.WithError(err).Error("call_compass error")
@@ -185,6 +207,7 @@ func (t compass) submitLogicCall(
 	queueTypeName string,
 	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
 	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	logger := liblog.WithContext(ctx).WithFields(log.Fields{
@@ -231,11 +254,61 @@ func (t compass) submitLogicCall(
 		Payload:              msg.GetPayload(),
 	}
 
+	padding := bytes.Repeat([]byte{0}, 32-len(msg.SenderAddress))
+	paddedSenderAddress := [32]byte(append(padding, msg.SenderAddress...))
+	// We use dummy fee data during estimation. This is not enough
+	// to process the transaction, but the user needs to have enough
+	// funds to cover the fees, even in the estimation.
+	feeArgs := FeeArgs{
+		RelayerFee:            big.NewInt(1_00_000),
+		CommunityFee:          big.NewInt(1_00_000),
+		SecurityFee:           big.NewInt(1_00_000),
+		FeePayerPalomaAddress: paddedSenderAddress,
+	}
+
+	if !opts.estimateOnly {
+		if msg.Fees == nil {
+			return nil, 0, errors.New("fees not provided")
+		}
+
+		feeArgs.RelayerFee = big.NewInt(0).SetUint64(msg.Fees.RelayerFee)
+		feeArgs.CommunityFee = big.NewInt(0).SetUint64(msg.Fees.CommunityFee)
+		feeArgs.SecurityFee = big.NewInt(0).SetUint64(msg.Fees.SecurityFee)
+
+		userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to query user funds: %w", err)
+		}
+
+		gasPrice, err := t.evm.SuggestGasPrice(ctx)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to suggest gas price: %w", err)
+		}
+
+		// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
+		totalFundsNeeded := big.NewInt(0).Add(
+			big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
+			big.NewInt(0).Add(
+				big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
+				big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
+
+		if userFunds.Cmp(totalFundsNeeded) < 0 {
+			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
+			t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			return nil, 0, err
+		}
+	}
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def submit_logic_call(consensus: Consensus, args: LogicCallArgs, fee_args: FeeArgs, message_id: uint256, deadline: uint256, relayer: address)
 	args := []any{
 		con,
 		compassArgs,
+		feeArgs,
 		new(big.Int).SetInt64(int64(origMessage.ID)),
 		new(big.Int).SetInt64(msg.GetDeadline()),
+		common.BytesToAddress(msg.ContractAddress),
 	}
 
 	if msg.ExecutionRequirements.EnforceMEVRelay {
@@ -500,6 +573,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		})
 		logger.Debug("processing")
 
+		ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+		if err != nil {
+			return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+		}
+
 		switch action := msg.GetAction().(type) {
 		case *evmtypes.Message_SubmitLogicCall:
 			tx, valsetID, processingErr = t.submitLogicCall(
@@ -507,6 +585,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.SubmitLogicCall,
 				rawMsg,
+				ethSender,
 				opts,
 			)
 		case *evmtypes.Message_UpdateValset:
@@ -526,6 +605,8 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.UpdateValset.Valset,
 				rawMsg,
+				ethSender,
+				rawMsg.Estimate,
 				opts,
 			)
 		case *evmtypes.Message_UploadSmartContract:
@@ -1273,4 +1354,27 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 	}
 
 	return valsetID, nil
+}
+
+func (t compass) findAssigneeEthAddress(ctx context.Context,
+	palomaAddress string,
+) (common.Address, error) {
+	valset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, t.ChainReferenceID)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	for _, v := range valset.Validators {
+		x := v.Address.String()
+		fmt.Println(x)
+		if v.Address.String() == palomaAddress {
+			for _, ci := range v.ExternalChainInfos {
+				if ci.ChainReferenceID == t.ChainReferenceID {
+					return common.HexToAddress(ci.Address), nil
+				}
+			}
+		}
+	}
+
+	return common.Address{}, errors.New("assignee's eth address not found")
 }
