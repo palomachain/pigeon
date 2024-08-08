@@ -1306,6 +1306,26 @@ func (t compass) skywayRelayBatch(
 			Amount:   amounts,
 		}
 
+		// get relayer
+		// get gas estimate
+		ethSender, err := t.findAssigneeEthAddress(ctx, batch.Assignee)
+		if err != nil {
+			logger.WithError(err).Error("failed to retrieve assignee eth address")
+			whoops.Assert(fmt.Errorf("failed to retrieve assignee eth address: %w", err))
+		}
+
+		var estimate *big.Int = big.NewInt(0).SetUint64(gomath.MaxUint64)
+		if !opts.estimateOnly {
+			if batch.GasEstimate < 1 {
+				logger.WithField("gas-estimate", batch.GasEstimate).Error("invalid gas estimate")
+				whoops.Assert(fmt.Errorf("invalid gas estimate: %d", batch.GasEstimate))
+			}
+			estimate.SetUint64(batch.GasEstimate)
+		}
+
+		// TODO: Use compiled contract instead
+		// compass 2.0
+		// def submit_batch(consensus: Consensus, token: address, args: TokenSendArgs, batch_id: uint256, deadline: uint256, relayer: address, gas_estimate: uint256)
 		tx, err := t.callCompass(
 			ctx,
 			opts,
@@ -1315,7 +1335,9 @@ func (t compass) skywayRelayBatch(
 				common.HexToAddress(batch.TokenContract),
 				compassArgs,
 				new(big.Int).SetInt64(int64(batch.BatchNonce)),
-				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())), // TODO : Deadline
+				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())),
+				ethSender,
+				estimate,
 			},
 		)
 		if err != nil {
