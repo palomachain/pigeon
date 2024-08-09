@@ -111,6 +111,6 @@ func (s *statusUpdater) update(ctx context.Context) error {
 		Args:   args,
 	}
 
-	_, err := s.c.MessageSender.SendMsg(ctx, msg, "", s.c.sendingOpts...)
+	_, err := s.c.messageSender.SendMsg(ctx, msg, "", s.c.sendingOpts...)
 	return err
 }

@@ -2,6 +2,7 @@ package paloma
 
 import (
 	"context"
+	"math/big"
 	"strings"
 
 	"github.com/VolumeFi/whoops"
@@ -26,7 +27,7 @@ func (c *Client) QueryMessagesForSigning(
 	return queryMessagesForSigning(
 		ctx,
 		c.GRPCClient,
-		c.Unpacker,
+		c.unpacker,
 		c.valAddr,
 		queueTypeName,
 	)
@@ -34,24 +35,44 @@ func (c *Client) QueryMessagesForSigning(
 
 // QueryMessagesForAttesting returns all messages that are currently in the queue except those already attested for.
 func (c *Client) QueryMessagesForAttesting(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesForAttesting(
-		ctx,
-		queueTypeName,
-		c.valAddr,
-		c.GRPCClient,
-		c.Unpacker,
-	)
+	qc := consensus.NewQueryClient(c.GRPCClient)
+	msgs, err := qc.QueuedMessagesForAttesting(ctx, &consensus.QueryQueuedMessagesForAttestingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    c.valAddr,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toMessagesWithSignature(msgs.Messages, c.unpacker)
+}
+
+// QueryMessagesForEstimating returns all messages which have not yet been estimated.
+func (c *Client) QueryMessagesForEstimating(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	qc := consensus.NewQueryClient(c.GRPCClient)
+	msgs, err := qc.QueuedMessagesForGasEstimation(ctx, &consensus.QueryQueuedMessagesForGasEstimationRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    c.valAddr,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toMessagesWithSignature(msgs.MessagesToEstimate, c.unpacker)
 }
 
 // QueryMessagesForRelaying returns all messages that are currently in the queue.
 func (c *Client) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
-	return queryMessagesForRelaying(
-		ctx,
-		queueTypeName,
-		c.valAddr,
-		c.GRPCClient,
-		c.Unpacker,
-	)
+	qc := consensus.NewQueryClient(c.GRPCClient)
+	msgs, err := qc.QueuedMessagesForRelaying(ctx, &consensus.QueryQueuedMessagesForRelayingRequest{
+		QueueTypeName: queueTypeName,
+		ValAddress:    c.valAddr,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toMessagesWithSignature(msgs.Messages, c.unpacker)
 }
 
 // QueryValidatorInfo returns info about the validator.
@@ -210,25 +231,10 @@ func queryMessagesForSigning(
 	return res, nil
 }
 
-func queryMessagesForRelaying(
-	ctx context.Context,
-	queueTypeName string,
-	valAddress sdk.ValAddress,
-	c grpc.ClientConn,
-	anyunpacker codectypes.AnyUnpacker,
-) ([]chain.MessageWithSignatures, error) {
-	qc := consensus.NewQueryClient(c)
-	msgs, err := qc.QueuedMessagesForRelaying(ctx, &consensus.QueryQueuedMessagesForRelayingRequest{
-		QueueTypeName: queueTypeName,
-		ValAddress:    valAddress,
-	})
-	if err != nil {
-		return nil, err
-	}
+func toMessagesWithSignature(msgs []consensus.MessageWithSignatures, unpacker codectypes.AnyUnpacker) ([]chain.MessageWithSignatures, error) {
+	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs))
 
-	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
-
-	for i, msg := range msgs.Messages {
+	for i, msg := range msgs {
 		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
 		for j, vs := range msg.SignData {
 			valSigs[j] = chain.ValidatorSignature{
@@ -237,9 +243,13 @@ func queryMessagesForRelaying(
 			}
 		}
 		var ptr consensus.ConsensusMsg
-		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
+		err := unpacker.UnpackAny(msg.GetMsg(), &ptr)
 		if err != nil {
 			return nil, err
+		}
+		var estimate *big.Int = nil
+		if msg.GasEstimate > 0 {
+			estimate = big.NewInt(0).SetUint64(msg.GasEstimate)
 		}
 		msgsWithSig[i] = chain.MessageWithSignatures{
 			QueuedMessage: chain.QueuedMessage{
@@ -249,56 +259,11 @@ func queryMessagesForRelaying(
 				BytesToSign:      msg.GetBytesToSign(),
 				PublicAccessData: msg.GetPublicAccessData(),
 				ErrorData:        msg.GetErrorData(),
+				Estimate:         estimate,
 			},
 			Signatures: valSigs,
 		}
 	}
-	return msgsWithSig, err
-}
 
-func queryMessagesForAttesting(
-	ctx context.Context,
-	queueTypeName string,
-	valAddress sdk.ValAddress,
-	c grpc.ClientConn,
-	anyunpacker codectypes.AnyUnpacker,
-) ([]chain.MessageWithSignatures, error) {
-	qc := consensus.NewQueryClient(c)
-	msgs, err := qc.QueuedMessagesForAttesting(ctx, &consensus.QueryQueuedMessagesForAttestingRequest{
-		QueueTypeName: queueTypeName,
-		ValAddress:    valAddress,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	msgsWithSig := make([]chain.MessageWithSignatures, len(msgs.Messages))
-	for i, msg := range msgs.Messages {
-		valSigs := make([]chain.ValidatorSignature, len(msg.SignData))
-		for j, vs := range msg.SignData {
-			valSigs[j] = chain.ValidatorSignature{
-				// ValAddress:      vs.GetValAddress(),
-				Signature:       vs.GetSignature(),
-				SignedByAddress: vs.GetExternalAccountAddress(),
-				// PublicKey:       vs.GetPublicKey(),
-			}
-		}
-		var ptr consensus.ConsensusMsg
-		err := anyunpacker.UnpackAny(msg.GetMsg(), &ptr)
-		if err != nil {
-			return nil, err
-		}
-		msgsWithSig[i] = chain.MessageWithSignatures{
-			QueuedMessage: chain.QueuedMessage{
-				ID:               msg.Id,
-				Nonce:            msg.Nonce,
-				Msg:              ptr,
-				BytesToSign:      msg.GetBytesToSign(),
-				PublicAccessData: msg.GetPublicAccessData(),
-				ErrorData:        msg.GetErrorData(),
-			},
-			Signatures: valSigs,
-		}
-	}
-	return msgsWithSig, err
+	return msgsWithSig, nil
 }

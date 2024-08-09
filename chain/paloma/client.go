@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	consensus "github.com/palomachain/paloma/x/consensus/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
+	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/util/ion"
 	"github.com/palomachain/pigeon/util/slice"
@@ -41,10 +42,9 @@ type Client struct {
 	PalomaConfig config.Paloma // This is only needed ONCE ! Can we remove it?
 	GRPCClient   grpc.ClientConn
 
-	// TODO: Can this shit not be made private???
-	Ion           IonClient
-	Unpacker      Unpacker
-	MessageSender MessageSender
+	ic            IonClient
+	unpacker      Unpacker
+	messageSender MessageSender
 	sendingOpts   []ion.SendMsgOption
 
 	creator        string
@@ -56,9 +56,9 @@ func NewClient(cfg config.Paloma, grpcWrapper grpc.ClientConn, ion IonClient, se
 	return (&Client{
 		PalomaConfig:  cfg,
 		GRPCClient:    grpcWrapper,
-		Ion:           ion,
-		Unpacker:      unpacker,
-		MessageSender: sender,
+		ic:            ion,
+		unpacker:      unpacker,
+		messageSender: sender,
 	}).init()
 }
 
@@ -80,11 +80,11 @@ type BroadcastMessageSignatureIn struct {
 // BroadcastMessageSignatures takes a list of signatures that need to be sent over to the chain.
 // It build the message and sends it over.
 func (c *Client) BroadcastMessageSignatures(ctx context.Context, signatures ...BroadcastMessageSignatureIn) error {
-	return broadcastMessageSignatures(ctx, c.MessageSender, c.creator, c.sendingOpts, signatures...)
+	return broadcastMessageSignatures(ctx, c.messageSender, c.creator, c.sendingOpts, signatures...)
 }
 
 func (c *Client) BlockHeight(ctx context.Context) (int64, error) {
-	res, err := c.Ion.Status(ctx)
+	res, err := c.ic.Status(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -130,7 +130,7 @@ func (c *Client) AddExternalChainInfo(ctx context.Context, chainInfos ...ChainIn
 		},
 	)
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -148,7 +148,28 @@ func (c *Client) AddMessageEvidence(ctx context.Context, queueTypeName string, m
 		},
 	}
 
-	_, err = c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	_, err = c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	return err
+}
+
+func (c *Client) AddMessagesGasEstimate(ctx context.Context, queueTypeName string, msgs ...chain.MessageWithEstimate) error {
+	estimates := make([]*consensus.MsgAddMessageGasEstimates_GasEstimate, len(msgs))
+	for i, msg := range msgs {
+		estimates[i] = &consensus.MsgAddMessageGasEstimates_GasEstimate{
+			MsgId:              msg.ID,
+			QueueTypeName:      queueTypeName,
+			Value:              msg.Estimate,
+			EstimatedByAddress: msg.EstimatedByAddress,
+		}
+	}
+	msg := &consensus.MsgAddMessageGasEstimates{
+		Estimates: estimates,
+		Metadata: valset.MsgMetadata{
+			Creator: c.creator,
+		},
+	}
+
+	_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -163,7 +184,7 @@ func (c *Client) SetPublicAccessData(ctx context.Context, queueTypeName string, 
 		},
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -177,7 +198,7 @@ func (c *Client) SetErrorData(ctx context.Context, queueTypeName string, message
 		},
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
@@ -189,12 +210,12 @@ func (c *Client) KeepValidatorAlive(ctx context.Context, appVersion string) erro
 		},
 	}
 
-	_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+	_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 	return err
 }
 
 func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
-	res, err := c.Ion.Status(ctx)
+	res, err := c.ic.Status(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +239,7 @@ func (c *Client) PalomaStatus(ctx context.Context) error {
 
 func (c *Client) GetValidator(ctx context.Context) (*stakingtypes.Validator, error) {
 	address := c.GetValidatorAddress().String()
-	_, err := c.Ion.DecodeBech32ValAddr(address)
+	_, err := c.ic.DecodeBech32ValAddr(address)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +284,7 @@ func broadcastMessageSignatures(
 }
 
 func (c *Client) Keyring() keyring.Keyring {
-	return c.Ion.GetKeybase()
+	return c.ic.GetKeybase()
 }
 
 func (c *Client) GetValidatorAddress() sdk.ValAddress {
@@ -275,7 +296,7 @@ func (c *Client) GetCreator() string {
 }
 
 func (c *Client) GetSigner() string {
-	addr, err := c.Ion.GetKeyAddress()
+	addr, err := c.ic.GetKeyAddress()
 	if err != nil {
 		panic(err)
 	}
@@ -313,6 +334,6 @@ func getCreatorAsValoper(c *Client) string {
 }
 
 func (c Client) addressString(val sdk.Address) string {
-	defer (c.Ion.SetSDKContext())()
+	defer (c.ic.SetSDKContext())()
 	return val.String()
 }

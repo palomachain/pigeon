@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAttestMessages(t *testing.T) {
+func TestEstimateMessages(t *testing.T) {
 	ctx := context.Background()
 	testcases := []struct {
 		name   string
@@ -44,7 +44,7 @@ func TestAttestMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "it attests messages",
+			name: "it estimates messages",
 			setup: func(t *testing.T) *Relayer {
 				keyringPass := "abcd"
 
@@ -52,19 +52,43 @@ func TestAttestMessages(t *testing.T) {
 				keyring := evm.OpenKeystore(dir)
 				acc, err := keyring.NewAccount(keyringPass)
 				require.NoError(t, err)
+				estimates := []chain.MessageWithEstimate{
+					{
+						MessageWithSignatures: chain.MessageWithSignatures{
+							QueuedMessage: chain.QueuedMessage{ID: 1},
+						},
+						Estimate:           21_000,
+						EstimatedByAddress: "validator",
+					},
+					{
+						MessageWithSignatures: chain.MessageWithSignatures{
+							QueuedMessage: chain.QueuedMessage{ID: 2},
+						},
+						Estimate:           22_000,
+						EstimatedByAddress: "validator",
+					},
+					{
+						MessageWithSignatures: chain.MessageWithSignatures{
+							QueuedMessage: chain.QueuedMessage{ID: 3},
+						},
+						Estimate:           23_000,
+						EstimatedByAddress: "validator",
+					},
+				}
 
 				p := chainmocks.NewProcessor(t)
 				p.On("IsRightChain", mock.Anything).Return(nil)
 				p.On("SupportedQueues").Return([]string{"a"})
-
 				p.On(
-					"ProvideEvidence",
+					"EstimateMessages",
 					mock.Anything,
 					queue.FromString("a"),
 					[]chain.MessageWithSignatures{
-						{QueuedMessage: chain.QueuedMessage{ID: 789, PublicAccessData: []byte("tx hash")}},
+						{QueuedMessage: chain.QueuedMessage{ID: 1}},
+						{QueuedMessage: chain.QueuedMessage{ID: 2}},
+						{QueuedMessage: chain.QueuedMessage{ID: 3}},
 					},
-				).Return(nil)
+				).Return(estimates, nil)
 
 				pal := mocks.NewPalomaClienter(t)
 				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
@@ -78,12 +102,15 @@ func TestAttestMessages(t *testing.T) {
 						MinOnChainBalance:     "10000",
 					},
 				}, nil)
-				pal.On("QueryMessagesForAttesting", mock.Anything, mock.Anything).Return(
+				pal.On("QueryMessagesForEstimating", mock.Anything, mock.Anything).Return(
 					[]chain.MessageWithSignatures{
-						{QueuedMessage: chain.QueuedMessage{ID: 789, PublicAccessData: []byte("tx hash")}},
+						{QueuedMessage: chain.QueuedMessage{ID: 1}},
+						{QueuedMessage: chain.QueuedMessage{ID: 2}},
+						{QueuedMessage: chain.QueuedMessage{ID: 3}},
 					},
 					nil,
 				)
+				pal.On("AddMessagesGasEstimate", mock.Anything, mock.Anything, estimates[0], estimates[1], estimates[2]).Return(nil)
 
 				os.Setenv("TEST_PASS", keyringPass)
 				t.Cleanup(func() {
@@ -113,56 +140,6 @@ func TestAttestMessages(t *testing.T) {
 				)
 			},
 		},
-		{
-			name: "if the processor is connected to the wrong chain it returns the error",
-			setup: func(t *testing.T) *Relayer {
-				keyringPass := "abcd"
-
-				dir := t.TempDir()
-				keyring := evm.OpenKeystore(dir)
-				acc, err := keyring.NewAccount(keyringPass)
-				require.NoError(t, err)
-
-				p := chainmocks.NewProcessor(t)
-				p.On("IsRightChain", mock.Anything).Return(chain.ErrNotConnectedToRightChain)
-
-				pal := mocks.NewPalomaClienter(t)
-				pal.On("QueryGetEVMChainInfos", mock.Anything, mock.Anything).Return([]*evmtypes.ChainInfo{
-					{
-						ChainReferenceID:      "main",
-						ChainID:               5,
-						SmartContractUniqueID: []byte("5"),
-						SmartContractAddr:     common.BytesToAddress([]byte("abcd")).Hex(),
-						ReferenceBlockHeight:  5,
-						ReferenceBlockHash:    "0x12",
-						MinOnChainBalance:     "10000",
-					},
-				}, nil)
-
-				factory := mocks.NewEvmFactorier(t)
-
-				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
-
-				return New(
-					&config.Config{
-						EVM: map[string]config.EVM{
-							"main": {
-								ChainClientConfig: config.ChainClientConfig{
-									KeyringPassEnvName: "TEST_PASS",
-									SigningKey:         acc.Address.Hex(),
-									KeyringDirectory:   config.Filepath(dir),
-								},
-							},
-						},
-					},
-					pal,
-					factory,
-					timemocks.NewTime(t),
-					Config{},
-				)
-			},
-			expErr: chain.ErrNotConnectedToRightChain,
-		},
 	}
 
 	for _, tt := range testcases {
@@ -171,7 +148,7 @@ func TestAttestMessages(t *testing.T) {
 			relayer := tt.setup(t)
 
 			var locker testutil.FakeMutex
-			actualErr := relayer.AttestMessages(ctx, &locker)
+			actualErr := relayer.EstimateMessages(ctx, &locker)
 			asserter.Equal(tt.expErr, actualErr)
 		})
 	}

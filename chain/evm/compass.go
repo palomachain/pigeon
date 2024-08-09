@@ -1,9 +1,11 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	gomath "math"
 	"math/big"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 	evmtypes "github.com/palomachain/paloma/x/evm/types"
 	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
+	cabi "github.com/palomachain/pigeon/chain/evm/abi/compass"
 	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
@@ -50,7 +53,7 @@ var errValsetIDMismatch = errors.New("valset id mismatch")
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, mevRelay bool, method string, arguments []any) (*ethtypes.Transaction, error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, opts callOptions, method string, arguments []any) (*ethtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 
@@ -58,6 +61,8 @@ type evmClienter interface {
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
 	FindCurrentBlockNumber(ctx context.Context) (*big.Int, error)
 	LastValsetID(ctx context.Context, addr common.Address) (*big.Int, error)
+	QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error)
+	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 	GetEthClient() ethClientConn
 }
 
@@ -71,10 +76,12 @@ type compass struct {
 	lastObservedBlockHeight int64
 	startingBlockHeight     int64
 	smartContractAddr       common.Address
+	feeMgrContractAddr      common.Address
 }
 
 func newCompassClient(
 	smartContractAddrStr,
+	feeMgrContractAddrStr,
 	compassID,
 	chainReferenceID string,
 	chainID *big.Int,
@@ -86,13 +93,14 @@ func newCompassClient(
 	// 	whoops.Assert(errors.Unrecoverable(ErrInvalidAddress.Format(smartContractAddrStr)))
 	// }
 	return compass{
-		CompassID:         compassID,
-		ChainReferenceID:  chainReferenceID,
-		smartContractAddr: common.HexToAddress(smartContractAddrStr),
-		chainID:           chainID,
-		compassAbi:        compassAbi,
-		paloma:            paloma,
-		evm:               evm,
+		CompassID:          compassID,
+		ChainReferenceID:   chainReferenceID,
+		smartContractAddr:  common.HexToAddress(smartContractAddrStr),
+		feeMgrContractAddr: common.HexToAddress(feeMgrContractAddrStr),
+		chainID:            chainID,
+		compassAbi:         compassAbi,
+		paloma:             paloma,
+		evm:                evm,
 	}
 }
 
@@ -118,6 +126,8 @@ type CompassLogicCallArgs struct {
 	LogicContractAddress common.Address
 }
 
+type FeeArgs cabi.Struct4
+
 type CompassTokenSendArgs struct {
 	Receiver []common.Address
 	Amount   []*big.Int
@@ -132,6 +142,9 @@ func (t compass) updateValset(
 	queueTypeName string,
 	newValset *evmtypes.Valset,
 	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
+	estimate *big.Int,
+	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	currentValsetID, err := t.findLastValsetMessageID(ctx)
 	if err != nil {
@@ -157,19 +170,31 @@ func (t compass) updateValset(
 		return nil, 0, ErrNoConsensus
 	}
 
-	tx, err := t.callCompass(ctx, false, "update_valset", []any{
+	if opts.estimateOnly {
+		// Simulate maximum gas estimate to ensure the transaction is not rejected
+		estimate = big.NewInt(gomath.MaxInt64)
+	}
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def update_valset(consensus: Consensus, new_valset: Valset, relayer: address, gas_estimate: uint256)
+	tx, err := t.callCompass(ctx, opts, "update_valset", []any{
 		BuildCompassConsensus(currentValset, origMessage.Signatures),
 		TransformValsetToCompassValset(newValset),
+		ethSender,
+		estimate,
 	})
 	if err != nil {
 		logger.WithError(err).Error("call_compass error")
-		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-		if setErr != nil {
-			return nil, 0, setErr
-		}
-		if isSmartContractError {
-			logger.Debug("smart contract error. recovering...")
-			return nil, 0, nil
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
 		}
 		whoops.Assert(err)
 	}
@@ -182,6 +207,8 @@ func (t compass) submitLogicCall(
 	queueTypeName string,
 	msg *evmtypes.SubmitLogicCall,
 	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
+	opts callOptions,
 ) (*ethtypes.Transaction, uint64, error) {
 	logger := liblog.WithContext(ctx).WithFields(log.Fields{
 		"chain-id": t.ChainReferenceID,
@@ -189,12 +216,15 @@ func (t compass) submitLogicCall(
 	})
 	logger.Info("submit logic call")
 
-	executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
-	if err != nil {
-		return nil, 0, err
-	}
-	if executed {
-		return nil, 0, ErrCallAlreadyExecuted
+	// Skip already executed check in case of estimate only
+	if !opts.estimateOnly {
+		executed, err := t.isArbitraryCallAlreadyExecuted(ctx, origMessage.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		if executed {
+			return nil, 0, ErrCallAlreadyExecuted
+		}
 	}
 
 	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
@@ -224,24 +254,81 @@ func (t compass) submitLogicCall(
 		Payload:              msg.GetPayload(),
 	}
 
+	padding := bytes.Repeat([]byte{0}, 32-len(msg.SenderAddress))
+	paddedSenderAddress := [32]byte(append(padding, msg.SenderAddress...))
+	// We use dummy fee data during estimation. This is not enough
+	// to process the transaction, but the user needs to have enough
+	// funds to cover the fees, even in the estimation.
+	feeArgs := FeeArgs{
+		RelayerFee:            big.NewInt(100_000),
+		CommunityFee:          big.NewInt(100_000),
+		SecurityFee:           big.NewInt(100_000),
+		FeePayerPalomaAddress: paddedSenderAddress,
+	}
+
+	if !opts.estimateOnly {
+		if msg.Fees == nil {
+			return nil, 0, errors.New("fees not provided")
+		}
+
+		feeArgs.RelayerFee = big.NewInt(0).SetUint64(msg.Fees.RelayerFee)
+		feeArgs.CommunityFee = big.NewInt(0).SetUint64(msg.Fees.CommunityFee)
+		feeArgs.SecurityFee = big.NewInt(0).SetUint64(msg.Fees.SecurityFee)
+
+		userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to query user funds: %w", err)
+		}
+
+		gasPrice, err := t.evm.SuggestGasPrice(ctx)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to suggest gas price: %w", err)
+		}
+
+		// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
+		totalFundsNeeded := big.NewInt(0).Add(
+			big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
+			big.NewInt(0).Add(
+				big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
+				big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
+
+		if userFunds.Cmp(totalFundsNeeded) < 0 {
+			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
+			if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
+				err = fmt.Errorf("failed to set error data: %w", sendErr)
+			}
+			return nil, 0, err
+		}
+	}
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def submit_logic_call(consensus: Consensus, args: LogicCallArgs, fee_args: FeeArgs, message_id: uint256, deadline: uint256, relayer: address)
 	args := []any{
 		con,
 		compassArgs,
+		feeArgs,
 		new(big.Int).SetInt64(int64(origMessage.ID)),
 		new(big.Int).SetInt64(msg.GetDeadline()),
+		common.BytesToAddress(msg.ContractAddress),
 	}
 
+	if msg.ExecutionRequirements.EnforceMEVRelay {
+		opts.useMevRelay = true
+	}
 	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
-	tx, err := t.callCompass(ctx, msg.ExecutionRequirements.EnforceMEVRelay, "submit_logic_call", args)
+	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args)
 	if err != nil {
 		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
-		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-		if setErr != nil {
-			return nil, 0, setErr
-		}
-		if isSmartContractError {
-			logger.Debug("smart contract error. recovering...")
-			return nil, 0, nil
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
 		}
 
 		return nil, 0, err
@@ -464,9 +551,10 @@ func BuildCompassConsensus(
 	return con
 }
 
-func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
+func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]ethtypes.Transaction, error) {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
+	res := make([]ethtypes.Transaction, 0, len(msgs))
 	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
@@ -487,6 +575,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		})
 		logger.Debug("processing")
 
+		ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+		if err != nil {
+			return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+		}
+
 		switch action := msg.GetAction().(type) {
 		case *evmtypes.Message_SubmitLogicCall:
 			tx, valsetID, processingErr = t.submitLogicCall(
@@ -494,6 +587,8 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.SubmitLogicCall,
 				rawMsg,
+				ethSender,
+				opts,
 			)
 		case *evmtypes.Message_UpdateValset:
 			logger := logger.WithFields(log.Fields{
@@ -512,6 +607,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				queueTypeName,
 				action.UpdateValset.Valset,
 				rawMsg,
+				ethSender,
+				rawMsg.Estimate,
+				opts,
 			)
 		case *evmtypes.Message_UploadSmartContract:
 			logger := logger.WithFields(log.Fields{
@@ -532,7 +630,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		default:
-			return ErrUnsupportedMessageType.Format(action)
+			return res, ErrUnsupportedMessageType.Format(action)
 		}
 
 		processingErr = whoops.Enrich(
@@ -541,15 +639,19 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			FieldMessageType.Val(msg.GetAction()),
 		)
 
+		if tx != nil {
+			res = append(res, *tx)
+		}
+
 		switch {
 		case processingErr == nil:
-			if tx != nil {
+			if tx != nil && opts.estimateOnly == false {
 				logger.Debug("setting public access data")
 				err := t.paloma.SetPublicAccessData(ctx, queueTypeName,
 					rawMsg.ID, valsetID, tx.Hash().Bytes())
 				if err != nil {
 					gErr.Add(err)
-					return gErr
+					return res, gErr
 				}
 			}
 		case errors.Is(processingErr, ErrNoConsensus):
@@ -577,7 +679,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		}
 	}
 
-	return gErr.Return()
+	return res, gErr.Return()
 }
 
 func (t compass) provideEvidenceForValidatorBalance(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures) error {
@@ -1073,16 +1175,21 @@ func isConsensusReached(ctx context.Context, val *evmtypes.Valset, msg chain.Sig
 	return s >= powerThreshold
 }
 
+type callOptions struct {
+	useMevRelay  bool
+	estimateOnly bool
+}
+
 func (c compass) callCompass(
 	ctx context.Context,
-	useMevRelay bool,
+	opts callOptions,
 	method string,
 	arguments []any,
 ) (*ethtypes.Transaction, error) {
 	if c.compassAbi == nil {
 		return nil, ErrABINotInitialized
 	}
-	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, useMevRelay, method, arguments)
+	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, opts, method, arguments)
 }
 
 func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) error {
@@ -1102,8 +1209,7 @@ func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayB
 		})
 		logger.Debug("relaying")
 
-		_, processingErr = t.skywayRelayBatch(ctx, batch)
-
+		_, processingErr = t.skywayRelayBatch(ctx, batch, callOptions{})
 		processingErr = whoops.Enrich(
 			processingErr,
 			FieldMessageID.Val(batch.BatchNonce),
@@ -1123,9 +1229,39 @@ func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayB
 	return gErr.Return()
 }
 
+func (t compass) skywayEstimateBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) ([]uint64, error) {
+	estimates := make([]uint64, 0, len(batches))
+	logger := liblog.WithContext(ctx).WithField("chainReferenceID", t.ChainReferenceID)
+	for _, batch := range batches {
+		logger = logger.WithField("batch-nonce", batch.BatchNonce)
+
+		if ctx.Err() != nil {
+			logger.Debug("exiting processing batch context")
+			break
+		}
+
+		logger := logger.WithFields(log.Fields{
+			"batch-nonce": batch.BatchNonce,
+		})
+		logger.Debug("estimating")
+
+		tx, err := t.skywayRelayBatch(ctx, batch, callOptions{estimateOnly: true})
+		if err != nil {
+			logger.WithError(err).Error("failed to estimate batch")
+			return nil, fmt.Errorf("failed to estimate batch: %w", err)
+		}
+
+		logger.WithField("estimate", tx.Gas()).Debug("Estimated gas for batch")
+		estimates = append(estimates, tx.Gas())
+	}
+
+	return estimates, nil
+}
+
 func (t compass) skywayRelayBatch(
 	ctx context.Context,
 	batch chain.SkywayBatchWithSignatures,
+	opts callOptions,
 ) (*ethtypes.Transaction, error) {
 	return whoops.TryVal(func() *ethtypes.Transaction {
 		logger := liblog.WithContext(ctx).
@@ -1172,16 +1308,38 @@ func (t compass) skywayRelayBatch(
 			Amount:   amounts,
 		}
 
+		// get relayer
+		// get gas estimate
+		ethSender, err := t.findAssigneeEthAddress(ctx, batch.Assignee)
+		if err != nil {
+			logger.WithError(err).Error("failed to retrieve assignee eth address")
+			whoops.Assert(fmt.Errorf("failed to retrieve assignee eth address: %w", err))
+		}
+
+		var estimate *big.Int = big.NewInt(0).SetUint64(gomath.MaxUint64)
+		if !opts.estimateOnly {
+			if batch.GasEstimate < 1 {
+				logger.WithField("gas-estimate", batch.GasEstimate).Error("invalid gas estimate")
+				whoops.Assert(fmt.Errorf("invalid gas estimate: %d", batch.GasEstimate))
+			}
+			estimate.SetUint64(batch.GasEstimate)
+		}
+
+		// TODO: Use compiled contract instead
+		// compass 2.0
+		// def submit_batch(consensus: Consensus, token: address, args: TokenSendArgs, batch_id: uint256, deadline: uint256, relayer: address, gas_estimate: uint256)
 		tx, err := t.callCompass(
 			ctx,
-			false,
+			opts,
 			"submit_batch",
 			[]any{
 				con,
 				common.HexToAddress(batch.TokenContract),
 				compassArgs,
 				new(big.Int).SetInt64(int64(batch.BatchNonce)),
-				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())), // TODO : Deadline
+				new(big.Int).SetInt64(int64(batch.GetBatchTimeout())),
+				ethSender,
+				estimate,
 			},
 		)
 		if err != nil {
@@ -1220,4 +1378,26 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 	}
 
 	return valsetID, nil
+}
+
+func (t compass) findAssigneeEthAddress(ctx context.Context,
+	palomaAddress string,
+) (common.Address, error) {
+	valset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, t.ChainReferenceID)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	for _, v := range valset.Validators {
+		if v.Address.String() == palomaAddress {
+			for _, ci := range v.ExternalChainInfos {
+				if ci.ChainReferenceID == t.ChainReferenceID {
+					return common.HexToAddress(ci.Address), nil
+				}
+			}
+			break
+		}
+	}
+
+	return common.Address{}, errors.New("assignee's eth address not found")
 }

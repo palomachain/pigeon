@@ -15,12 +15,14 @@ const (
 	updateExternalChainsLoopInterval = 1 * time.Minute
 	signMessagesLoopInterval         = 500 * time.Millisecond
 	relayMessagesLoopInterval        = 500 * time.Millisecond
+	estimateMessagesLoopInterval     = 500 * time.Millisecond
 	attestMessagesLoopInterval       = 500 * time.Millisecond
 	checkStakingLoopInterval         = 5 * time.Second
 
-	skywaySignBatchesLoopInterval  = 5 * time.Second
-	skywayRelayBatchesLoopInterval = 5 * time.Second
-	skywayEventWatcherLoopInterval = 1 * time.Minute
+	skywaySignBatchesLoopInterval     = 5 * time.Second
+	skywayEstimateBatchesLoopInterval = 5 * time.Second
+	skywayRelayBatchesLoopInterval    = 5 * time.Second
+	skywayEventWatcherLoopInterval    = 1 * time.Minute
 )
 
 func (r *Relayer) checkStaking(ctx context.Context, locker sync.Locker) error {
@@ -78,6 +80,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 	go r.startProcess(ctx, "Check staking", &locker, checkStakingLoopInterval, false, r.checkStaking)
 	go r.startProcess(ctx, "Update external chain infos", &locker, updateExternalChainsLoopInterval, true, r.UpdateExternalChainInfos)
 	go r.startProcess(ctx, "Sign messages", &locker, signMessagesLoopInterval, true, r.SignMessages)
+	go r.startProcess(ctx, "Estimate messages", &locker, estimateMessagesLoopInterval, true, r.EstimateMessages)
 	go r.startProcess(ctx, "Relay messages", &locker, relayMessagesLoopInterval, true, r.RelayMessages)
 	go r.startProcess(ctx, "Attest messages", &locker, attestMessagesLoopInterval, true, r.AttestMessages)
 
@@ -87,6 +90,7 @@ func (r *Relayer) Start(ctx context.Context) error {
 
 	// Start skyway background goroutines to run separately from each other
 	go r.startProcess(ctx, "[Skyway] Sign batches", &locker, skywaySignBatchesLoopInterval, true, r.SkywaySignBatches)
+	go r.startProcess(ctx, "[Skyway] Estimate batches", &locker, skywayEstimateBatchesLoopInterval, true, r.SkywayEstimateBatchGas)
 	go r.startProcess(ctx, "[Skyway] Relay batches", &locker, skywayRelayBatchesLoopInterval, true, r.SkywayRelayBatches)
 	go r.startProcess(ctx, "[Skyway] Handle Events", &locker, skywayEventWatcherLoopInterval, true, r.SkywayHandleEvents)
 
