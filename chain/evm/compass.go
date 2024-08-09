@@ -294,7 +294,9 @@ func (t compass) submitLogicCall(
 
 		if userFunds.Cmp(totalFundsNeeded) < 0 {
 			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
-			t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
+				err = fmt.Errorf("failed to set error data: %w", sendErr)
+			}
 			return nil, 0, err
 		}
 	}
