@@ -1395,7 +1395,7 @@ func (t compass) findAssigneeEthAddress(ctx context.Context,
 					return common.HexToAddress(ci.Address), nil
 				}
 			}
-		break
+			break
 		}
 	}
 
