@@ -89,7 +89,9 @@ func (c *Client) SkywayEstimateBatchGas(ctx context.Context, estimates ...chain.
 			Estimate:      v.Value,
 		}
 		_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
-		return err
+		if err != nil {
+			return err
+		}
 
 	}
 	return nil
