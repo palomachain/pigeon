@@ -1389,8 +1389,6 @@ func (t compass) findAssigneeEthAddress(ctx context.Context,
 	}
 
 	for _, v := range valset.Validators {
-		x := v.Address.String()
-		fmt.Println(x)
 		if v.Address.String() == palomaAddress {
 			for _, ci := range v.ExternalChainInfos {
 				if ci.ChainReferenceID == t.ChainReferenceID {
