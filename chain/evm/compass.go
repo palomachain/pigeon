@@ -260,9 +260,9 @@ func (t compass) submitLogicCall(
 	// to process the transaction, but the user needs to have enough
 	// funds to cover the fees, even in the estimation.
 	feeArgs := FeeArgs{
-		RelayerFee:            big.NewInt(1_00_000),
-		CommunityFee:          big.NewInt(1_00_000),
-		SecurityFee:           big.NewInt(1_00_000),
+		RelayerFee:            big.NewInt(100_000),
+		CommunityFee:          big.NewInt(100_000),
+		SecurityFee:           big.NewInt(100_000),
 		FeePayerPalomaAddress: paddedSenderAddress,
 	}
 
