@@ -768,7 +768,7 @@ func (c *Client) LastValsetID(ctx context.Context, addr common.Address) (*big.In
 
 func (c *Client) QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error) {
 	logger := liblog.WithContext(ctx).WithField("address", feemgraddr.String())
-	logger.Debug("called LastValsetID in EVM client")
+	logger.Debug("called QueryUserFunds in EVM client")
 
 	fm, err := feemgrABI.NewFeemgr(feemgraddr, c.conn)
 	if err != nil {
