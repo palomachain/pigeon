@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	gomath "math"
 	"math/big"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 const (
 	SignedMessagePrefix             = "\x19Ethereum Signed Message:\n32"
 	cEventQueryBlockHeightMinWindow = 10
+	cConservativeDummyGasEstimate   = 300_000
 )
 
 var (
@@ -172,7 +172,7 @@ func (t compass) updateValset(
 
 	if opts.estimateOnly {
 		// Simulate maximum gas estimate to ensure the transaction is not rejected
-		estimate = big.NewInt(gomath.MaxInt64)
+		estimate = big.NewInt(cConservativeDummyGasEstimate)
 	}
 
 	// TODO: Use generated contract code directly
@@ -1319,7 +1319,7 @@ func (t compass) skywayRelayBatch(
 			whoops.Assert(fmt.Errorf("failed to retrieve assignee eth address: %w", err))
 		}
 
-		var estimate *big.Int = big.NewInt(0).SetUint64(gomath.MaxUint64)
+		var estimate *big.Int = big.NewInt(cConservativeDummyGasEstimate)
 		if !opts.estimateOnly {
 			if batch.GasEstimate < 1 {
 				logger.WithField("gas-estimate", batch.GasEstimate).Error("invalid gas estimate")
