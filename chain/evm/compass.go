@@ -44,7 +44,7 @@ var (
 		"BatchSendEvent(address,uint256,uint256,uint256)",
 	))
 	sendToPalomaEvent = crypto.Keccak256Hash([]byte(
-		"SendToPalomaEvent(address,address,string,uint256,uint256,uint256)",
+		"SendToPalomaEvent(address,address,bytes32,uint256,uint256,uint256)",
 	))
 )
 
@@ -899,9 +899,9 @@ func (t *compass) parseSendToPalomaEvent(
 		return evt, fmt.Errorf("invalid sender address")
 	}
 
-	palomaReceiver := event[2].(string)
-	if !ok {
-		return evt, fmt.Errorf("invalid paloma receiver")
+	palomaReceiver, err := compassBytesToPalomaAddress(event[2])
+	if err != nil {
+		return evt, fmt.Errorf("invalid paloma receiver: %w", err)
 	}
 
 	amount, ok := event[3].(*big.Int)
@@ -924,7 +924,7 @@ func (t *compass) parseSendToPalomaEvent(
 		EventNonce:     eventNonce.Uint64(),
 		Amount:         amount.Uint64(),
 		EthereumSender: ethSender.String(),
-		PalomaReceiver: palomaReceiver,
+		PalomaReceiver: palomaReceiver.String(),
 		TokenContract:  tokenContract.String(),
 		SkywayNonce:    skywayNonce.Uint64(),
 	}, nil
@@ -982,23 +982,9 @@ func (t *compass) parseLightNodeSaleEvent(
 		return evt, fmt.Errorf("invalid smart contract address")
 	}
 
-	rawBytes, ok := event[2].([32]byte)
-	if !ok {
-		return evt, fmt.Errorf("invalid paloma address bytes")
-	}
-
-	// Keep only the last 20 bytes, removing the first 12 zeroes
-	addrBytes := rawBytes[12:]
-
-	// The Unmarshal function below does not check for errors, so we need to do
-	// it beforehand
-	if err := sdk.VerifyAddressFormat(addrBytes); err != nil {
-		return evt, err
-	}
-
-	var clientAddress sdk.AccAddress
-	if err := clientAddress.Unmarshal(addrBytes); err != nil {
-		return evt, err
+	clientAddress, err := compassBytesToPalomaAddress(event[2])
+	if err != nil {
+		return evt, fmt.Errorf("invalid client address: %w", err)
 	}
 
 	amount, ok := event[4].(*big.Int)
@@ -1403,4 +1389,27 @@ func (t compass) findAssigneeEthAddress(ctx context.Context,
 	}
 
 	return common.Address{}, errors.New("assignee's eth address not found")
+}
+
+func compassBytesToPalomaAddress(b any) (sdk.AccAddress, error) {
+	var addr sdk.AccAddress
+	rawBytes, ok := b.([32]byte)
+	if !ok {
+		return addr, fmt.Errorf("invalid paloma address bytes")
+	}
+
+	// Keep only the last 20 bytes, removing the first 12 zeroes
+	addrBytes := rawBytes[12:]
+
+	// The Unmarshal function below does not check for errors, so we need to do
+	// it beforehand
+	if err := sdk.VerifyAddressFormat(addrBytes); err != nil {
+		return addr, err
+	}
+
+	if err := addr.Unmarshal(addrBytes); err != nil {
+		return addr, err
+	}
+
+	return addr, nil
 }
