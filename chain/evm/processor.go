@@ -132,7 +132,9 @@ func (p Processor) EstimateMessages(ctx context.Context, queueTypeName queue.Typ
 		ctx,
 		queueTypeName.String(),
 		msgs,
-		callOptions{},
+		callOptions{
+			estimateOnly: true,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("processor::EstimateMessages: %w", err)
