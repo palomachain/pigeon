@@ -310,7 +310,7 @@ func (t compass) submitLogicCall(
 		feeArgs,
 		new(big.Int).SetInt64(int64(origMessage.ID)),
 		new(big.Int).SetInt64(msg.GetDeadline()),
-		common.BytesToAddress(msg.ContractAddress),
+		ethSender,
 	}
 
 	if msg.ExecutionRequirements.EnforceMEVRelay {
