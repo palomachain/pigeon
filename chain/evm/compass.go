@@ -196,7 +196,7 @@ func (t compass) updateValset(
 				return nil, 0, nil
 			}
 		}
-		whoops.Assert(err)
+		return nil, 0, fmt.Errorf("call_compass error: %w", err)
 	}
 
 	return tx, currentValsetID, nil
