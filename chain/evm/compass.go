@@ -551,10 +551,10 @@ func BuildCompassConsensus(
 	return con
 }
 
-func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]ethtypes.Transaction, error) {
+func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]*ethtypes.Transaction, error) {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
-	res := make([]ethtypes.Transaction, 0, len(msgs))
+	res := make([]*ethtypes.Transaction, 0, len(msgs))
 	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
@@ -639,9 +639,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			FieldMessageType.Val(msg.GetAction()),
 		)
 
-		if tx != nil {
-			res = append(res, *tx)
-		}
+		// Append all txs, even if their nil
+		// They will have to be filtered out by the caller
+		res = append(res, tx)
 
 		switch {
 		case processingErr == nil:

@@ -140,12 +140,13 @@ func (p Processor) EstimateMessages(ctx context.Context, queueTypeName queue.Typ
 		return nil, fmt.Errorf("processor::EstimateMessages: %w", err)
 	}
 
-	if len(txs) != len(msgs) {
-		return nil, fmt.Errorf("processor::EstimateMessages: estimated %d messages, but got %d", len(msgs), len(txs))
-	}
-
 	res := make([]chain.MessageWithEstimate, 0, len(txs))
 	for i, tx := range txs {
+		if tx == nil {
+			// We couldn't estimate this message, so we just ignore it
+			continue
+		}
+
 		res = append(res, chain.MessageWithEstimate{
 			MessageWithSignatures: msgs[i],
 			Estimate:              tx.Gas(),
