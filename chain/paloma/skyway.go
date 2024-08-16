@@ -40,7 +40,7 @@ func (c *Client) SkywayConfirmBatches(ctx context.Context, signatures ...chain.S
 			Orchestrator:  c.creator,
 			Signature:     hex.EncodeToString(signedBatch.Signature),
 		}
-		_, err := c.MessageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+		_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
 		return err
 
 	}
@@ -61,8 +61,61 @@ func (c *Client) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferen
 		return nil, err
 	}
 
-	batchesWithSignatures := make([]chain.SkywayBatchWithSignatures, len(batches.Batches))
-	for i, batch := range batches.Batches {
+	return skywayLoadConfirms(ctx, qc, batches.Batches)
+}
+
+func (c *Client) SkywayQueryLastPendingBatchForGasEstimation(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error) {
+	qc := skyway.NewQueryClient(c.GRPCClient)
+	res, err := qc.LastPendingBatchForGasEstimation(ctx, &skyway.QueryLastPendingBatchForGasEstimationRequest{
+		Address:          c.valAddr,
+		ChainReferenceId: chainReferenceID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return skywayLoadConfirms(ctx, qc, res.Batch)
+}
+
+func (c *Client) SkywayEstimateBatchGas(ctx context.Context, estimates ...chain.EstimatedSkywayBatch) error {
+	if len(estimates) == 0 {
+		return nil
+	}
+	for _, v := range estimates {
+		msg := &skyway.MsgEstimateBatchGas{
+			Nonce:         v.BatchNonce,
+			TokenContract: v.TokenContract,
+			EthSigner:     v.EstimatedByAddress,
+			Estimate:      v.Value,
+		}
+		_, err := c.messageSender.SendMsg(ctx, msg, "", c.sendingOpts...)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+// TODO: Combine with below method
+func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim skyway.MsgBatchSendToRemoteClaim) error {
+	_, err := c.messageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}
+
+func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim skyway.MsgSendToPalomaClaim) error {
+	_, err := c.messageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}
+
+func (c *Client) SendLightNodeSaleClaim(ctx context.Context, claim skyway.MsgLightNodeSaleClaim) error {
+	_, err := c.messageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
+	return err
+}
+
+func skywayLoadConfirms(ctx context.Context, qc skyway.QueryClient, in []skyway.OutgoingTxBatch) ([]chain.SkywayBatchWithSignatures, error) {
+	batchesWithSignatures := make([]chain.SkywayBatchWithSignatures, len(in))
+	for i, batch := range in {
 		confirms, err := qc.BatchConfirms(ctx, &skyway.QueryBatchConfirmsRequest{
 			Nonce:           batch.BatchNonce,
 			ContractAddress: batch.TokenContract,
@@ -88,22 +141,5 @@ func (c *Client) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferen
 		}
 
 	}
-
 	return batchesWithSignatures, nil
-}
-
-// TODO: Combine with below method
-func (c *Client) SendBatchSendToEVMClaim(ctx context.Context, claim skyway.MsgBatchSendToRemoteClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
-	return err
-}
-
-func (c *Client) SendSendToPalomaClaim(ctx context.Context, claim skyway.MsgSendToPalomaClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
-	return err
-}
-
-func (c *Client) SendLightNodeSaleClaim(ctx context.Context, claim skyway.MsgLightNodeSaleClaim) error {
-	_, err := c.MessageSender.SendMsg(ctx, &claim, "", c.sendingOpts...)
-	return err
 }

@@ -72,6 +72,31 @@ func (_m *PalomaClienter) AddMessageEvidence(ctx context.Context, queueTypeName 
 	return r0
 }
 
+// AddMessagesGasEstimate provides a mock function with given fields: ctx, queueTypeName, msgs
+func (_m *PalomaClienter) AddMessagesGasEstimate(ctx context.Context, queueTypeName string, msgs ...chain.MessageWithEstimate) error {
+	_va := make([]interface{}, len(msgs))
+	for _i := range msgs {
+		_va[_i] = msgs[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, queueTypeName)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddMessagesGasEstimate")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...chain.MessageWithEstimate) error); ok {
+		r0 = rf(ctx, queueTypeName, msgs...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // BlockHeight provides a mock function with given fields: _a0
 func (_m *PalomaClienter) BlockHeight(_a0 context.Context) (int64, error) {
 	ret := _m.Called(_a0)
@@ -379,6 +404,36 @@ func (_m *PalomaClienter) QueryMessagesForAttesting(ctx context.Context, queueTy
 	return r0, r1
 }
 
+// QueryMessagesForEstimating provides a mock function with given fields: ctx, queueTypeName
+func (_m *PalomaClienter) QueryMessagesForEstimating(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
+	ret := _m.Called(ctx, queueTypeName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for QueryMessagesForEstimating")
+	}
+
+	var r0 []chain.MessageWithSignatures
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.MessageWithSignatures, error)); ok {
+		return rf(ctx, queueTypeName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.MessageWithSignatures); ok {
+		r0 = rf(ctx, queueTypeName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.MessageWithSignatures)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, queueTypeName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // QueryMessagesForRelaying provides a mock function with given fields: ctx, queueTypeName
 func (_m *PalomaClienter) QueryMessagesForRelaying(ctx context.Context, queueTypeName string) ([]chain.MessageWithSignatures, error) {
 	ret := _m.Called(ctx, queueTypeName)
@@ -530,12 +585,67 @@ func (_m *PalomaClienter) SkywayConfirmBatches(ctx context.Context, signatures .
 	return r0
 }
 
+// SkywayEstimateBatchGas provides a mock function with given fields: ctx, estimates
+func (_m *PalomaClienter) SkywayEstimateBatchGas(ctx context.Context, estimates ...chain.EstimatedSkywayBatch) error {
+	_va := make([]interface{}, len(estimates))
+	for _i := range estimates {
+		_va[_i] = estimates[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SkywayEstimateBatchGas")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...chain.EstimatedSkywayBatch) error); ok {
+		r0 = rf(ctx, estimates...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SkywayQueryBatchesForRelaying provides a mock function with given fields: ctx, chainReferenceID
 func (_m *PalomaClienter) SkywayQueryBatchesForRelaying(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error) {
 	ret := _m.Called(ctx, chainReferenceID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SkywayQueryBatchesForRelaying")
+	}
+
+	var r0 []chain.SkywayBatchWithSignatures
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]chain.SkywayBatchWithSignatures, error)); ok {
+		return rf(ctx, chainReferenceID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []chain.SkywayBatchWithSignatures); ok {
+		r0 = rf(ctx, chainReferenceID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]chain.SkywayBatchWithSignatures)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, chainReferenceID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SkywayQueryLastPendingBatchForGasEstimation provides a mock function with given fields: ctx, chainReferenceID
+func (_m *PalomaClienter) SkywayQueryLastPendingBatchForGasEstimation(ctx context.Context, chainReferenceID string) ([]chain.SkywayBatchWithSignatures, error) {
+	ret := _m.Called(ctx, chainReferenceID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SkywayQueryLastPendingBatchForGasEstimation")
 	}
 
 	var r0 []chain.SkywayBatchWithSignatures
@@ -595,7 +705,8 @@ func (_m *PalomaClienter) SkywayQueryLastUnsignedBatch(ctx context.Context, chai
 func NewPalomaClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *PalomaClienter {
+},
+) *PalomaClienter {
 	mock := &PalomaClienter{}
 	mock.Mock.Test(t)
 

@@ -310,7 +310,7 @@ func TestAddingExternalChainInfo(t *testing.T) {
 			mocksrv := tt.mcksrv(t)
 
 			client := Client{
-				MessageSender: mocksrv,
+				messageSender: mocksrv,
 			}
 			err := client.AddExternalChainInfo(
 				ctx,
@@ -368,7 +368,7 @@ func TestKeepValidatorAlive(t *testing.T) {
 
 			client := Client{
 				creator:       creator,
-				MessageSender: sender,
+				messageSender: sender,
 			}
 
 			err := client.KeepValidatorAlive(ctx, tt.appVersion)

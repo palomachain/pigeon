@@ -32,10 +32,10 @@ import (
 	skywaytypes "github.com/palomachain/paloma/x/skyway/types"
 	valset "github.com/palomachain/paloma/x/valset/types"
 	compassABI "github.com/palomachain/pigeon/chain/evm/abi/compass"
+	feemgrABI "github.com/palomachain/pigeon/chain/evm/abi/feemgr"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
-	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	arbcommon "github.com/roodeag/arbitrum/common"
@@ -155,12 +155,12 @@ type CompassBindingCaller interface {
 	LastCheckpoint(opts *bind.CallOpts) ([32]byte, error)
 	LastValsetId(opts *bind.CallOpts) (*big.Int, error)
 	MessageIdUsed(opts *bind.CallOpts, arg0 *big.Int) (bool, error)
-	TurnstoneId(opts *bind.CallOpts) ([32]byte, error)
+	CompassId(opts *bind.CallOpts) ([32]byte, error)
 }
 
 type CompassBindingTransactor interface {
-	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, messageId *big.Int, deadline *big.Int) (*ethtypes.Transaction, error)
-	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0) (*ethtypes.Transaction, error)
+	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, fee_args compassABI.Struct4, messageId *big.Int, deadline *big.Int, relayer common.Address) (*ethtypes.Transaction, error)
+	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0, relayer common.Address, gas_estimate *big.Int) (*ethtypes.Transaction, error)
 }
 
 type CompassBindingFilterer interface {
@@ -240,6 +240,7 @@ type executeSmartContractIn struct {
 
 	method    string
 	arguments []any
+	opts      callOptions
 }
 
 func callSmartContract(
@@ -334,23 +335,28 @@ func callSmartContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = args.signingAddr
 
-		if !libchain.IsArbitrum(args.chainID) {
-			// Leads to problems with arbitrum:
-			// both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified
-			// Only set this on other chains.
-			// https://github.com/VolumeFi/paloma/issues/1048
-			value := new(big.Int)
-			gasFeeCap := new(big.Int)
-			var gasLimit uint64
-			if args.txType == 2 {
-				gasFeeCap = gasPrice
-				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, nil, gasTipCap, gasFeeCap, value)
-				whoops.Assert(err)
-			} else {
-				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
-				whoops.Assert(err)
-			}
-			txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
+		value := new(big.Int)
+		gasFeeCap := new(big.Int)
+		var gasLimit uint64
+		if args.txType == 2 {
+			gasFeeCap = gasPrice
+			gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, nil, gasTipCap, gasFeeCap, value)
+			whoops.Assert(err)
+		} else {
+			gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
+			whoops.Assert(err)
+		}
+		logger.WithFields(log.Fields{
+			"gas-limit": gasLimit,
+		}).Debug("estimated gas limit")
+		txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
+
+		// In case we only want to estimate, now is the time to return.
+		if args.opts.estimateOnly {
+			return ethtypes.NewTx(
+				&ethtypes.LegacyTx{
+					Gas: txOpts.GasLimit,
+				})
 		}
 
 		if args.txType == 2 {
@@ -377,7 +383,7 @@ func callSmartContract(
 		}
 
 		// In case we want to relay, don't actually send the constructed TX
-		if args.mevClient != nil {
+		if args.opts.useMevRelay && args.mevClient != nil {
 			logger.Info("MEV Client set - setting TX to not execute")
 			txOpts.NoSend = true
 		}
@@ -644,12 +650,12 @@ func (c *Client) ExecuteSmartContract(
 	chainID *big.Int,
 	contractAbi abi.ABI,
 	addr common.Address,
-	useMevRelay bool,
+	opts callOptions,
 	method string,
 	arguments []any,
 ) (*etherumtypes.Transaction, error) {
 	var mevClient mevClient = nil
-	if useMevRelay {
+	if opts.useMevRelay {
 		mevClient = c.mevClient
 		logrus.WithContext(ctx).WithField("mevClient", mevClient).WithField("c.mevClient", c.mevClient).Info("Using MEV relay")
 	}
@@ -666,6 +672,7 @@ func (c *Client) ExecuteSmartContract(
 			contract:      addr,
 			signingAddr:   c.addr,
 			keystore:      c.keystore,
+			opts:          opts,
 
 			method:    method,
 			arguments: arguments,
@@ -753,4 +760,25 @@ func (c *Client) LastValsetID(ctx context.Context, addr common.Address) (*big.In
 		Context: ctx,
 	}
 	return cmps.LastValsetId(callOpts)
+}
+
+func (c *Client) QueryUserFunds(ctx context.Context, feemgraddr common.Address, palomaAddress [32]byte) (*big.Int, error) {
+	logger := liblog.WithContext(ctx).WithField("address", feemgraddr.String())
+	logger.Debug("called QueryUserFunds in EVM client")
+
+	fm, err := feemgrABI.NewFeemgr(feemgraddr, c.conn)
+	if err != nil {
+		logger.WithError(err).Error("QueryUserFunds: error instantiating feemgr")
+		return nil, fmt.Errorf("error instantiating feemgr binding: %w", err)
+	}
+
+	callOpts := &bind.CallOpts{
+		Pending: false,
+		Context: ctx,
+	}
+	return fm.Funds(callOpts, palomaAddress)
+}
+
+func (c *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+	return c.conn.SuggestGasPrice(ctx)
 }

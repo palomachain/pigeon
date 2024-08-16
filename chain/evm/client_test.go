@@ -50,9 +50,10 @@ func TestExecutingSmartContract(t *testing.T) {
 	require.NoError(t, err)
 	fakeErr := whoops.String("oh no")
 	for _, tt := range []struct {
-		name        string
-		setup       func(t *testing.T, args *executeSmartContractIn)
-		expectedErr error
+		name              string
+		setup             func(t *testing.T, args *executeSmartContractIn)
+		expectedErr       error
+		expectedEstimated *uint64
 	}{
 		{
 			name: "happy path",
@@ -139,7 +140,28 @@ func TestExecutingSmartContract(t *testing.T) {
 
 				args.ethClient = ethMock
 				args.mevClient = mevMock
+				args.opts.useMevRelay = true
 			},
+		},
+		{
+			name: "Message gas estimation only, should not send transaction",
+			setup: func(t *testing.T, args *executeSmartContractIn) {
+				ethMock := newMockEthClienter(t)
+
+				ethMock.On("PendingNonceAt", mock.Anything, mock.Anything).Return(uint64(333), nil)
+
+				ethMock.On("SuggestGasPrice", mock.Anything).Return(big.NewInt(444), nil)
+
+				ethMock.On("SuggestGasTipCap", mock.Anything).Return(big.NewInt(4), nil)
+
+				ethMock.On("PendingCodeAt", mock.Anything, args.contract).Return([]byte("a"), nil)
+
+				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
+
+				args.ethClient = ethMock
+				args.opts.estimateOnly = true
+			},
+			expectedEstimated: &([]uint64{333})[0], // afford for 1.5 multiplier
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -163,12 +185,15 @@ func TestExecutingSmartContract(t *testing.T) {
 
 			tt.setup(t, &args)
 
-			_, err = callSmartContract(
+			tx, err := callSmartContract(
 				context.Background(),
 				args,
 			)
 
 			require.ErrorIs(t, err, tt.expectedErr)
+			if tt.expectedEstimated != nil {
+				require.Equal(t, *tt.expectedEstimated, tx.Gas())
+			}
 		})
 	}
 }

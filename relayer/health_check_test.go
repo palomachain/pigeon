@@ -95,7 +95,7 @@ var _ = Describe("health check", func() {
 						MinOnChainBalance: "100000",
 					},
 				}, nil)
-				fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
+				fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
 				m.On("GetValidator", mock.Anything).Return(val, nil)
 
 				pm.On("HealthCheck", mock.Anything).Return(retErr)
@@ -122,7 +122,7 @@ var _ = Describe("health check", func() {
 					MinOnChainBalance: "100000",
 				},
 			}, nil)
-			fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
+			fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
 			m.On("GetValidator", mock.Anything).Return(val, nil)
 
 			pm.On("HealthCheck", mock.Anything).Return(retErr)
@@ -153,7 +153,7 @@ var _ = Describe("health check", func() {
 						MinOnChainBalance: "100000",
 					},
 				}, nil)
-				fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
+				fm.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(pm, nil)
 				m.On("GetValidator", mock.Anything).Return(val, nil)
 
 				pm.On("HealthCheck", mock.Anything).Return(retErr)
