@@ -639,8 +639,8 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			FieldMessageType.Val(msg.GetAction()),
 		)
 
-		// Append all txs, even if their nil
-		// They will have to be filtered out by the caller
+		// Append all txs, even if they are nil
+		// These values will have to be filtered out by the caller
 		res = append(res, tx)
 
 		switch {
