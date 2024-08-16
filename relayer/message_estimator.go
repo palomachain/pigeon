@@ -69,7 +69,28 @@ func (r *Relayer) estimateMessages(ctx context.Context, processors []chain.Proce
 					return err
 				}
 
-				err = r.palomaClient.AddMessagesGasEstimate(ctx, queueName, estimates...)
+				filteredEstimates := make([]chain.MessageWithEstimate, 0, len(estimates))
+				for _, v := range estimates {
+					logger.
+						WithField("message-id", v.ID).
+						WithField("estimate", v.Estimate).
+						Info("estimated message")
+					if v.Estimate < 1 {
+						logger.
+							WithField("message-id", v.ID).
+							WithField("estimate", v.Estimate).
+							Warn("Received an estimate of 0 or less, skipping")
+						continue
+					}
+					filteredEstimates = append(filteredEstimates, v)
+				}
+
+				if len(filteredEstimates) == 0 {
+					logger.Info("No valid estimates, skipping")
+					continue
+				}
+
+				err = r.palomaClient.AddMessagesGasEstimate(ctx, queueName, filteredEstimates...)
 				if err != nil {
 					logger.WithError(err).Error("failed to send estimates to Paloma")
 					return err

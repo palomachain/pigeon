@@ -36,7 +36,6 @@ import (
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/config"
 	"github.com/palomachain/pigeon/errors"
-	"github.com/palomachain/pigeon/internal/libchain"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
 	arbcommon "github.com/roodeag/arbitrum/common"
@@ -336,23 +335,28 @@ func callSmartContract(
 		txOpts.Nonce = big.NewInt(int64(nonce))
 		txOpts.From = args.signingAddr
 
-		if !libchain.IsArbitrum(args.chainID) {
-			// Leads to problems with arbitrum:
-			// both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified
-			// Only set this on other chains.
-			// https://github.com/VolumeFi/paloma/issues/1048
-			value := new(big.Int)
-			gasFeeCap := new(big.Int)
-			var gasLimit uint64
-			if args.txType == 2 {
-				gasFeeCap = gasPrice
-				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, nil, gasTipCap, gasFeeCap, value)
-				whoops.Assert(err)
-			} else {
-				gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
-				whoops.Assert(err)
-			}
-			txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
+		value := new(big.Int)
+		gasFeeCap := new(big.Int)
+		var gasLimit uint64
+		if args.txType == 2 {
+			gasFeeCap = gasPrice
+			gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, nil, gasTipCap, gasFeeCap, value)
+			whoops.Assert(err)
+		} else {
+			gasLimit, err = estimateGasLimit(ctx, args.ethClient, txOpts, &args.contract, packedBytes, gasPrice, nil, nil, value)
+			whoops.Assert(err)
+		}
+		logger.WithFields(log.Fields{
+			"gas-limit": gasLimit,
+		}).Debug("estimated gas limit")
+		txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
+
+		// In case we only want to estimate, now is the time to return.
+		if args.opts.estimateOnly {
+			return ethtypes.NewTx(
+				&ethtypes.LegacyTx{
+					Gas: txOpts.GasLimit,
+				})
 		}
 
 		if args.txType == 2 {
@@ -376,14 +380,6 @@ func callSmartContract(
 				"nonce":     txOpts.Nonce,
 				"from":      txOpts.From,
 			}).Debug("executing legacy tx")
-		}
-
-		// In case we only want to estimate, now is the time to return.
-		if args.opts.estimateOnly {
-			return ethtypes.NewTx(
-				&ethtypes.LegacyTx{
-					Gas: txOpts.GasLimit,
-				})
 		}
 
 		// In case we want to relay, don't actually send the constructed TX

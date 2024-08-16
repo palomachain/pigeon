@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	SignedMessagePrefix             = "\x19Ethereum Signed Message:\n32"
-	cEventQueryBlockHeightMinWindow = 10
-	cConservativeDummyGasEstimate   = 300_000
+	SignedMessagePrefix                    = "\x19Ethereum Signed Message:\n32"
+	cEventQueryBlockHeightMinWindow        = 10
+	cConservativeDummyGasEstimate   uint64 = 300_000
 )
 
 var (
@@ -172,7 +172,7 @@ func (t compass) updateValset(
 
 	if opts.estimateOnly {
 		// Simulate maximum gas estimate to ensure the transaction is not rejected
-		estimate = big.NewInt(cConservativeDummyGasEstimate)
+		estimate = big.NewInt(0).SetUint64(cConservativeDummyGasEstimate)
 	}
 
 	// TODO: Use generated contract code directly
@@ -196,7 +196,7 @@ func (t compass) updateValset(
 				return nil, 0, nil
 			}
 		}
-		whoops.Assert(err)
+		return nil, 0, fmt.Errorf("call_compass error: %w", err)
 	}
 
 	return tx, currentValsetID, nil
@@ -310,7 +310,7 @@ func (t compass) submitLogicCall(
 		feeArgs,
 		new(big.Int).SetInt64(int64(origMessage.ID)),
 		new(big.Int).SetInt64(msg.GetDeadline()),
-		common.BytesToAddress(msg.ContractAddress),
+		ethSender,
 	}
 
 	if msg.ExecutionRequirements.EnforceMEVRelay {
@@ -551,10 +551,10 @@ func BuildCompassConsensus(
 	return con
 }
 
-func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]ethtypes.Transaction, error) {
+func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs []chain.MessageWithSignatures, opts callOptions) ([]*ethtypes.Transaction, error) {
 	var gErr whoops.Group
 	logger := liblog.WithContext(ctx).WithField("queue-type-name", queueTypeName)
-	res := make([]ethtypes.Transaction, 0, len(msgs))
+	res := make([]*ethtypes.Transaction, 0, len(msgs))
 	for i, rawMsg := range msgs {
 		logger = logger.WithField("message-id", rawMsg.ID)
 
@@ -639,9 +639,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			FieldMessageType.Val(msg.GetAction()),
 		)
 
-		if tx != nil {
-			res = append(res, *tx)
-		}
+		// Append all txs, even if they are nil
+		// These values will have to be filtered out by the caller
+		res = append(res, tx)
 
 		switch {
 		case processingErr == nil:
@@ -1305,7 +1305,7 @@ func (t compass) skywayRelayBatch(
 			whoops.Assert(fmt.Errorf("failed to retrieve assignee eth address: %w", err))
 		}
 
-		var estimate *big.Int = big.NewInt(cConservativeDummyGasEstimate)
+		var estimate *big.Int = big.NewInt(0).SetUint64(cConservativeDummyGasEstimate)
 		if !opts.estimateOnly {
 			if batch.GasEstimate < 1 {
 				logger.WithField("gas-estimate", batch.GasEstimate).Error("invalid gas estimate")
