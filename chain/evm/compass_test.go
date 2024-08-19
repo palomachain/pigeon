@@ -2063,3 +2063,49 @@ func TestIfTheConsensusHasBeenReached(t *testing.T) {
 		})
 	}
 }
+
+func TestCompassBytesToPaloma(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		src  [32]byte
+		res  sdk.AccAddress
+		err  bool
+	}{
+		{
+			name: "20 byte address",
+			src:  [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			res:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		{
+			name: "20 byte address starting with 0",
+			src:  [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			res:  []byte{0, 0, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		{
+			name: "32 byte address",
+			src:  [32]byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			res:  []byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		{
+			name: "32 byte address starting with 0",
+			src:  [32]byte{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			res:  []byte{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		{
+			name: "invalid address",
+			src:  [32]byte{},
+			err:  true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := compassBytesToPalomaAddress(tt.src)
+			if tt.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, tt.res, res)
+		})
+	}
+}

@@ -1398,8 +1398,20 @@ func compassBytesToPalomaAddress(b any) (sdk.AccAddress, error) {
 		return addr, fmt.Errorf("invalid paloma address bytes")
 	}
 
-	// Keep only the last 20 bytes, removing the first 12 zeroes
-	addrBytes := rawBytes[12:]
+	var addrBytes []byte
+	for i := range rawBytes {
+		if rawBytes[i] != 0 {
+			// Allow addresses starting with 0 and align to either 20 or 32
+			// bytes
+			if i < 12 {
+				addrBytes = rawBytes[:]
+			} else {
+				addrBytes = rawBytes[12:]
+			}
+
+			break
+		}
+	}
 
 	// The Unmarshal function below does not check for errors, so we need to do
 	// it beforehand
