@@ -56,6 +56,7 @@ type evmClienter interface {
 	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, opts callOptions, method string, arguments []any) (*ethtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*ethtypes.Receipt, error)
 
 	BalanceAt(ctx context.Context, address common.Address, blockHeight uint64) (*big.Int, error)
 	FindBlockNearestToTime(ctx context.Context, startingHeight uint64, when time.Time) (uint64, error)
@@ -1156,8 +1157,31 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 		return err
 	}
 
+	var serializedReceipt []byte
+
+	msg, ok := rawMsg.Msg.(*evmtypes.Message)
+	// If this is a turnstone message, we may need additional info
+	if ok {
+		switch msg.GetAction().(type) {
+		case *evmtypes.Message_UploadUserSmartContract:
+			// For UserUploadSmartContract messages, we need the transaction
+			// receipt, so that paloma can use the generated events to get the
+			// contract address
+			receipt, err := t.evm.TransactionReceipt(ctx, tx.Hash())
+			if err != nil {
+				return err
+			}
+
+			serializedReceipt, err = receipt.MarshalBinary()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return t.paloma.AddMessageEvidence(ctx, queueTypeName, rawMsg.ID, &evmtypes.TxExecutedProof{
-		SerializedTX: txProof,
+		SerializedTX:      txProof,
+		SerializedReceipt: serializedReceipt,
 	})
 }
 

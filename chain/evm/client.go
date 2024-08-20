@@ -145,6 +145,7 @@ type mevClient interface {
 type ethClientConn interface {
 	ethClienter
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *etherumtypes.Transaction, isPending bool, err error)
+	TransactionReceipt(ctx context.Context, hash common.Hash) (*etherumtypes.Receipt, error)
 	HeaderByNumber(ctx context.Context, number *big.Int) (*etherumtypes.Header, error)
 	BlockByHash(ctx context.Context, hash common.Hash) (*etherumtypes.Block, error)
 	BlockNumber(ctx context.Context) (uint64, error)
@@ -483,6 +484,10 @@ func (c *Client) FilterLogs(ctx context.Context, fq etherum.FilterQuery, currBlo
 
 func (c *Client) TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error) {
 	return c.conn.TransactionByHash(ctx, txHash)
+}
+
+func (c *Client) TransactionReceipt(ctx context.Context, txHash common.Hash) (*ethtypes.Receipt, error) {
+	return c.conn.TransactionReceipt(ctx, txHash)
 }
 
 func (c *Client) BlockByHash(ctx context.Context, blockHash common.Hash) (*ethtypes.Block, error) {
