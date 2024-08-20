@@ -670,13 +670,13 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		})
 		logger.Debug("processing")
 
-		ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
-		if err != nil {
-			return res, fmt.Errorf("failed to find assignee eth address: %w", err)
-		}
-
 		switch action := msg.GetAction().(type) {
 		case *evmtypes.Message_SubmitLogicCall:
+			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+			if err != nil {
+				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+			}
+
 			tx, valsetID, processingErr = t.submitLogicCall(
 				ctx,
 				queueTypeName,
@@ -686,6 +686,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				opts,
 			)
 		case *evmtypes.Message_UpdateValset:
+			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+			if err != nil {
+				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+			}
+
 			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
@@ -725,6 +730,11 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *evmtypes.Message_UploadUserSmartContract:
+			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+			if err != nil {
+				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+			}
+
 			logger := logger.WithFields(log.Fields{
 				"chain-reference-id":     t.ChainReferenceID,
 				"queue-name":             queueTypeName,
@@ -1528,39 +1538,41 @@ func (t compass) getFeeArgs(
 		FeePayerPalomaAddress: paddedSenderAddress,
 	}
 
-	if !opts.estimateOnly {
-		if fees == nil {
-			return feeArgs, errors.New("fees not provided")
+	if opts.estimateOnly {
+		return feeArgs, nil
+	}
+
+	if fees == nil {
+		return feeArgs, errors.New("fees not provided")
+	}
+
+	feeArgs.RelayerFee = big.NewInt(0).SetUint64(fees.RelayerFee)
+	feeArgs.CommunityFee = big.NewInt(0).SetUint64(fees.CommunityFee)
+	feeArgs.SecurityFee = big.NewInt(0).SetUint64(fees.SecurityFee)
+
+	userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
+	if err != nil {
+		return feeArgs, fmt.Errorf("failed to query user funds: %w", err)
+	}
+
+	gasPrice, err := t.evm.SuggestGasPrice(ctx)
+	if err != nil {
+		return feeArgs, fmt.Errorf("failed to suggest gas price: %w", err)
+	}
+
+	// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
+	totalFundsNeeded := big.NewInt(0).Add(
+		big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
+		big.NewInt(0).Add(
+			big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
+			big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
+
+	if userFunds.Cmp(totalFundsNeeded) < 0 {
+		err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
+		if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
+			err = fmt.Errorf("failed to set error data: %w", sendErr)
 		}
-
-		feeArgs.RelayerFee = big.NewInt(0).SetUint64(fees.RelayerFee)
-		feeArgs.CommunityFee = big.NewInt(0).SetUint64(fees.CommunityFee)
-		feeArgs.SecurityFee = big.NewInt(0).SetUint64(fees.SecurityFee)
-
-		userFunds, err := t.evm.QueryUserFunds(ctx, t.feeMgrContractAddr, paddedSenderAddress)
-		if err != nil {
-			return feeArgs, fmt.Errorf("failed to query user funds: %w", err)
-		}
-
-		gasPrice, err := t.evm.SuggestGasPrice(ctx)
-		if err != nil {
-			return feeArgs, fmt.Errorf("failed to suggest gas price: %w", err)
-		}
-
-		// (relayerFee*gasPrice + communityFee*gasPrice + security*gasPrice)
-		totalFundsNeeded := big.NewInt(0).Add(
-			big.NewInt(0).Mul(feeArgs.RelayerFee, gasPrice),
-			big.NewInt(0).Add(
-				big.NewInt(0).Mul(feeArgs.CommunityFee, gasPrice),
-				big.NewInt(0).Mul(feeArgs.SecurityFee, gasPrice)))
-
-		if userFunds.Cmp(totalFundsNeeded) < 0 {
-			err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
-			if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
-				err = fmt.Errorf("failed to set error data: %w", sendErr)
-			}
-			return feeArgs, err
-		}
+		return feeArgs, err
 	}
 
 	return feeArgs, nil
