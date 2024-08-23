@@ -261,7 +261,7 @@ func (_m *CompassBinding) ParseValsetUpdated(log types.Log) (*compass.CompassVal
 }
 
 // SubmitLogicCall provides a mock function with given fields: opts, consensus, args, fee_args, messageId, deadline, relayer
-func (_m *CompassBinding) SubmitLogicCall(opts *bind.TransactOpts, consensus compass.Struct2, args compass.Struct3, fee_args compass.Struct4, messageId *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+func (_m *CompassBinding) SubmitLogicCall(opts *bind.TransactOpts, consensus compass.Struct2, args compass.Struct4, fee_args compass.Struct5, messageId *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
 	ret := _m.Called(opts, consensus, args, fee_args, messageId, deadline, relayer)
 
 	if len(ret) == 0 {
@@ -270,10 +270,10 @@ func (_m *CompassBinding) SubmitLogicCall(opts *bind.TransactOpts, consensus com
 
 	var r0 *types.Transaction
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, compass.Struct3, compass.Struct4, *big.Int, *big.Int, common.Address) (*types.Transaction, error)); ok {
+	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, compass.Struct4, compass.Struct5, *big.Int, *big.Int, common.Address) (*types.Transaction, error)); ok {
 		return rf(opts, consensus, args, fee_args, messageId, deadline, relayer)
 	}
-	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, compass.Struct3, compass.Struct4, *big.Int, *big.Int, common.Address) *types.Transaction); ok {
+	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, compass.Struct4, compass.Struct5, *big.Int, *big.Int, common.Address) *types.Transaction); ok {
 		r0 = rf(opts, consensus, args, fee_args, messageId, deadline, relayer)
 	} else {
 		if ret.Get(0) != nil {
@@ -281,7 +281,7 @@ func (_m *CompassBinding) SubmitLogicCall(opts *bind.TransactOpts, consensus com
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*bind.TransactOpts, compass.Struct2, compass.Struct3, compass.Struct4, *big.Int, *big.Int, common.Address) error); ok {
+	if rf, ok := ret.Get(1).(func(*bind.TransactOpts, compass.Struct2, compass.Struct4, compass.Struct5, *big.Int, *big.Int, common.Address) error); ok {
 		r1 = rf(opts, consensus, args, fee_args, messageId, deadline, relayer)
 	} else {
 		r1 = ret.Error(1)

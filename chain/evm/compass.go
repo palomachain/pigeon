@@ -127,7 +127,7 @@ type CompassLogicCallArgs struct {
 	LogicContractAddress common.Address
 }
 
-type FeeArgs cabi.Struct4
+type FeeArgs cabi.Struct5
 
 type CompassTokenSendArgs struct {
 	Receiver []common.Address
@@ -280,6 +280,79 @@ func (t compass) submitLogicCall(
 	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args)
 	if err != nil {
 		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
+		if opts.estimateOnly == false {
+			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
+			if setErr != nil {
+				return nil, 0, setErr
+			}
+			if isSmartContractError {
+				logger.Debug("smart contract error. recovering...")
+				return nil, 0, nil
+			}
+		}
+
+		return nil, 0, err
+	}
+
+	return tx, valsetID, nil
+}
+
+func (t compass) compass_handover(
+	ctx context.Context,
+	queueTypeName string,
+	msg *evmtypes.CompassHandover,
+	origMessage chain.MessageWithSignatures,
+	ethSender common.Address,
+	estimate *big.Int,
+	opts callOptions,
+) (*ethtypes.Transaction, uint64, error) {
+	logger := liblog.WithContext(ctx).WithFields(log.Fields{
+		"chain-id": t.ChainReferenceID,
+		"msg-id":   origMessage.ID,
+	})
+	logger.Info("compass handover")
+
+	valsetID, err := t.performValsetIDCrosscheck(ctx, t.ChainReferenceID)
+	logger = logger.WithField("last-valset-id", valsetID)
+	if err != nil {
+		if errors.Is(err, errValsetIDMismatch) {
+			logger.Warn("Valset ID mismatch. Swallowing error to retry message...")
+			return nil, 0, nil
+		}
+
+		return nil, 0, err
+	}
+
+	valset, err := t.paloma.QueryGetEVMValsetByID(ctx, valsetID, t.ChainReferenceID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	consensusReached := isConsensusReached(ctx, valset, origMessage)
+	if !consensusReached {
+		return nil, 0, ErrNoConsensus
+	}
+
+	con := BuildCompassConsensus(valset, origMessage.Signatures)
+	compassArgs := slice.Map(msg.GetForwardCallArgs(), func(arg evmtypes.CompassHandover_ForwardCallArgs) CompassLogicCallArgs {
+		return CompassLogicCallArgs{arg.GetPayload(), common.HexToAddress(arg.GetHexContractAddress())}
+	})
+
+	// TODO: Use generated contract code directly
+	// compass 2.0.0
+	// def compass_update_batch(consensus: Consensus, update_compass_args: DynArray[LogicCallArgs, MAX_BATCH], deadline: uint256, gas_estimate: uint256, relayer: address):
+	args := []any{
+		con,
+		compassArgs,
+		new(big.Int).SetInt64(msg.GetDeadline()),
+		estimate,
+		ethSender,
+	}
+
+	logger.WithField("consensus", con).WithField("args", args).Debug("compass handover")
+	tx, err := t.callCompass(ctx, opts, "compass_update_batch", args)
+	if err != nil {
+		logger.WithError(err).Error("CompassHandover: error calling DeployContract")
 		if opts.estimateOnly == false {
 			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
 			if setErr != nil {
@@ -663,20 +736,30 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		var tx *ethtypes.Transaction
 		var valsetID uint64
 		msg := rawMsg.Msg.(*evmtypes.Message)
+		ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+		if err != nil {
+			return res, fmt.Errorf("failed to find assignee eth address: %w", err)
+		}
+
 		logger := logger.WithFields(log.Fields{
-			"chain-reference-id": t.ChainReferenceID,
-			"queue-name":         queueTypeName,
-			"msg-id":             rawMsg.ID,
-			"message-type":       fmt.Sprintf("%T", msg.GetAction()),
+			"message-type":           fmt.Sprintf("%T", msg.GetAction()),
+			"chain-reference-id":     t.ChainReferenceID,
+			"queue-name":             queueTypeName,
+			"msg-id":                 rawMsg.ID,
+			"msg-bytes-to-sign":      rawMsg.BytesToSign,
+			"msg-msg":                rawMsg.Msg,
+			"msg-nonce":              rawMsg.Nonce,
+			"msg-public-access-data": rawMsg.PublicAccessData,
+			"msg-eth-sender":         ethSender.String(),
 		})
 		logger.Debug("processing")
 
 		switch action := msg.GetAction().(type) {
 		case *evmtypes.Message_SubmitLogicCall:
-			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
-			if err != nil {
-				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
-			}
+			logger := logger.WithFields(log.Fields{
+				"message-type": "Message_SubmitLogicCall",
+			})
+			logger.Debug("switch-case-message-update-valset")
 
 			tx, valsetID, processingErr = t.submitLogicCall(
 				ctx,
@@ -687,20 +770,8 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				opts,
 			)
 		case *evmtypes.Message_UpdateValset:
-			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
-			if err != nil {
-				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
-			}
-
 			logger := logger.WithFields(log.Fields{
-				"chain-reference-id":     t.ChainReferenceID,
-				"queue-name":             queueTypeName,
-				"msg-id":                 rawMsg.ID,
-				"msg-bytes-to-sign":      rawMsg.BytesToSign,
-				"msg-msg":                rawMsg.Msg,
-				"msg-nonce":              rawMsg.Nonce,
-				"msg-public-access-data": rawMsg.PublicAccessData,
-				"message-type":           "Message_UpdateValset",
+				"message-type": "Message_UpdateValset",
 			})
 			logger.Debug("switch-case-message-update-valset")
 			tx, valsetID, processingErr = t.updateValset(
@@ -714,14 +785,7 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			)
 		case *evmtypes.Message_UploadSmartContract:
 			logger := logger.WithFields(log.Fields{
-				"chain-reference-id":     t.ChainReferenceID,
-				"queue-name":             queueTypeName,
-				"msg-id":                 rawMsg.ID,
-				"msg-bytes-to-sign":      rawMsg.BytesToSign,
-				"msg-msg":                rawMsg.Msg,
-				"msg-nonce":              rawMsg.Nonce,
-				"msg-public-access-data": rawMsg.PublicAccessData,
-				"message-type":           "Message_UploadSmartContract",
+				"message-type": "Message_UploadSmartContract",
 			})
 			logger.Debug("switch-case-message-upload-contract")
 			tx, processingErr = t.uploadSmartContract(
@@ -731,20 +795,8 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				rawMsg,
 			)
 		case *evmtypes.Message_UploadUserSmartContract:
-			ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
-			if err != nil {
-				return res, fmt.Errorf("failed to find assignee eth address: %w", err)
-			}
-
 			logger := logger.WithFields(log.Fields{
-				"chain-reference-id":     t.ChainReferenceID,
-				"queue-name":             queueTypeName,
-				"msg-id":                 rawMsg.ID,
-				"msg-bytes-to-sign":      rawMsg.BytesToSign,
-				"msg-msg":                rawMsg.Msg,
-				"msg-nonce":              rawMsg.Nonce,
-				"msg-public-access-data": rawMsg.PublicAccessData,
-				"message-type":           "Message_UploadUserSmartContract",
+				"message-type": "Message_UploadUserSmartContract",
 			})
 			logger.Debug("switch-case-message-upload-user-contract")
 
@@ -754,6 +806,21 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 				action.UploadUserSmartContract,
 				rawMsg,
 				ethSender,
+				opts,
+			)
+		case *evmtypes.Message_CompassHandover:
+			logger := logger.WithFields(log.Fields{
+				"message-type": "Message_CompassHandover",
+			})
+			logger.Debug("switch-case-message-upload-user-contract")
+
+			tx, valsetID, processingErr = t.compass_handover(
+				ctx,
+				queueTypeName,
+				action.CompassHandover,
+				rawMsg,
+				ethSender,
+				rawMsg.Estimate,
 				opts,
 			)
 		default:
