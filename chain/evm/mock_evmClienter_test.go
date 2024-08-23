@@ -357,13 +357,42 @@ func (_m *mockEvmClienter) TransactionByHash(ctx context.Context, txHash common.
 	return r0, r1, r2
 }
 
+// TransactionReceipt provides a mock function with given fields: ctx, txHash
+func (_m *mockEvmClienter) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	ret := _m.Called(ctx, txHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TransactionReceipt")
+	}
+
+	var r0 *types.Receipt
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash) (*types.Receipt, error)); ok {
+		return rf(ctx, txHash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash) *types.Receipt); ok {
+		r0 = rf(ctx, txHash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Receipt)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, common.Hash) error); ok {
+		r1 = rf(ctx, txHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // newMockEvmClienter creates a new instance of mockEvmClienter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func newMockEvmClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *mockEvmClienter {
+}) *mockEvmClienter {
 	mock := &mockEvmClienter{}
 	mock.Mock.Test(t)
 

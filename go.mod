@@ -22,7 +22,7 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/palomachain/paloma v1.3.1-next.0.20240816163105-fca35187f8e3
+	github.com/palomachain/paloma v1.3.1-next.0.20240822130154-5baf5f2629d3
 	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3

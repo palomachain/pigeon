@@ -357,7 +357,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -452,7 +452,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -589,7 +589,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -648,7 +648,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -745,7 +745,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -836,7 +836,7 @@ func TestMessageProcessing(t *testing.T) {
 									Abi:                []byte("abi"),
 									Payload:            []byte("payload"),
 									Deadline:           123,
-									Fees: &types.SubmitLogicCall_Fees{
+									Fees: &types.Fees{
 										RelayerFee:   50_000,
 										CommunityFee: 3_000,
 										SecurityFee:  1_000,
@@ -1416,22 +1416,6 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
-								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
-							},
-						},
-					},
-					nil,
-				)
 
 				evm.On("DeployContract", mock.Anything, chainID, string(StoredContracts()["simple"].Source), []byte("bytecode"), []byte("constructor input")).Return(nil, tx, nil)
 
@@ -1485,22 +1469,6 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
-								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
-							},
-						},
-					},
-					nil,
-				)
 				return evm, paloma
 			},
 		},
@@ -1536,22 +1504,6 @@ func TestMessageProcessing(t *testing.T) {
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(55),
-					},
-					nil,
-				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
-								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
-							},
-						},
 					},
 					nil,
 				)
@@ -1594,22 +1546,6 @@ func TestMessageProcessing(t *testing.T) {
 						Validators: []string{crypto.PubkeyToAddress(bobPK.PublicKey).Hex()},
 						Powers:     []uint64{testPowerThreshold + 1},
 						ValsetID:   uint64(55),
-					},
-					nil,
-				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
-								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
-							},
-						},
 					},
 					nil,
 				)

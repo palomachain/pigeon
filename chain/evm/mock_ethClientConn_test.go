@@ -459,13 +459,42 @@ func (_m *mockEthClientConn) TransactionByHash(ctx context.Context, hash common.
 	return r0, r1, r2
 }
 
+// TransactionReceipt provides a mock function with given fields: ctx, hash
+func (_m *mockEthClientConn) TransactionReceipt(ctx context.Context, hash common.Hash) (*types.Receipt, error) {
+	ret := _m.Called(ctx, hash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TransactionReceipt")
+	}
+
+	var r0 *types.Receipt
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash) (*types.Receipt, error)); ok {
+		return rf(ctx, hash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash) *types.Receipt); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Receipt)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, common.Hash) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // newMockEthClientConn creates a new instance of mockEthClientConn. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func newMockEthClientConn(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *mockEthClientConn {
+}) *mockEthClientConn {
 	mock := &mockEthClientConn{}
 	mock.Mock.Test(t)
 
