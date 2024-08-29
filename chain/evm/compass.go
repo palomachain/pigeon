@@ -736,7 +736,14 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		var tx *ethtypes.Transaction
 		var valsetID uint64
 		msg := rawMsg.Msg.(*evmtypes.Message)
-		ethSender, err := t.findAssigneeEthAddress(ctx, msg.Assignee)
+		ethSender, err := func() (common.Address, error) {
+			// Do not retrieve eth sender for UploadSmartContract messages
+			switch msg.GetAction().(type) {
+			case *evmtypes.Message_UploadSmartContract:
+				return common.Address{}, nil
+			}
+			return t.findAssigneeEthAddress(ctx, msg.Assignee)
+		}()
 		if err != nil {
 			return res, fmt.Errorf("failed to find assignee eth address: %w", err)
 		}
