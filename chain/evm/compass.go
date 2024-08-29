@@ -338,6 +338,11 @@ func (t compass) compass_handover(
 		return CompassLogicCallArgs{arg.GetPayload(), common.HexToAddress(arg.GetHexContractAddress())}
 	})
 
+	if opts.estimateOnly {
+		// Simulate maximum gas estimate to ensure the transaction is not rejected
+		estimate = big.NewInt(0).SetUint64(cConservativeDummyGasEstimate)
+	}
+
 	// TODO: Use generated contract code directly
 	// compass 2.0.0
 	// def compass_update_batch(consensus: Consensus, update_compass_args: DynArray[LogicCallArgs, MAX_BATCH], deadline: uint256, gas_estimate: uint256, relayer: address):
