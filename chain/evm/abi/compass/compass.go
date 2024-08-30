@@ -35,14 +35,14 @@ type Struct2 struct {
 	Signatures []Struct1
 }
 
-// Struct3 is an auto generated low-level Go binding around an user-defined struct.
-type Struct3 struct {
+// Struct4 is an auto generated low-level Go binding around an user-defined struct.
+type Struct4 struct {
 	LogicContractAddress common.Address
 	Payload              []byte
 }
 
-// Struct5 is an auto generated low-level Go binding around an user-defined struct.
-type Struct5 struct {
+// Struct3 is an auto generated low-level Go binding around an user-defined struct.
+type Struct3 struct {
 	Receiver []common.Address
 	Amount   []*big.Int
 }
@@ -61,8 +61,8 @@ type Struct1 struct {
 	S *big.Int
 }
 
-// Struct4 is an auto generated low-level Go binding around an user-defined struct.
-type Struct4 struct {
+// Struct5 is an auto generated low-level Go binding around an user-defined struct.
+type Struct5 struct {
 	RelayerFee            *big.Int
 	CommunityFee          *big.Int
 	SecurityFee           *big.Int
@@ -71,7 +71,7 @@ type Struct4 struct {
 
 // CompassMetaData contains all meta data concerning the Compass contract.
 var CompassMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"checkpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"valset_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"ValsetUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"payload\",\"type\":\"bytes\"},{\"indexed\":false,\"name\":\"message_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"LogicCallEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"receiver\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"SendToPalomaEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"batch_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"BatchSendEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"paloma_denom\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"token_contract\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"name\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"symbol\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"decimals\",\"type\":\"uint8\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"ERC20DeployedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"depositor_paloma_address\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsDepositedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsWithdrawnEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"new_compass\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"UpdateCompassAddressInFeeManager\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"paloma\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"node_count\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"grain_amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"NodeSaleEvent\",\"type\":\"event\"},{\"inputs\":[{\"name\":\"_compass_id\",\"type\":\"bytes32\"},{\"name\":\"_event_id\",\"type\":\"uint256\"},{\"name\":\"_gravity_nonce\",\"type\":\"uint256\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"name\":\"fee_manager\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"new_valset\",\"type\":\"tuple\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"}],\"name\":\"update_valset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"relayer_fee\",\"type\":\"uint256\"},{\"name\":\"community_fee\",\"type\":\"uint256\"},{\"name\":\"security_fee\",\"type\":\"uint256\"},{\"name\":\"fee_payer_paloma_address\",\"type\":\"bytes32\"}],\"name\":\"fee_args\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"}],\"name\":\"submit_logic_call\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"receiver\",\"type\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"send_token_to_paloma\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"token\",\"type\":\"address\"},{\"components\":[{\"name\":\"receiver\",\"type\":\"address[]\"},{\"name\":\"amount\",\"type\":\"uint256[]\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"name\":\"batch_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"}],\"name\":\"submit_batch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"buyer\",\"type\":\"address\"},{\"name\":\"paloma\",\"type\":\"bytes32\"},{\"name\":\"node_count\",\"type\":\"uint256\"},{\"name\":\"grain_amount\",\"type\":\"uint256\"}],\"name\":\"emit_nodesale_event\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_paloma_denom\",\"type\":\"string\"},{\"name\":\"_name\",\"type\":\"string\"},{\"name\":\"_symbol\",\"type\":\"string\"},{\"name\":\"_decimals\",\"type\":\"uint8\"},{\"name\":\"_blueprint\",\"type\":\"address\"}],\"name\":\"deploy_erc20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"arbitrary_view\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"depositor_paloma_address\",\"type\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"dex\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"min_grain\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"security_fee_topup\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"receiver\",\"type\":\"bytes32\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"dex\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"min_grain\",\"type\":\"uint256\"}],\"name\":\"bridge_community_tax_to_paloma\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"},{\"name\":\"_new_compass\",\"type\":\"address\"},{\"name\":\"relayer\",\"type\":\"address\"}],\"name\":\"update_compass_address_in_fee_manager\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"compass_id\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_checkpoint\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_valset_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_event_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_gravity_nonce\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"arg0\",\"type\":\"address\"}],\"name\":\"last_batch_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"arg0\",\"type\":\"uint256\"}],\"name\":\"message_id_used\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"slc_switch\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FEE_MANAGER\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"checkpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"valset_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"ValsetUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"payload\",\"type\":\"bytes\"},{\"indexed\":false,\"name\":\"message_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"LogicCallEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"receiver\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"SendToPalomaEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"batch_id\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"BatchSendEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"paloma_denom\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"token_contract\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"name\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"symbol\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"decimals\",\"type\":\"uint8\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"ERC20DeployedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"depositor_paloma_address\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsDepositedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FundsWithdrawnEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"payload\",\"type\":\"bytes\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"UpdateCompass\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"contract_address\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"paloma\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"node_count\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"grain_amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"NodeSaleEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"child\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"deployer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"event_id\",\"type\":\"uint256\"}],\"name\":\"ContractDeployed\",\"type\":\"event\"},{\"inputs\":[{\"name\":\"_compass_id\",\"type\":\"bytes32\"},{\"name\":\"_event_id\",\"type\":\"uint256\"},{\"name\":\"_gravity_nonce\",\"type\":\"uint256\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"name\":\"fee_manager\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"new_valset\",\"type\":\"tuple\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"}],\"name\":\"update_valset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"relayer_fee\",\"type\":\"uint256\"},{\"name\":\"community_fee\",\"type\":\"uint256\"},{\"name\":\"security_fee\",\"type\":\"uint256\"},{\"name\":\"fee_payer_paloma_address\",\"type\":\"bytes32\"}],\"name\":\"fee_args\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"}],\"name\":\"submit_logic_call\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"receiver\",\"type\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"send_token_to_paloma\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"token\",\"type\":\"address\"},{\"components\":[{\"name\":\"receiver\",\"type\":\"address[]\"},{\"name\":\"amount\",\"type\":\"uint256[]\"}],\"name\":\"args\",\"type\":\"tuple\"},{\"name\":\"batch_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"}],\"name\":\"submit_batch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"buyer\",\"type\":\"address\"},{\"name\":\"paloma\",\"type\":\"bytes32\"},{\"name\":\"node_count\",\"type\":\"uint256\"},{\"name\":\"grain_amount\",\"type\":\"uint256\"}],\"name\":\"emit_nodesale_event\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_paloma_denom\",\"type\":\"string\"},{\"name\":\"_name\",\"type\":\"string\"},{\"name\":\"_symbol\",\"type\":\"string\"},{\"name\":\"_decimals\",\"type\":\"uint8\"},{\"name\":\"_blueprint\",\"type\":\"address\"}],\"name\":\"deploy_erc20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"arbitrary_view\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"depositor_paloma_address\",\"type\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"dex\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"min_grain\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"security_fee_topup\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"receiver\",\"type\":\"bytes32\"},{\"name\":\"relayer\",\"type\":\"address\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"dex\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"min_grain\",\"type\":\"uint256\"}],\"name\":\"bridge_community_tax_to_paloma\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"logic_contract_address\",\"type\":\"address\"},{\"name\":\"payload\",\"type\":\"bytes\"}],\"name\":\"update_compass_args\",\"type\":\"tuple[]\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"gas_estimate\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"}],\"name\":\"compass_update_batch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"name\":\"validators\",\"type\":\"address[]\"},{\"name\":\"powers\",\"type\":\"uint256[]\"},{\"name\":\"valset_id\",\"type\":\"uint256\"}],\"name\":\"valset\",\"type\":\"tuple\"},{\"components\":[{\"name\":\"v\",\"type\":\"uint256\"},{\"name\":\"r\",\"type\":\"uint256\"},{\"name\":\"s\",\"type\":\"uint256\"}],\"name\":\"signatures\",\"type\":\"tuple[]\"}],\"name\":\"consensus\",\"type\":\"tuple\"},{\"name\":\"_deployer\",\"type\":\"address\"},{\"name\":\"_bytecode\",\"type\":\"bytes\"},{\"components\":[{\"name\":\"relayer_fee\",\"type\":\"uint256\"},{\"name\":\"community_fee\",\"type\":\"uint256\"},{\"name\":\"security_fee\",\"type\":\"uint256\"},{\"name\":\"fee_payer_paloma_address\",\"type\":\"bytes32\"}],\"name\":\"fee_args\",\"type\":\"tuple\"},{\"name\":\"message_id\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"relayer\",\"type\":\"address\"}],\"name\":\"deploy_contract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"compass_id\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_checkpoint\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_valset_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_event_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"last_gravity_nonce\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"arg0\",\"type\":\"address\"}],\"name\":\"last_batch_id\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"arg0\",\"type\":\"uint256\"}],\"name\":\"message_id_used\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"slc_switch\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FEE_MANAGER\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // CompassABI is the input ABI used to generate the binding from.
@@ -531,6 +531,48 @@ func (_Compass *CompassTransactorSession) BridgeCommunityTaxToPaloma(consensus S
 	return _Compass.Contract.BridgeCommunityTaxToPaloma(&_Compass.TransactOpts, consensus, message_id, deadline, receiver, relayer, gas_estimate, amount, dex, payload, min_grain)
 }
 
+// CompassUpdateBatch is a paid mutator transaction binding the contract method 0x08d2b3e3.
+//
+// Solidity: function compass_update_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes)[] update_compass_args, uint256 deadline, uint256 gas_estimate, address relayer) returns()
+func (_Compass *CompassTransactor) CompassUpdateBatch(opts *bind.TransactOpts, consensus Struct2, update_compass_args []Struct4, deadline *big.Int, gas_estimate *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.contract.Transact(opts, "compass_update_batch", consensus, update_compass_args, deadline, gas_estimate, relayer)
+}
+
+// CompassUpdateBatch is a paid mutator transaction binding the contract method 0x08d2b3e3.
+//
+// Solidity: function compass_update_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes)[] update_compass_args, uint256 deadline, uint256 gas_estimate, address relayer) returns()
+func (_Compass *CompassSession) CompassUpdateBatch(consensus Struct2, update_compass_args []Struct4, deadline *big.Int, gas_estimate *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.Contract.CompassUpdateBatch(&_Compass.TransactOpts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+}
+
+// CompassUpdateBatch is a paid mutator transaction binding the contract method 0x08d2b3e3.
+//
+// Solidity: function compass_update_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes)[] update_compass_args, uint256 deadline, uint256 gas_estimate, address relayer) returns()
+func (_Compass *CompassTransactorSession) CompassUpdateBatch(consensus Struct2, update_compass_args []Struct4, deadline *big.Int, gas_estimate *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.Contract.CompassUpdateBatch(&_Compass.TransactOpts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+}
+
+// DeployContract is a paid mutator transaction binding the contract method 0x61baeb63.
+//
+// Solidity: function deploy_contract(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address _deployer, bytes _bytecode, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
+func (_Compass *CompassTransactor) DeployContract(opts *bind.TransactOpts, consensus Struct2, _deployer common.Address, _bytecode []byte, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.contract.Transact(opts, "deploy_contract", consensus, _deployer, _bytecode, fee_args, message_id, deadline, relayer)
+}
+
+// DeployContract is a paid mutator transaction binding the contract method 0x61baeb63.
+//
+// Solidity: function deploy_contract(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address _deployer, bytes _bytecode, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
+func (_Compass *CompassSession) DeployContract(consensus Struct2, _deployer common.Address, _bytecode []byte, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.Contract.DeployContract(&_Compass.TransactOpts, consensus, _deployer, _bytecode, fee_args, message_id, deadline, relayer)
+}
+
+// DeployContract is a paid mutator transaction binding the contract method 0x61baeb63.
+//
+// Solidity: function deploy_contract(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address _deployer, bytes _bytecode, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
+func (_Compass *CompassTransactorSession) DeployContract(consensus Struct2, _deployer common.Address, _bytecode []byte, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+	return _Compass.Contract.DeployContract(&_Compass.TransactOpts, consensus, _deployer, _bytecode, fee_args, message_id, deadline, relayer)
+}
+
 // DeployErc20 is a paid mutator transaction binding the contract method 0x08a92ad7.
 //
 // Solidity: function deploy_erc20(string _paloma_denom, string _name, string _symbol, uint8 _decimals, address _blueprint) returns()
@@ -639,64 +681,43 @@ func (_Compass *CompassTransactorSession) SendTokenToPaloma(token common.Address
 // SubmitBatch is a paid mutator transaction binding the contract method 0x14fe978f.
 //
 // Solidity: function submit_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address token, (address[],uint256[]) args, uint256 batch_id, uint256 deadline, address relayer, uint256 gas_estimate) returns()
-func (_Compass *CompassTransactor) SubmitBatch(opts *bind.TransactOpts, consensus Struct2, token common.Address, args Struct5, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
+func (_Compass *CompassTransactor) SubmitBatch(opts *bind.TransactOpts, consensus Struct2, token common.Address, args Struct3, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
 	return _Compass.contract.Transact(opts, "submit_batch", consensus, token, args, batch_id, deadline, relayer, gas_estimate)
 }
 
 // SubmitBatch is a paid mutator transaction binding the contract method 0x14fe978f.
 //
 // Solidity: function submit_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address token, (address[],uint256[]) args, uint256 batch_id, uint256 deadline, address relayer, uint256 gas_estimate) returns()
-func (_Compass *CompassSession) SubmitBatch(consensus Struct2, token common.Address, args Struct5, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
+func (_Compass *CompassSession) SubmitBatch(consensus Struct2, token common.Address, args Struct3, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
 	return _Compass.Contract.SubmitBatch(&_Compass.TransactOpts, consensus, token, args, batch_id, deadline, relayer, gas_estimate)
 }
 
 // SubmitBatch is a paid mutator transaction binding the contract method 0x14fe978f.
 //
 // Solidity: function submit_batch(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, address token, (address[],uint256[]) args, uint256 batch_id, uint256 deadline, address relayer, uint256 gas_estimate) returns()
-func (_Compass *CompassTransactorSession) SubmitBatch(consensus Struct2, token common.Address, args Struct5, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
+func (_Compass *CompassTransactorSession) SubmitBatch(consensus Struct2, token common.Address, args Struct3, batch_id *big.Int, deadline *big.Int, relayer common.Address, gas_estimate *big.Int) (*types.Transaction, error) {
 	return _Compass.Contract.SubmitBatch(&_Compass.TransactOpts, consensus, token, args, batch_id, deadline, relayer, gas_estimate)
 }
 
 // SubmitLogicCall is a paid mutator transaction binding the contract method 0xa930e8dc.
 //
 // Solidity: function submit_logic_call(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes) args, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
-func (_Compass *CompassTransactor) SubmitLogicCall(opts *bind.TransactOpts, consensus Struct2, args Struct3, fee_args Struct4, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+func (_Compass *CompassTransactor) SubmitLogicCall(opts *bind.TransactOpts, consensus Struct2, args Struct4, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
 	return _Compass.contract.Transact(opts, "submit_logic_call", consensus, args, fee_args, message_id, deadline, relayer)
 }
 
 // SubmitLogicCall is a paid mutator transaction binding the contract method 0xa930e8dc.
 //
 // Solidity: function submit_logic_call(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes) args, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
-func (_Compass *CompassSession) SubmitLogicCall(consensus Struct2, args Struct3, fee_args Struct4, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+func (_Compass *CompassSession) SubmitLogicCall(consensus Struct2, args Struct4, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
 	return _Compass.Contract.SubmitLogicCall(&_Compass.TransactOpts, consensus, args, fee_args, message_id, deadline, relayer)
 }
 
 // SubmitLogicCall is a paid mutator transaction binding the contract method 0xa930e8dc.
 //
 // Solidity: function submit_logic_call(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, (address,bytes) args, (uint256,uint256,uint256,bytes32) fee_args, uint256 message_id, uint256 deadline, address relayer) returns()
-func (_Compass *CompassTransactorSession) SubmitLogicCall(consensus Struct2, args Struct3, fee_args Struct4, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
+func (_Compass *CompassTransactorSession) SubmitLogicCall(consensus Struct2, args Struct4, fee_args Struct5, message_id *big.Int, deadline *big.Int, relayer common.Address) (*types.Transaction, error) {
 	return _Compass.Contract.SubmitLogicCall(&_Compass.TransactOpts, consensus, args, fee_args, message_id, deadline, relayer)
-}
-
-// UpdateCompassAddressInFeeManager is a paid mutator transaction binding the contract method 0x120e8ddd.
-//
-// Solidity: function update_compass_address_in_fee_manager(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, uint256 deadline, uint256 gas_estimate, address _new_compass, address relayer) returns()
-func (_Compass *CompassTransactor) UpdateCompassAddressInFeeManager(opts *bind.TransactOpts, consensus Struct2, deadline *big.Int, gas_estimate *big.Int, _new_compass common.Address, relayer common.Address) (*types.Transaction, error) {
-	return _Compass.contract.Transact(opts, "update_compass_address_in_fee_manager", consensus, deadline, gas_estimate, _new_compass, relayer)
-}
-
-// UpdateCompassAddressInFeeManager is a paid mutator transaction binding the contract method 0x120e8ddd.
-//
-// Solidity: function update_compass_address_in_fee_manager(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, uint256 deadline, uint256 gas_estimate, address _new_compass, address relayer) returns()
-func (_Compass *CompassSession) UpdateCompassAddressInFeeManager(consensus Struct2, deadline *big.Int, gas_estimate *big.Int, _new_compass common.Address, relayer common.Address) (*types.Transaction, error) {
-	return _Compass.Contract.UpdateCompassAddressInFeeManager(&_Compass.TransactOpts, consensus, deadline, gas_estimate, _new_compass, relayer)
-}
-
-// UpdateCompassAddressInFeeManager is a paid mutator transaction binding the contract method 0x120e8ddd.
-//
-// Solidity: function update_compass_address_in_fee_manager(((address[],uint256[],uint256),(uint256,uint256,uint256)[]) consensus, uint256 deadline, uint256 gas_estimate, address _new_compass, address relayer) returns()
-func (_Compass *CompassTransactorSession) UpdateCompassAddressInFeeManager(consensus Struct2, deadline *big.Int, gas_estimate *big.Int, _new_compass common.Address, relayer common.Address) (*types.Transaction, error) {
-	return _Compass.Contract.UpdateCompassAddressInFeeManager(&_Compass.TransactOpts, consensus, deadline, gas_estimate, _new_compass, relayer)
 }
 
 // UpdateValset is a paid mutator transaction binding the contract method 0xf064acb2.
@@ -870,6 +891,140 @@ func (_Compass *CompassFilterer) WatchBatchSendEvent(opts *bind.WatchOpts, sink 
 func (_Compass *CompassFilterer) ParseBatchSendEvent(log types.Log) (*CompassBatchSendEvent, error) {
 	event := new(CompassBatchSendEvent)
 	if err := _Compass.contract.UnpackLog(event, "BatchSendEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CompassContractDeployedIterator is returned from FilterContractDeployed and is used to iterate over the raw logs and unpacked data for ContractDeployed events raised by the Compass contract.
+type CompassContractDeployedIterator struct {
+	Event *CompassContractDeployed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CompassContractDeployedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CompassContractDeployed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CompassContractDeployed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CompassContractDeployedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CompassContractDeployedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CompassContractDeployed represents a ContractDeployed event raised by the Compass contract.
+type CompassContractDeployed struct {
+	Child    common.Address
+	Deployer common.Address
+	EventId  *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterContractDeployed is a free log retrieval operation binding the contract event 0xac4ce915ef22753b636e57aac5ae5fdd9d13d782ae5bf6dbcda15e29f95386c1.
+//
+// Solidity: event ContractDeployed(address child, address deployer, uint256 event_id)
+func (_Compass *CompassFilterer) FilterContractDeployed(opts *bind.FilterOpts) (*CompassContractDeployedIterator, error) {
+	logs, sub, err := _Compass.contract.FilterLogs(opts, "ContractDeployed")
+	if err != nil {
+		return nil, err
+	}
+	return &CompassContractDeployedIterator{contract: _Compass.contract, event: "ContractDeployed", logs: logs, sub: sub}, nil
+}
+
+// WatchContractDeployed is a free log subscription operation binding the contract event 0xac4ce915ef22753b636e57aac5ae5fdd9d13d782ae5bf6dbcda15e29f95386c1.
+//
+// Solidity: event ContractDeployed(address child, address deployer, uint256 event_id)
+func (_Compass *CompassFilterer) WatchContractDeployed(opts *bind.WatchOpts, sink chan<- *CompassContractDeployed) (event.Subscription, error) {
+	logs, sub, err := _Compass.contract.WatchLogs(opts, "ContractDeployed")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CompassContractDeployed)
+				if err := _Compass.contract.UnpackLog(event, "ContractDeployed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseContractDeployed is a log parse operation binding the contract event 0xac4ce915ef22753b636e57aac5ae5fdd9d13d782ae5bf6dbcda15e29f95386c1.
+//
+// Solidity: event ContractDeployed(address child, address deployer, uint256 event_id)
+func (_Compass *CompassFilterer) ParseContractDeployed(log types.Log) (*CompassContractDeployed, error) {
+	event := new(CompassContractDeployed)
+	if err := _Compass.contract.UnpackLog(event, "ContractDeployed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1690,9 +1845,9 @@ func (_Compass *CompassFilterer) ParseSendToPalomaEvent(log types.Log) (*Compass
 	return event, nil
 }
 
-// CompassUpdateCompassAddressInFeeManagerIterator is returned from FilterUpdateCompassAddressInFeeManager and is used to iterate over the raw logs and unpacked data for UpdateCompassAddressInFeeManager events raised by the Compass contract.
-type CompassUpdateCompassAddressInFeeManagerIterator struct {
-	Event *CompassUpdateCompassAddressInFeeManager // Event containing the contract specifics and raw log
+// CompassUpdateCompassIterator is returned from FilterUpdateCompass and is used to iterate over the raw logs and unpacked data for UpdateCompass events raised by the Compass contract.
+type CompassUpdateCompassIterator struct {
+	Event *CompassUpdateCompass // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1706,7 +1861,7 @@ type CompassUpdateCompassAddressInFeeManagerIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CompassUpdateCompassAddressInFeeManagerIterator) Next() bool {
+func (it *CompassUpdateCompassIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1715,7 +1870,7 @@ func (it *CompassUpdateCompassAddressInFeeManagerIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CompassUpdateCompassAddressInFeeManager)
+			it.Event = new(CompassUpdateCompass)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1730,7 +1885,7 @@ func (it *CompassUpdateCompassAddressInFeeManagerIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CompassUpdateCompassAddressInFeeManager)
+		it.Event = new(CompassUpdateCompass)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1746,40 +1901,41 @@ func (it *CompassUpdateCompassAddressInFeeManagerIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CompassUpdateCompassAddressInFeeManagerIterator) Error() error {
+func (it *CompassUpdateCompassIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CompassUpdateCompassAddressInFeeManagerIterator) Close() error {
+func (it *CompassUpdateCompassIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CompassUpdateCompassAddressInFeeManager represents a UpdateCompassAddressInFeeManager event raised by the Compass contract.
-type CompassUpdateCompassAddressInFeeManager struct {
-	NewCompass common.Address
-	EventId    *big.Int
-	Raw        types.Log // Blockchain specific contextual infos
+// CompassUpdateCompass represents a UpdateCompass event raised by the Compass contract.
+type CompassUpdateCompass struct {
+	ContractAddress common.Address
+	Payload         []byte
+	EventId         *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterUpdateCompassAddressInFeeManager is a free log retrieval operation binding the contract event 0x0662fa994447aee93c78fd46a6801f664461ecbba2af6c5a0a6aecbc955835fc.
+// FilterUpdateCompass is a free log retrieval operation binding the contract event 0xdf4a952cd86acf74a1c5b1d3ff176de7e23a76082d0169d1925e1b32f3cf36e0.
 //
-// Solidity: event UpdateCompassAddressInFeeManager(address new_compass, uint256 event_id)
-func (_Compass *CompassFilterer) FilterUpdateCompassAddressInFeeManager(opts *bind.FilterOpts) (*CompassUpdateCompassAddressInFeeManagerIterator, error) {
-	logs, sub, err := _Compass.contract.FilterLogs(opts, "UpdateCompassAddressInFeeManager")
+// Solidity: event UpdateCompass(address contract_address, bytes payload, uint256 event_id)
+func (_Compass *CompassFilterer) FilterUpdateCompass(opts *bind.FilterOpts) (*CompassUpdateCompassIterator, error) {
+	logs, sub, err := _Compass.contract.FilterLogs(opts, "UpdateCompass")
 	if err != nil {
 		return nil, err
 	}
-	return &CompassUpdateCompassAddressInFeeManagerIterator{contract: _Compass.contract, event: "UpdateCompassAddressInFeeManager", logs: logs, sub: sub}, nil
+	return &CompassUpdateCompassIterator{contract: _Compass.contract, event: "UpdateCompass", logs: logs, sub: sub}, nil
 }
 
-// WatchUpdateCompassAddressInFeeManager is a free log subscription operation binding the contract event 0x0662fa994447aee93c78fd46a6801f664461ecbba2af6c5a0a6aecbc955835fc.
+// WatchUpdateCompass is a free log subscription operation binding the contract event 0xdf4a952cd86acf74a1c5b1d3ff176de7e23a76082d0169d1925e1b32f3cf36e0.
 //
-// Solidity: event UpdateCompassAddressInFeeManager(address new_compass, uint256 event_id)
-func (_Compass *CompassFilterer) WatchUpdateCompassAddressInFeeManager(opts *bind.WatchOpts, sink chan<- *CompassUpdateCompassAddressInFeeManager) (event.Subscription, error) {
-	logs, sub, err := _Compass.contract.WatchLogs(opts, "UpdateCompassAddressInFeeManager")
+// Solidity: event UpdateCompass(address contract_address, bytes payload, uint256 event_id)
+func (_Compass *CompassFilterer) WatchUpdateCompass(opts *bind.WatchOpts, sink chan<- *CompassUpdateCompass) (event.Subscription, error) {
+	logs, sub, err := _Compass.contract.WatchLogs(opts, "UpdateCompass")
 	if err != nil {
 		return nil, err
 	}
@@ -1789,8 +1945,8 @@ func (_Compass *CompassFilterer) WatchUpdateCompassAddressInFeeManager(opts *bin
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CompassUpdateCompassAddressInFeeManager)
-				if err := _Compass.contract.UnpackLog(event, "UpdateCompassAddressInFeeManager", log); err != nil {
+				event := new(CompassUpdateCompass)
+				if err := _Compass.contract.UnpackLog(event, "UpdateCompass", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1811,12 +1967,12 @@ func (_Compass *CompassFilterer) WatchUpdateCompassAddressInFeeManager(opts *bin
 	}), nil
 }
 
-// ParseUpdateCompassAddressInFeeManager is a log parse operation binding the contract event 0x0662fa994447aee93c78fd46a6801f664461ecbba2af6c5a0a6aecbc955835fc.
+// ParseUpdateCompass is a log parse operation binding the contract event 0xdf4a952cd86acf74a1c5b1d3ff176de7e23a76082d0169d1925e1b32f3cf36e0.
 //
-// Solidity: event UpdateCompassAddressInFeeManager(address new_compass, uint256 event_id)
-func (_Compass *CompassFilterer) ParseUpdateCompassAddressInFeeManager(log types.Log) (*CompassUpdateCompassAddressInFeeManager, error) {
-	event := new(CompassUpdateCompassAddressInFeeManager)
-	if err := _Compass.contract.UnpackLog(event, "UpdateCompassAddressInFeeManager", log); err != nil {
+// Solidity: event UpdateCompass(address contract_address, bytes payload, uint256 event_id)
+func (_Compass *CompassFilterer) ParseUpdateCompass(log types.Log) (*CompassUpdateCompass, error) {
+	event := new(CompassUpdateCompass)
+	if err := _Compass.contract.UnpackLog(event, "UpdateCompass", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

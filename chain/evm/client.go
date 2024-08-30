@@ -160,8 +160,9 @@ type CompassBindingCaller interface {
 }
 
 type CompassBindingTransactor interface {
-	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct3, fee_args compassABI.Struct4, messageId *big.Int, deadline *big.Int, relayer common.Address) (*ethtypes.Transaction, error)
+	SubmitLogicCall(opts *bind.TransactOpts, consensus compassABI.Struct2, args compassABI.Struct4, fee_args compassABI.Struct5, messageId *big.Int, deadline *big.Int, relayer common.Address) (*ethtypes.Transaction, error)
 	UpdateValset(opts *bind.TransactOpts, consensus compassABI.Struct2, newValset compassABI.Struct0, relayer common.Address, gas_estimate *big.Int) (*ethtypes.Transaction, error)
+	CompassUpdateBatch(opts *bind.TransactOpts, consensus compassABI.Struct2, update_compass_args []compassABI.Struct4, deadline *big.Int, gas_estimate *big.Int, relayer common.Address) (*ethtypes.Transaction, error)
 }
 
 type CompassBindingFilterer interface {
