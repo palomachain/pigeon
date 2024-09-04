@@ -70,6 +70,10 @@ var (
 		return tx
 	}()
 
+	sampleReceiptTx1 = &ethtypes.Receipt{
+		Status: ethtypes.ReceiptStatusSuccessful,
+	}
+
 	eventIdAtomic = atomic.Int64{}
 )
 
@@ -1915,9 +1919,14 @@ func TestProvidingEvidenceForAMessage(t *testing.T) {
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
 				evm.On("TransactionByHash", mock.Anything, mock.Anything).Return(sampleTx1, false, nil)
+				evm.On("TransactionReceipt", mock.Anything, mock.Anything).
+					Return(sampleReceiptTx1, nil)
 
 				paloma.On("AddMessageEvidence", mock.Anything, queue.QueueSuffixTurnstone, uint64(555),
-					&types.TxExecutedProof{SerializedTX: whoops.Must(sampleTx1.MarshalBinary())},
+					&types.TxExecutedProof{
+						SerializedTX:      whoops.Must(sampleTx1.MarshalBinary()),
+						SerializedReceipt: whoops.Must(sampleReceiptTx1.MarshalBinary()),
+					},
 				).Return(
 					nil,
 				)
