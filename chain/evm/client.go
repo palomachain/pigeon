@@ -351,15 +351,18 @@ func callSmartContract(
 		logger.WithFields(log.Fields{
 			"gas-limit": gasLimit,
 		}).Debug("estimated gas limit")
-		txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
 
 		// In case we only want to estimate, now is the time to return.
 		if args.opts.estimateOnly {
 			return ethtypes.NewTx(
 				&ethtypes.LegacyTx{
-					Gas: txOpts.GasLimit,
+					Gas: gasLimit,
 				})
 		}
+
+		// Once estimation is finished, we adjust the gas limit
+		// to be sure that the tx will be included in the next block.
+		txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
 
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
