@@ -1238,23 +1238,16 @@ func (t compass) provideTxProof(ctx context.Context, queueTypeName string, rawMs
 
 	var serializedReceipt []byte
 
-	msg, ok := rawMsg.Msg.(*evmtypes.Message)
-	// If this is a turnstone message, we may need additional info
-	if ok {
-		switch msg.GetAction().(type) {
-		case *evmtypes.Message_UploadUserSmartContract:
-			// For UserUploadSmartContract messages, we need the transaction
-			// receipt, so that paloma can use the generated events to get the
-			// contract address
-			receipt, err := t.evm.TransactionReceipt(ctx, tx.Hash())
-			if err != nil {
-				return err
-			}
+	// If this is a turnstone message, we need to get the tx receipt
+	if _, ok := rawMsg.Msg.(*evmtypes.Message); ok {
+		receipt, err := t.evm.TransactionReceipt(ctx, tx.Hash())
+		if err != nil {
+			return err
+		}
 
-			serializedReceipt, err = receipt.MarshalBinary()
-			if err != nil {
-				return err
-			}
+		serializedReceipt, err = receipt.MarshalBinary()
+		if err != nil {
+			return err
 		}
 	}
 
