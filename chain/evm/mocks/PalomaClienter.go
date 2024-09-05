@@ -149,6 +149,36 @@ func (_m *PalomaClienter) QueryGetLatestPublishedSnapshot(ctx context.Context, c
 	return r0, r1
 }
 
+// QueryGetSnapshotByID provides a mock function with given fields: ctx, id
+func (_m *PalomaClienter) QueryGetSnapshotByID(ctx context.Context, id uint64) (*valsettypes.Snapshot, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for QueryGetSnapshotByID")
+	}
+
+	var r0 *valsettypes.Snapshot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) (*valsettypes.Snapshot, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) *valsettypes.Snapshot); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*valsettypes.Snapshot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // QueryLastObservedSkywayNonceByAddr provides a mock function with given fields: ctx, chainReferenceID, orchestrator
 func (_m *PalomaClienter) QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error) {
 	ret := _m.Called(ctx, chainReferenceID, orchestrator)
@@ -272,7 +302,8 @@ func (_m *PalomaClienter) SetPublicAccessData(ctx context.Context, queueTypeName
 func NewPalomaClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *PalomaClienter {
+},
+) *PalomaClienter {
 	mock := &PalomaClienter{}
 	mock.Mock.Test(t)
 

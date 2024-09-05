@@ -161,7 +161,7 @@ func TestExecutingSmartContract(t *testing.T) {
 				args.ethClient = ethMock
 				args.opts.estimateOnly = true
 			},
-			expectedEstimated: &([]uint64{333})[0], // afford for 1.5 multiplier
+			expectedEstimated: &([]uint64{222})[0], // will not be with the 1.5 multiplier safety margin
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1601,12 +1601,12 @@ func (t compass) performValsetIDCrosscheck(ctx context.Context, chainReferenceID
 func (t compass) findAssigneeEthAddress(ctx context.Context,
 	palomaAddress string,
 ) (common.Address, error) {
-	valset, err := t.paloma.QueryGetLatestPublishedSnapshot(ctx, t.ChainReferenceID)
+	snapshot, err := t.paloma.QueryGetSnapshotByID(ctx, 0)
 	if err != nil {
 		return common.Address{}, err
 	}
 
-	for _, v := range valset.Validators {
+	for _, v := range snapshot.Validators {
 		if v.Address.String() == palomaAddress {
 			for _, ci := range v.ExternalChainInfos {
 				if ci.ChainReferenceID == t.ChainReferenceID {
