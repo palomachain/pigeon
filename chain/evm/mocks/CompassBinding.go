@@ -52,6 +52,36 @@ func (_m *CompassBinding) CompassId(opts *bind.CallOpts) ([32]byte, error) {
 	return r0, r1
 }
 
+// CompassUpdateBatch provides a mock function with given fields: opts, consensus, update_compass_args, deadline, gas_estimate, relayer
+func (_m *CompassBinding) CompassUpdateBatch(opts *bind.TransactOpts, consensus compass.Struct2, update_compass_args []compass.Struct4, deadline *big.Int, gas_estimate *big.Int, relayer common.Address) (*types.Transaction, error) {
+	ret := _m.Called(opts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompassUpdateBatch")
+	}
+
+	var r0 *types.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, []compass.Struct4, *big.Int, *big.Int, common.Address) (*types.Transaction, error)); ok {
+		return rf(opts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+	}
+	if rf, ok := ret.Get(0).(func(*bind.TransactOpts, compass.Struct2, []compass.Struct4, *big.Int, *big.Int, common.Address) *types.Transaction); ok {
+		r0 = rf(opts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*bind.TransactOpts, compass.Struct2, []compass.Struct4, *big.Int, *big.Int, common.Address) error); ok {
+		r1 = rf(opts, consensus, update_compass_args, deadline, gas_estimate, relayer)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FilterLogicCallEvent provides a mock function with given fields: opts
 func (_m *CompassBinding) FilterLogicCallEvent(opts *bind.FilterOpts) (*compass.CompassLogicCallEventIterator, error) {
 	ret := _m.Called(opts)

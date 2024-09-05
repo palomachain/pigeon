@@ -115,6 +115,7 @@ type PalomaClienter interface {
 	QueryLastObservedSkywayNonceByAddr(ctx context.Context, chainReferenceID string, orchestrator string) (uint64, error)
 	QueryBatchRequestByNonce(ctx context.Context, nonce uint64, contract string) (skywaytypes.OutgoingTxBatch, error)
 	QueryGetLatestPublishedSnapshot(ctx context.Context, chainReferenceID string) (*valset.Snapshot, error)
+	QueryGetSnapshotByID(ctx context.Context, id uint64) (*valset.Snapshot, error)
 }
 
 type Client struct {

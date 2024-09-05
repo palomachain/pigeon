@@ -320,23 +320,21 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Id: 55,
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
+				sn := &valsettypes.Snapshot{
+					Id: 55,
+					Validators: []valsettypes.Validator{
+						{
+							ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+								{
+									ChainReferenceID: "internal-chain-id",
+									Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
 								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
 							},
+							Address: sdk.ValAddress("validator-1").Bytes(),
 						},
 					},
-					nil,
-				)
+				}
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(sn, nil)
 
 				return evm, paloma
 			},
@@ -405,6 +403,23 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Id: 55,
 						Validators: []valsettypes.Validator{
@@ -502,6 +517,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "submit_logic_call", mock.Anything).Return(
 					tx,
@@ -569,6 +601,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Id: 56,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				paloma.On("NewStatus").Return(&StatusUpdater{})
 				return evm, paloma
 			},
@@ -613,6 +662,23 @@ func TestMessageProcessing(t *testing.T) {
 				)
 
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 56,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Id: 56,
 						Validators: []valsettypes.Validator{
@@ -699,6 +765,23 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Id: 55,
 						Validators: []valsettypes.Validator{
@@ -810,6 +893,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 				evm.On("FindCurrentBlockNumber", mock.Anything).Return(
 					big.NewInt(0),
 					nil,
@@ -873,6 +973,23 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Id: 55,
 						Validators: []valsettypes.Validator{
@@ -975,6 +1092,23 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
+					},
+					nil,
+				)
 
 				return evm, paloma
 			},
@@ -1027,6 +1161,23 @@ func TestMessageProcessing(t *testing.T) {
 							powerFromPercentage(0.35),
 						},
 						ValsetID: uint64(currentValsetID),
+					},
+					nil,
+				)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
+					&valsettypes.Snapshot{
+						Id: 55,
+						Validators: []valsettypes.Validator{
+							{
+								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+									{
+										ChainReferenceID: "internal-chain-id",
+										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
+									},
+								},
+								Address: sdk.ValAddress("validator-1").Bytes(),
+							},
+						},
 					},
 					nil,
 				)
@@ -1112,7 +1263,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Validators: []valsettypes.Validator{
 							{
@@ -1197,7 +1348,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Validators: []valsettypes.Validator{
 							{
@@ -1279,7 +1430,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(
 					&valsettypes.Snapshot{
 						Validators: []valsettypes.Validator{
 							{
@@ -1358,25 +1509,20 @@ func TestMessageProcessing(t *testing.T) {
 							powerFromPercentage(0.4),
 						},
 						ValsetID: uint64(currentValsetID),
-					},
-					nil,
-				)
-				paloma.On("QueryGetLatestPublishedSnapshot", mock.Anything, "internal-chain-id").Return(
-					&valsettypes.Snapshot{
-						Validators: []valsettypes.Validator{
-							{
-								ExternalChainInfos: []*valsettypes.ExternalChainInfo{
-									{
-										ChainReferenceID: "internal-chain-id",
-										Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
-									},
+					}, nil)
+				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(&valsettypes.Snapshot{
+					Validators: []valsettypes.Validator{
+						{
+							ExternalChainInfos: []*valsettypes.ExternalChainInfo{
+								{
+									ChainReferenceID: "internal-chain-id",
+									Address:          "0xDEADBEEF0ba39494ce839613fffba74279579268",
 								},
-								Address: sdk.ValAddress("validator-1").Bytes(),
 							},
+							Address: sdk.ValAddress("validator-1").Bytes(),
 						},
 					},
-					nil,
-				)
+				}, nil)
 				return evm, paloma
 			},
 		},
