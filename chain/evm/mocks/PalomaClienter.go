@@ -207,6 +207,36 @@ func (_m *PalomaClienter) QueryLastObservedSkywayNonceByAddr(ctx context.Context
 	return r0, r1
 }
 
+// QueryUnobservedBlocksByValidator provides a mock function with given fields: ctx, chainReferenceID, orchestrator
+func (_m *PalomaClienter) QueryUnobservedBlocksByValidator(ctx context.Context, chainReferenceID string, orchestrator string) ([]uint64, error) {
+	ret := _m.Called(ctx, chainReferenceID, orchestrator)
+
+	if len(ret) == 0 {
+		panic("no return value specified for QueryUnobservedBlocksByValidator")
+	}
+
+	var r0 []uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]uint64, error)); ok {
+		return rf(ctx, chainReferenceID, orchestrator)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []uint64); ok {
+		r0 = rf(ctx, chainReferenceID, orchestrator)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, chainReferenceID, orchestrator)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SendBatchSendToEVMClaim provides a mock function with given fields: ctx, claim
 func (_m *PalomaClienter) SendBatchSendToEVMClaim(ctx context.Context, claim types.MsgBatchSendToRemoteClaim) error {
 	ret := _m.Called(ctx, claim)
@@ -302,8 +332,7 @@ func (_m *PalomaClienter) SetPublicAccessData(ctx context.Context, queueTypeName
 func NewPalomaClienter(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *PalomaClienter {
+}) *PalomaClienter {
 	mock := &PalomaClienter{}
 	mock.Mock.Test(t)
 
