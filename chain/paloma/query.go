@@ -198,6 +198,22 @@ func (c *Client) QueryGetValidatorAliveUntilBlockHeight(ctx context.Context) (in
 	return aliveUntilRes.AliveUntilBlockHeight, nil
 }
 
+func (c *Client) QueryUnobservedBlocksByValidator(
+	ctx context.Context,
+	chainReferenceID string,
+	orchestrator string,
+) ([]uint64, error) {
+	qc := skyway.NewQueryClient(c.GRPCClient)
+	res, err := qc.GetUnobservedBlocksByAddr(ctx, &skyway.QueryUnobservedBlocksByAddrRequest{
+		ChainReferenceId: chainReferenceID,
+		Address:          orchestrator,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Blocks, nil
+}
+
 func queryMessagesForSigning(
 	ctx context.Context,
 	c grpc.ClientConn,
