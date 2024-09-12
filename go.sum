@@ -240,6 +240,8 @@ github.com/VictoriaMetrics/fastcache v1.12.1 h1:i0mICQuojGDL3KblA7wUNlY5lOK6a4bw
 github.com/VictoriaMetrics/fastcache v1.12.1/go.mod h1:tX04vaqcNoQeGLD+ra5pU5sWkuxnzWhEzLwhP9w653o=
 github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrdtl/UvroE=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
+github.com/VolumeFi/paloma v1.5.0-next.0.20240912102351-206ba32e60b3 h1:xjwn0FW8Vs4BIbNIcKIB/rkaPfVjqppUMp4M6+I4Jr8=
+github.com/VolumeFi/paloma v1.5.0-next.0.20240912102351-206ba32e60b3/go.mod h1:/Gyvm8s1/4A7+/SLUBJ05tDW4DGYPbIHGGqKVK6Rv+k=
 github.com/VolumeFi/whoops v0.7.2 h1:BMxDRo1N14QPPkruA9tsqivpWFXlujvFR+CtWGeQ0cc=
 github.com/VolumeFi/whoops v0.7.2/go.mod h1:WH5v7h5SzHTOIx28WZ9kJqdMqOX2VQNPBelwlrgg5PQ=
 github.com/adlio/schema v1.3.3 h1:oBJn8I02PyTB466pZO1UZEn1TV5XLlifBSyMrmHl/1I=
@@ -949,8 +951,8 @@ github.com/ory/dockertest v3.3.5+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnh
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936 h1:fmQAgxcdYBxCZYczws/uxTVOYHZd4fNrOaoHp35HZMM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936/go.mod h1:B2H2+2I4UiMR4hvAIaGLyYszNfSTYC8fWIw+kgfuFSQ=
-github.com/palomachain/paloma v1.3.1-next.0.20240830071542-741048197401 h1:ZO/l1TCo4Ry4BuF/PUH3H9Y/ipY6fKPO9rjjy+i0zzE=
-github.com/palomachain/paloma v1.3.1-next.0.20240830071542-741048197401/go.mod h1:91O0VRxBof+IXTZxSsSbk/lV2DSaWQIdUaoCBv6HXDo=
+github.com/palomachain/paloma v1.3.1-next.0.20240912110829-e6db2923ff78 h1:1795bjnQjinb2pHTM3/8ANnUQK9UdvrRCkkv8MsmTBU=
+github.com/palomachain/paloma v1.3.1-next.0.20240912110829-e6db2923ff78/go.mod h1:/Gyvm8s1/4A7+/SLUBJ05tDW4DGYPbIHGGqKVK6Rv+k=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

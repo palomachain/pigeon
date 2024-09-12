@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 	"time"
 
 	"cosmossdk.io/math"
@@ -24,6 +25,7 @@ import (
 	"github.com/palomachain/pigeon/internal/ethfilter"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -74,7 +76,7 @@ type compass struct {
 	chainID                 *big.Int
 	CompassID               string
 	ChainReferenceID        string
-	lastObservedBlockHeight int64
+	lastObservedBlockHeight uint64
 	startingBlockHeight     int64
 	smartContractAddr       common.Address
 	feeMgrContractAddr      common.Address
@@ -996,6 +998,58 @@ func (t compass) provideEvidenceForReferenceBlock(ctx context.Context, queueType
 	return nil
 }
 
+func (t *compass) getLogs(
+	ctx context.Context,
+	logger *logrus.Entry,
+	from, to uint64,
+) ([]ethtypes.Log, uint64, error) {
+	var filter ethereum.FilterQuery
+	var err error
+
+	if from == 0 && to == 0 {
+		// If from and to are zero, we default to search the latest blocks
+		filter, err = ethfilter.Factory().
+			WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
+			WithFromBlockNumberSafetyMargin(1).
+			WithTopics([]common.Hash{
+				batchSendEvent,
+				sendToPalomaEvent,
+				nodeSaleEvent,
+			}).
+			WithAddresses(t.smartContractAddr).
+			Filter(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		currentBlockNumber := filter.FromBlock.Uint64()
+		if t.lastObservedBlockHeight == 0 {
+			t.lastObservedBlockHeight = currentBlockNumber - 10_000
+		}
+
+		filter.FromBlock = big.NewInt(0).SetUint64(t.lastObservedBlockHeight)
+		filter.ToBlock = big.NewInt(0).SetUint64(min(t.lastObservedBlockHeight+10_000, currentBlockNumber))
+	} else {
+		filter = ethereum.FilterQuery{
+			Addresses: []common.Address{t.smartContractAddr},
+			Topics: [][]common.Hash{{
+				batchSendEvent,
+				sendToPalomaEvent,
+				nodeSaleEvent,
+			}},
+			FromBlock: big.NewInt(0).SetUint64(from),
+			ToBlock:   big.NewInt(0).SetUint64(to),
+		}
+	}
+
+	logger.WithField("from", filter.FromBlock).
+		WithField("to", filter.ToBlock).
+		Debug("Filter is ready")
+
+	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+	return logs, filter.ToBlock.Uint64(), err
+}
+
 func (t *compass) GetSkywayEvents(
 	ctx context.Context,
 	orchestrator string,
@@ -1004,38 +1058,35 @@ func (t *compass) GetSkywayEvents(
 
 	logger.Debug("Querying compass events")
 
-	filter, err := ethfilter.Factory().
-		WithFromBlockNumberProvider(t.evm.FindCurrentBlockNumber).
-		WithFromBlockNumberSafetyMargin(1).
-		WithTopics([]common.Hash{
-			batchSendEvent,
-			sendToPalomaEvent,
-			nodeSaleEvent,
-		}).
-		WithAddresses(t.smartContractAddr).
-		Filter(ctx)
+	blocks, err := t.paloma.QueryUnobservedBlocksByValidator(ctx, t.ChainReferenceID, orchestrator)
 	if err != nil {
+		logger.WithError(err).Warn("Failed to query unobserved blocks")
 		return nil, err
 	}
 
-	currentBlockNumber := filter.FromBlock.Int64()
-	if t.lastObservedBlockHeight == 0 {
-		t.lastObservedBlockHeight = currentBlockNumber - 10_000
-	}
+	var logs []ethtypes.Log
+	var toBlock uint64
 
-	filter.FromBlock = big.NewInt(t.lastObservedBlockHeight)
-	filter.ToBlock = big.NewInt(min(t.lastObservedBlockHeight+10_000, currentBlockNumber))
+	if len(blocks) == 0 {
+		logs, toBlock, err = t.getLogs(ctx, logger, 0, 0)
+		if err != nil {
+			logger.WithError(err).Warn("Failed to filter events")
+			return nil, err
+		}
+	} else {
+		var moreLogs []ethtypes.Log
+		for i := range blocks {
+			logger.WithField("block", blocks[i]).
+				Debug("Getting logs from block")
 
-	var events []chain.SkywayEventer
+			moreLogs, toBlock, err = t.getLogs(ctx, logger, blocks[i], blocks[i])
+			if err != nil {
+				logger.WithError(err).Warn("Failed to filter events")
+				return nil, err
+			}
 
-	logger.WithField("from", filter.FromBlock).
-		WithField("to", filter.ToBlock).
-		Debug("Filter is ready")
-
-	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
-	if err != nil {
-		logger.WithError(err).Warn("Failed to filter events")
-		return nil, err
+			logs = slices.Concat(logs, moreLogs)
+		}
 	}
 
 	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
@@ -1048,6 +1099,7 @@ func (t *compass) GetSkywayEvents(
 		WithField("logs", len(logs)).
 		Debug("Ready to parse events")
 
+	var events []chain.SkywayEventer
 	var evt chain.SkywayEventer
 
 	for _, ethLog := range logs {
@@ -1081,7 +1133,7 @@ func (t *compass) GetSkywayEvents(
 		events = append(events, evt)
 	}
 
-	t.lastObservedBlockHeight = filter.ToBlock.Int64()
+	t.lastObservedBlockHeight = toBlock
 
 	return events, err
 }
