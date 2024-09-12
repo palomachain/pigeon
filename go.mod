@@ -12,7 +12,7 @@ require (
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/cometbft/cometbft v0.38.7
 	github.com/cosmos/cosmos-sdk v0.50.6
-	github.com/cosmos/gogoproto v1.4.12
+	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/ibc-go/modules/capability v1.0.0
 	github.com/cosmos/ibc-go/v8 v8.2.0
 	github.com/ethereum/go-ethereum v1.13.15
