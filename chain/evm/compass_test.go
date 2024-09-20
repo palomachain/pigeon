@@ -339,6 +339,7 @@ func TestMessageProcessing(t *testing.T) {
 					},
 				}
 				paloma.On("QueryGetSnapshotByID", mock.Anything, uint64(0)).Return(sn, nil)
+				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				return evm, paloma
 			},

@@ -188,18 +188,7 @@ func (t compass) updateValset(
 		estimate,
 	})
 	if err != nil {
-		logger.WithError(err).Error("call_compass error")
-		if opts.estimateOnly == false {
-			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-			if setErr != nil {
-				return nil, 0, setErr
-			}
-			if isSmartContractError {
-				logger.Debug("smart contract error. recovering...")
-				return nil, 0, nil
-			}
-		}
-		return nil, 0, fmt.Errorf("call_compass error: %w", err)
+		return nil, 0, err
 	}
 
 	return tx, currentValsetID, nil
@@ -281,18 +270,6 @@ func (t compass) submitLogicCall(
 	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
 	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args)
 	if err != nil {
-		logger.WithError(err).Error("submitLogicCall: error calling DeployContract")
-		if opts.estimateOnly == false {
-			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-			if setErr != nil {
-				return nil, 0, setErr
-			}
-			if isSmartContractError {
-				logger.Debug("smart contract error. recovering...")
-				return nil, 0, nil
-			}
-		}
-
 		return nil, 0, err
 	}
 
@@ -359,18 +336,6 @@ func (t compass) compass_handover(
 	logger.WithField("consensus", con).WithField("args", args).Debug("compass handover")
 	tx, err := t.callCompass(ctx, opts, "compass_update_batch", args)
 	if err != nil {
-		logger.WithError(err).Error("CompassHandover: error calling DeployContract")
-		if opts.estimateOnly == false {
-			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-			if setErr != nil {
-				return nil, 0, setErr
-			}
-			if isSmartContractError {
-				logger.Debug("smart contract error. recovering...")
-				return nil, 0, nil
-			}
-		}
-
 		return nil, 0, err
 	}
 
@@ -410,20 +375,6 @@ func (t compass) uploadSmartContract(
 		constructorInput,
 	)
 	if err != nil {
-		logger.
-			WithError(err).
-			WithField("input", constructorInput).
-			Error("uploadSmartContract: error calling DeployContract")
-
-		isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-		if setErr != nil {
-			return nil, setErr
-		}
-		if isSmartContractError {
-			logger.Debug("smart contract error. recovering...")
-			return nil, nil
-		}
-
 		return nil, err
 	}
 
@@ -501,18 +452,6 @@ func (t compass) uploadUserSmartContract(
 		Debug("deploying user smart contract")
 	tx, err := t.callCompass(ctx, opts, "deploy_contract", args)
 	if err != nil {
-		logger.WithError(err).Error("deploy_contract: error calling compass")
-		if opts.estimateOnly == false {
-			isSmartContractError, setErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err)
-			if setErr != nil {
-				return nil, 0, setErr
-			}
-			if isSmartContractError {
-				logger.Debug("smart contract error. recovering...")
-				return nil, 0, nil
-			}
-		}
-
 		return nil, 0, err
 	}
 
@@ -877,6 +816,28 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 			}
 		default:
 			logger.WithError(processingErr).Error("processing error")
+
+			var isContractErr bool
+			var setErr error
+
+			if !opts.estimateOnly {
+				// If we're not just estimating, we want to set the error data
+				// on the message
+				isContractErr, setErr = t.SetErrorData(ctx, queueTypeName, rawMsg.ID, processingErr)
+			}
+
+			if setErr == nil && isContractErr {
+				// If it's a smart contract error we just ignore it, as we want
+				// to retry it
+				continue
+			}
+
+			if setErr != nil {
+				// If we got an error setting the error data, this is the error
+				// we want to log
+				processingErr = setErr
+			}
+
 			if err := t.paloma.NewStatus().
 				WithChainReferenceID(t.ChainReferenceID).
 				WithQueueType(queueTypeName).
