@@ -458,11 +458,16 @@ func (t compass) uploadUserSmartContract(
 	return tx, valsetID, nil
 }
 
-func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID uint64, errToProcess error) (bool, error) {
+func (t compass) SetErrorData(
+	ctx context.Context,
+	queueTypeName string,
+	msgID uint64,
+	errToProcess error,
+) error {
+	data := []byte(errToProcess.Error())
+
 	var jsonRpcErr rpc.DataError
-	if !errors.As(errToProcess, &jsonRpcErr) {
-		return false, t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(errToProcess.Error()))
-	} else {
+	if errors.As(errToProcess, &jsonRpcErr) {
 		liblog.WithContext(ctx).WithFields(
 			log.Fields{
 				"queue-type-name": queueTypeName,
@@ -471,13 +476,10 @@ func (t compass) SetErrorData(ctx context.Context, queueTypeName string, msgID u
 			},
 		).Warn("smart contract returned an error")
 
-		err := t.paloma.SetErrorData(ctx, queueTypeName, msgID, []byte(jsonRpcErr.Error()))
-		if err != nil {
-			return false, err
-		}
-
-		return true, nil
+		data = []byte(jsonRpcErr.Error())
 	}
+
+	return t.paloma.SetErrorData(ctx, queueTypeName, msgID, data)
 }
 
 func (t compass) findLastValsetMessageID(ctx context.Context) (uint64, error) {
@@ -817,19 +819,12 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		default:
 			logger.WithError(processingErr).Error("processing error")
 
-			var isContractErr bool
 			var setErr error
 
 			if !opts.estimateOnly {
 				// If we're not just estimating, we want to set the error data
 				// on the message
-				isContractErr, setErr = t.SetErrorData(ctx, queueTypeName, rawMsg.ID, processingErr)
-			}
-
-			if setErr == nil && isContractErr {
-				// If it's a smart contract error we just ignore it, as we want
-				// to retry it
-				continue
+				setErr = t.SetErrorData(ctx, queueTypeName, rawMsg.ID, processingErr)
 			}
 
 			if setErr != nil {
@@ -1680,7 +1675,7 @@ func (t compass) getFeeArgs(
 
 	if userFunds.Cmp(totalFundsNeeded) < 0 {
 		err := fmt.Errorf("insufficient funds for fees: %s < %s", userFunds, totalFundsNeeded)
-		if _, sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
+		if sendErr := t.SetErrorData(ctx, queueTypeName, origMessage.ID, err); sendErr != nil {
 			err = fmt.Errorf("failed to set error data: %w", sendErr)
 		}
 		return feeArgs, err

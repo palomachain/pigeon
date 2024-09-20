@@ -268,6 +268,7 @@ func TestIsArbitraryCallAlreadyExecuted(t *testing.T) {
 
 func TestMessageProcessing(t *testing.T) {
 	dummyErr := whoops.String("dummy")
+	rpcErr := fakeJsonRpcError("bla")
 
 	addValidSignature := func(pk *ecdsa.PrivateKey) chain.ValidatorSignature {
 		return signMessage(ethCompatibleBytesToSign, pk)
@@ -1648,7 +1649,6 @@ func TestMessageProcessing(t *testing.T) {
 			},
 			setup: func(t *testing.T) (*mockEvmClienter, *evmmocks.PalomaClienter) {
 				evm, paloma := newMockEvmClienter(t), evmmocks.NewPalomaClienter(t)
-				fakeErr := fakeJsonRpcError("bla")
 
 				paloma.On("QueryGetEVMValsetByID", mock.Anything, uint64(0), "internal-chain-id").Return(
 					&types.Valset{
@@ -1658,11 +1658,12 @@ func TestMessageProcessing(t *testing.T) {
 					},
 					nil,
 				)
-				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fakeErr)
+				evm.On("DeployContract", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, rpcErr)
+				paloma.On("NewStatus").Return(&StatusUpdater{})
 				paloma.On("SetErrorData", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return evm, paloma
 			},
-			expErr: nil,
+			expErr: rpcErr,
 		},
 		{
 			name: "upload_smart_contract/when smart contract returns an error and sending it to paloma fails, it returns it back",
