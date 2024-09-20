@@ -854,7 +854,9 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		switch {
 		case processingErr == nil:
 			if tx != nil && opts.estimateOnly == false {
-				logger.Debug("setting public access data")
+				logger.WithFields(log.Fields{
+					"msg-public-access-data": tx.Hash().Hex(),
+				}).Debug("setting public access data")
 				err := t.paloma.SetPublicAccessData(ctx, queueTypeName,
 					rawMsg.ID, valsetID, tx.Hash().Bytes())
 				if err != nil {
