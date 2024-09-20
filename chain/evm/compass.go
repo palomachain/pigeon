@@ -819,18 +819,15 @@ func (t compass) processMessages(ctx context.Context, queueTypeName string, msgs
 		default:
 			logger.WithError(processingErr).Error("processing error")
 
-			var setErr error
-
 			if !opts.estimateOnly {
 				// If we're not just estimating, we want to set the error data
 				// on the message
-				setErr = t.SetErrorData(ctx, queueTypeName, rawMsg.ID, processingErr)
-			}
-
-			if setErr != nil {
-				// If we got an error setting the error data, this is the error
-				// we want to log
-				processingErr = setErr
+				setErr := t.SetErrorData(ctx, queueTypeName, rawMsg.ID, processingErr)
+				if setErr != nil {
+					// If we got an error setting the error data, this is the error
+					// we want to log
+					processingErr = setErr
+				}
 			}
 
 			if err := t.paloma.NewStatus().
