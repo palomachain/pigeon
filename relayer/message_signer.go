@@ -45,7 +45,11 @@ func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor
 			messagesForSigning, err := r.palomaClient.QueryMessagesForSigning(ctx, queueName)
 			if err != nil {
 				logger.Error("failed getting messages to sign")
-				return err
+				if isFatal(err) {
+					return err
+				}
+				// Move on to the next queue on the same chain
+				continue
 			}
 
 			logger = logger.WithFields(log.Fields{
@@ -65,6 +69,8 @@ func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor
 				signedMessages, err := p.SignMessages(ctx, messagesForSigning...)
 				if err != nil {
 					logger.WithError(err).Error("unable to sign messages")
+					// If we fail to sign this batch, we will fail to sign them
+					// all, so might as well return now
 					return err
 				}
 				logger = logger.WithFields(log.Fields{
@@ -78,7 +84,9 @@ func (r *Relayer) signMessages(ctx context.Context, processors []chain.Processor
 
 				if err = r.broadcastSignatures(ctx, queueName, signedMessages); err != nil {
 					logger.WithError(err).Error("couldn't broadcast signatures and process attestation")
-					return err
+					if isFatal(err) {
+						return err
+					}
 				}
 			}
 

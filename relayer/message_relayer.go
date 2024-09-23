@@ -70,6 +70,14 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 			})
 
 			messagesInQueue, err := r.palomaClient.QueryMessagesForRelaying(ctx, queueName)
+			if err != nil {
+				logger.WithError(err).Error("couldn't get messages to relay")
+				if isFatal(err) {
+					return err
+				}
+				// Move on to the next queue on the same chain
+				continue
+			}
 
 			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
@@ -78,10 +86,6 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 			})
 
 			logger.Debug("got ", len(messagesInQueue), " messages from ", queueName)
-			if err != nil {
-				logger.WithError(err).Error("couldn't get messages to relay")
-				return err
-			}
 
 			for _, v := range messagesInQueue {
 				r.msgCache.records[v.ID] = struct{}{}
@@ -103,7 +107,9 @@ func (r *Relayer) relayMessages(ctx context.Context, processors []chain.Processo
 							return msg.ID
 						}),
 					}).Error("error relaying messages")
-					return err
+					if isFatal(err) {
+						return err
+					}
 				}
 			}
 		}
