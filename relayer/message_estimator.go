@@ -43,6 +43,14 @@ func (r *Relayer) estimateMessages(ctx context.Context, processors []chain.Proce
 			})
 
 			messagesInQueue, err := r.palomaClient.QueryMessagesForEstimating(ctx, queueName)
+			if err != nil {
+				logger.WithError(err).Error("couldn't get messages to estimate")
+				if isFatal(err) {
+					return err
+				}
+				// Move on to the next queue on the same chain
+				continue
+			}
 
 			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
@@ -51,10 +59,6 @@ func (r *Relayer) estimateMessages(ctx context.Context, processors []chain.Proce
 			})
 
 			logger.Debug("got ", len(messagesInQueue), " messages from ", queueName)
-			if err != nil {
-				logger.WithError(err).Error("couldn't get messages to estimate")
-				return err
-			}
 
 			if len(messagesInQueue) > 0 {
 				logger := logger.WithFields(log.Fields{
@@ -66,7 +70,11 @@ func (r *Relayer) estimateMessages(ctx context.Context, processors []chain.Proce
 				estimates, err := p.EstimateMessages(ctx, queue.FromString(queueName), messagesInQueue)
 				if err != nil {
 					logger.WithError(err).Error("error estimating messages")
-					return err
+					if isFatal(err) {
+						return err
+					}
+					// Move on to the next queue on the same chain
+					continue
 				}
 
 				filteredEstimates := make([]chain.MessageWithEstimate, 0, len(estimates))
@@ -93,7 +101,9 @@ func (r *Relayer) estimateMessages(ctx context.Context, processors []chain.Proce
 				err = r.palomaClient.AddMessagesGasEstimate(ctx, queueName, filteredEstimates...)
 				if err != nil {
 					logger.WithError(err).Error("failed to send estimates to Paloma")
-					return err
+					if isFatal(err) {
+						return err
+					}
 				}
 			}
 

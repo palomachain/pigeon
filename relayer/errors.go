@@ -39,3 +39,11 @@ func handleProcessError(ctx context.Context, err error) error {
 	logger.WithError(err).Error("error returned in process loop")
 	return nil
 }
+
+// isFatal returns true if the error is unrecoverable and the caller should
+// return it immediately
+func isFatal(err error) bool {
+	return goerrors.Is(err, context.Canceled) ||
+		goerrors.Is(err, context.DeadlineExceeded) ||
+		errors.IsUnrecoverable(err)
+}

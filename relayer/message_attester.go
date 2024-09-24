@@ -44,6 +44,14 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 			})
 
 			messagesInQueue, err := r.palomaClient.QueryMessagesForAttesting(ctx, queueName)
+			if err != nil {
+				logger.WithError(err).Error("couldn't get messages to attest")
+				if isFatal(err) {
+					return err
+				}
+				// Move on to the next queue on the same chain
+				continue
+			}
 
 			logger = logger.WithFields(log.Fields{
 				"message-ids": slice.Map(messagesInQueue, func(msg chain.MessageWithSignatures) uint64 {
@@ -52,10 +60,6 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 			})
 
 			logger.Debug("got ", len(messagesInQueue), " messages from ", queueName)
-			if err != nil {
-				logger.WithError(err).Error("couldn't get messages to attest")
-				return err
-			}
 
 			if len(messagesInQueue) > 0 {
 				logger := logger.WithFields(log.Fields{
@@ -75,7 +79,10 @@ func (r *Relayer) attestMessages(ctx context.Context, processors []chain.Process
 						Error(ctx); err != nil {
 						logger.WithError(err).Error("failed to send Paloma status update")
 					}
-					return err
+
+					if isFatal(err) {
+						return err
+					}
 				}
 			}
 		}
