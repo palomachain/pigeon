@@ -982,6 +982,12 @@ func (t *compass) getLogs(
 			t.lastObservedBlockHeight = currentBlockNumber - 10_000
 		}
 
+		if currentBlockNumber < t.lastObservedBlockHeight {
+			// Either we messed up tracking the current block, or the RPC is
+			// having some issue. Either way, it's best to sync again.
+			t.lastObservedBlockHeight = currentBlockNumber
+		}
+
 		filter.FromBlock = big.NewInt(0).SetUint64(t.lastObservedBlockHeight)
 		filter.ToBlock = big.NewInt(0).SetUint64(min(t.lastObservedBlockHeight+10_000, currentBlockNumber))
 	} else {
@@ -1002,6 +1008,16 @@ func (t *compass) getLogs(
 		Debug("Filter is ready")
 
 	logs, err := t.evm.GetEthClient().FilterLogs(ctx, filter)
+	if err != nil {
+		logger.WithField("from", filter.FromBlock).
+			WithField("to", filter.ToBlock).
+			WithField("req_from", from).
+			WithField("req_to", to).
+			WithField("chain_reference_id", t.ChainReferenceID).
+			WithError(err).
+			Warn("Failed to filter events")
+	}
+
 	return logs, filter.ToBlock.Uint64(), err
 }
 
@@ -1025,7 +1041,6 @@ func (t *compass) GetSkywayEvents(
 	if len(blocks) == 0 {
 		logs, toBlock, err = t.getLogs(ctx, logger, 0, 0)
 		if err != nil {
-			logger.WithError(err).Warn("Failed to filter events")
 			return nil, err
 		}
 	} else {
@@ -1036,7 +1051,6 @@ func (t *compass) GetSkywayEvents(
 
 			moreLogs, toBlock, err = t.getLogs(ctx, logger, blocks[i], blocks[i])
 			if err != nil {
-				logger.WithError(err).Warn("Failed to filter events")
 				return nil, err
 			}
 
