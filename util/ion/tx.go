@@ -23,6 +23,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const txGasAdjustment = 1.2
+
 func (cc *Client) TxFactory() tx.Factory {
 	return tx.Factory{}.
 		WithAccountRetriever(cc).
@@ -67,6 +69,8 @@ func (cc *Client) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string, opt
 	if err != nil {
 		return nil, err
 	}
+
+	txf = txf.WithGasAdjustment(txGasAdjustment)
 
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
