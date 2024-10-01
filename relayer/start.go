@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palomachain/paloma/util/libvalid"
+	"github.com/palomachain/paloma/v2/util/libvalid"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/relayer/heartbeat"
 	log "github.com/sirupsen/logrus"

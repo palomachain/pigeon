@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	evmtypes "github.com/palomachain/paloma/x/evm/types"
+	evmtypes "github.com/palomachain/paloma/v2/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/chain/evm"
 	evmmocks "github.com/palomachain/pigeon/chain/evm/mocks"

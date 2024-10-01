@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	skyway "github.com/palomachain/paloma/x/skyway/types"
+	skyway "github.com/palomachain/paloma/v2/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/palomachain/pigeon/util/slice"
 	log "github.com/sirupsen/logrus"
