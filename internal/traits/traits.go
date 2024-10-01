@@ -1,7 +1,7 @@
 package traits
 
 import (
-	valsettypes "github.com/palomachain/paloma/x/valset/types"
+	valsettypes "github.com/palomachain/paloma/v2/x/valset/types"
 )
 
 type Traits []string

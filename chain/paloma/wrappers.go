@@ -9,7 +9,7 @@ import (
 	"github.com/VolumeFi/whoops"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
-	vtypes "github.com/palomachain/paloma/x/valset/types"
+	vtypes "github.com/palomachain/paloma/v2/x/valset/types"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/ion"
 	ggrpc "google.golang.org/grpc"

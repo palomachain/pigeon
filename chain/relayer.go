@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	skyway "github.com/palomachain/paloma/x/skyway/types"
+	skyway "github.com/palomachain/paloma/v2/x/skyway/types"
 	"github.com/palomachain/pigeon/health"
 	"github.com/palomachain/pigeon/internal/queue"
 )

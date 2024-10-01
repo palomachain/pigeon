@@ -3,7 +3,7 @@ package liblog
 import (
 	"context"
 
-	"github.com/palomachain/paloma/util/libvalid"
+	"github.com/palomachain/paloma/v2/util/libvalid"
 	"github.com/rs/xid"
 )
 

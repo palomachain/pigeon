@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	consensus "github.com/palomachain/paloma/x/consensus/types"
-	consensusmocks "github.com/palomachain/paloma/x/consensus/types/mocks"
+	consensus "github.com/palomachain/paloma/v2/x/consensus/types"
+	consensusmocks "github.com/palomachain/paloma/v2/x/consensus/types/mocks"
 	"github.com/palomachain/pigeon/chain"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

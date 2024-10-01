@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	evmtypes "github.com/palomachain/paloma/x/evm/types"
-	palomatypes "github.com/palomachain/paloma/x/paloma/types"
+	evmtypes "github.com/palomachain/paloma/v2/x/evm/types"
+	palomatypes "github.com/palomachain/paloma/v2/x/paloma/types"
 	"github.com/palomachain/pigeon/chain"
 )
 

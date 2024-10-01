@@ -9,7 +9,7 @@ import (
 	"github.com/VolumeFi/whoops"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	skyway "github.com/palomachain/paloma/x/skyway/types"
+	skyway "github.com/palomachain/paloma/v2/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 	pigeonerrors "github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/queue"

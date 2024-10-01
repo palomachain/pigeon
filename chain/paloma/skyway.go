@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 
-	skyway "github.com/palomachain/paloma/x/skyway/types"
+	skyway "github.com/palomachain/paloma/v2/x/skyway/types"
 	"github.com/palomachain/pigeon/chain"
 )
 

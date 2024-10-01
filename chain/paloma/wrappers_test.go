@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	palomatypes "github.com/palomachain/paloma/x/paloma/types"
-	valsettypes "github.com/palomachain/paloma/x/valset/types"
+	palomatypes "github.com/palomachain/paloma/v2/x/paloma/types"
+	valsettypes "github.com/palomachain/paloma/v2/x/valset/types"
 	"github.com/palomachain/pigeon/chain/paloma"
 	"github.com/palomachain/pigeon/util/ion"
 	"github.com/stretchr/testify/require"

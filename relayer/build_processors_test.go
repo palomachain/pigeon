@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/palomachain/paloma/x/evm/types"
+	"github.com/palomachain/paloma/v2/x/evm/types"
 	"github.com/palomachain/pigeon/chain"
 	chainmocks "github.com/palomachain/pigeon/chain/mocks"
 	"github.com/palomachain/pigeon/config"
