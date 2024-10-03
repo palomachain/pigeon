@@ -55,7 +55,7 @@ var errValsetIDMismatch = errors.New("valset id mismatch")
 //go:generate mockery --name=evmClienter --inpackage --testonly
 type evmClienter interface {
 	FilterLogs(ctx context.Context, fq ethereum.FilterQuery, currBlockHeight *big.Int, fn func(logs []ethtypes.Log) bool) (bool, error)
-	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, opts callOptions, method string, arguments []any) (*ethtypes.Transaction, error)
+	ExecuteSmartContract(ctx context.Context, chainID *big.Int, contractAbi abi.ABI, addr common.Address, opts callOptions, method string, arguments []any, gasEstimate *big.Int) (*ethtypes.Transaction, error)
 	DeployContract(ctx context.Context, chainID *big.Int, rawABI string, bytecode, constructorInput []byte) (contractAddr common.Address, tx *ethtypes.Transaction, err error)
 	TransactionByHash(ctx context.Context, txHash common.Hash) (*ethtypes.Transaction, bool, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*ethtypes.Receipt, error)
@@ -181,12 +181,13 @@ func (t compass) updateValset(
 	// TODO: Use generated contract code directly
 	// compass 2.0.0
 	// def update_valset(consensus: Consensus, new_valset: Valset, relayer: address, gas_estimate: uint256)
-	tx, err := t.callCompass(ctx, opts, "update_valset", []any{
+	args := []any{
 		BuildCompassConsensus(currentValset, origMessage.Signatures),
 		TransformValsetToCompassValset(newValset),
 		ethSender,
 		estimate,
-	})
+	}
+	tx, err := t.callCompass(ctx, opts, "update_valset", args, estimate)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -268,7 +269,7 @@ func (t compass) submitLogicCall(
 		opts.useMevRelay = true
 	}
 	logger.WithField("consensus", con).WithField("args", args).Debug("submitting logic call")
-	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args)
+	tx, err := t.callCompass(ctx, opts, "submit_logic_call", args, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -334,7 +335,7 @@ func (t compass) compass_handover(
 	}
 
 	logger.WithField("consensus", con).WithField("args", args).Debug("compass handover")
-	tx, err := t.callCompass(ctx, opts, "compass_update_batch", args)
+	tx, err := t.callCompass(ctx, opts, "compass_update_batch", args, estimate)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -450,7 +451,7 @@ func (t compass) uploadUserSmartContract(
 
 	logger.WithField("consensus", con).WithField("args", args).
 		Debug("deploying user smart contract")
-	tx, err := t.callCompass(ctx, opts, "deploy_contract", args)
+	tx, err := t.callCompass(ctx, opts, "deploy_contract", args, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1417,11 +1418,12 @@ func (c compass) callCompass(
 	opts callOptions,
 	method string,
 	arguments []any,
+	gasEstimate *big.Int,
 ) (*ethtypes.Transaction, error) {
 	if c.compassAbi == nil {
 		return nil, ErrABINotInitialized
 	}
-	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, opts, method, arguments)
+	return c.evm.ExecuteSmartContract(ctx, c.chainID, *c.compassAbi, c.smartContractAddr, opts, method, arguments, gasEstimate)
 }
 
 func (t compass) skywayRelayBatches(ctx context.Context, batches []chain.SkywayBatchWithSignatures) error {
@@ -1573,6 +1575,7 @@ func (t compass) skywayRelayBatch(
 				ethSender,
 				estimate,
 			},
+			estimate,
 		)
 		if err != nil {
 			logger.WithError(err).Error("failed to relay batch")

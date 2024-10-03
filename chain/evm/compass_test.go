@@ -443,7 +443,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "submit_logic_call", mock.Anything, mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -541,7 +541,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "submit_logic_call", mock.Anything, mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -805,7 +805,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true}, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true}, "submit_logic_call", mock.Anything, mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -1013,7 +1013,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true, estimateOnly: true}, "submit_logic_call", mock.Anything).Return(
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{useMevRelay: true, estimateOnly: true}, "submit_logic_call", mock.Anything, mock.Anything).Return(
 					tx,
 					nil,
 				)
@@ -1286,7 +1286,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "update_valset", mock.Anything).Return(tx, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{}, "update_valset", mock.Anything, mock.Anything).Return(tx, nil)
 
 				paloma.On("SetPublicAccessData", mock.Anything, "queue-name", uint64(555), uint64(55), tx.Hash().Bytes()).Return(nil)
 				return evm, paloma
@@ -1371,7 +1371,7 @@ func TestMessageProcessing(t *testing.T) {
 					nil,
 				)
 
-				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "update_valset", mock.Anything).Return(tx, nil)
+				evm.On("ExecuteSmartContract", mock.Anything, chainID, mock.Anything, smartContractAddr, callOptions{estimateOnly: true}, "update_valset", mock.Anything, mock.Anything).Return(tx, nil)
 				return evm, paloma
 			},
 		},

@@ -19,11 +19,6 @@ import (
 	"github.com/palomachain/pigeon/util/slice"
 )
 
-type (
-	ResultStatus = coretypes.ResultStatus
-	Unpacker     = codectypes.AnyUnpacker
-)
-
 //go:generate mockery --name=MessageSender
 type MessageSender interface {
 	SendMsg(ctx context.Context, msg sdk.Msg, memo string, opts ...ion.SendMsgOption) (*sdk.TxResponse, error)
@@ -31,7 +26,7 @@ type MessageSender interface {
 
 //go:generate mockery --name=IonClient
 type IonClient interface {
-	Status(context.Context) (*ResultStatus, error)
+	Status(context.Context) (*coretypes.ResultStatus, error)
 	DecodeBech32ValAddr(string) (sdk.ValAddress, error)
 	GetKeybase() keyring.Keyring
 	SetSDKContext() func()
@@ -43,7 +38,7 @@ type Client struct {
 	GRPCClient   grpc.ClientConn
 
 	ic            IonClient
-	unpacker      Unpacker
+	unpacker      codectypes.AnyUnpacker
 	messageSender MessageSender
 	sendingOpts   []ion.SendMsgOption
 
@@ -214,7 +209,7 @@ func (c *Client) KeepValidatorAlive(ctx context.Context, appVersion string) erro
 	return err
 }
 
-func (c *Client) Status(ctx context.Context) (*ResultStatus, error) {
+func (c *Client) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
 	res, err := c.ic.Status(ctx)
 	if err != nil {
 		return nil, err

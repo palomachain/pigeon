@@ -245,6 +245,8 @@ type executeSmartContractIn struct {
 	method    string
 	arguments []any
 	opts      callOptions
+
+	gasEstimate *big.Int
 }
 
 func callSmartContract(
@@ -365,6 +367,11 @@ func callSmartContract(
 		// Once estimation is finished, we adjust the gas limit
 		// to be sure that the tx will be included in the next block.
 		txOpts.GasLimit = uint64(float64(gasLimit) * 1.5)
+		if args.gasEstimate != nil && args.gasEstimate.Uint64() > txOpts.GasLimit {
+			// If we have a gas estimate from pigeons, and it is greater than
+			// what we just got, we use it
+			txOpts.GasLimit = args.gasEstimate.Uint64()
+		}
 
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
@@ -664,6 +671,7 @@ func (c *Client) ExecuteSmartContract(
 	opts callOptions,
 	method string,
 	arguments []any,
+	gasEstimate *big.Int,
 ) (*etherumtypes.Transaction, error) {
 	var mevClient mevClient = nil
 	if opts.useMevRelay {
@@ -685,8 +693,9 @@ func (c *Client) ExecuteSmartContract(
 			keystore:      c.keystore,
 			opts:          opts,
 
-			method:    method,
-			arguments: arguments,
+			method:      method,
+			arguments:   arguments,
+			gasEstimate: gasEstimate,
 		},
 	)
 }
