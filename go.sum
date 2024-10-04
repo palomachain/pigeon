@@ -953,8 +953,8 @@ github.com/ory/dockertest v3.3.5+incompatible/go.mod h1:1vX4m9wsvi00u5bseYwXaSnh
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936 h1:fmQAgxcdYBxCZYczws/uxTVOYHZd4fNrOaoHp35HZMM=
 github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936/go.mod h1:B2H2+2I4UiMR4hvAIaGLyYszNfSTYC8fWIw+kgfuFSQ=
-github.com/palomachain/paloma/v2 v2.0.0-20241001160943-eea138b39129 h1:rn1u1p6Ro09uMz1UYJnrjgndSy5Y9rVUunSwCY2OQZs=
-github.com/palomachain/paloma/v2 v2.0.0-20241001160943-eea138b39129/go.mod h1:EOa+cqEMAxZXYyvN5BOy0ysDP+3nMDgDUPvIXKzUc4g=
+github.com/palomachain/paloma/v2 v2.3.1 h1:wRcRJKiafQbKXXn93qAeg0s4/EBgSs9g5nB/4RC3HLc=
+github.com/palomachain/paloma/v2 v2.3.1/go.mod h1:EOa+cqEMAxZXYyvN5BOy0ysDP+3nMDgDUPvIXKzUc4g=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

@@ -1022,55 +1022,23 @@ func (t *compass) getLogs(
 	return logs, filter.ToBlock.Uint64(), err
 }
 
-func (t *compass) GetSkywayEvents(
+func (t *compass) getEvents(
 	ctx context.Context,
-	orchestrator string,
+	logger *logrus.Entry,
+	lastSkywayNonce uint64,
+	logs []ethtypes.Log,
 ) ([]chain.SkywayEventer, error) {
-	logger := liblog.WithContext(ctx)
-
-	logger.Debug("Querying compass events")
-
-	blocks, err := t.paloma.QueryUnobservedBlocksByValidator(ctx, t.ChainReferenceID, orchestrator)
-	if err != nil {
-		logger.WithError(err).Warn("Failed to query unobserved blocks")
-		return nil, err
+	if len(logs) == 0 {
+		return nil, nil
 	}
 
-	var logs []ethtypes.Log
-	var toBlock uint64
-
-	if len(blocks) == 0 {
-		logs, toBlock, err = t.getLogs(ctx, logger, 0, 0)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		var moreLogs []ethtypes.Log
-		for i := range blocks {
-			logger.WithField("block", blocks[i]).
-				Debug("Getting logs from block")
-
-			moreLogs, toBlock, err = t.getLogs(ctx, logger, blocks[i], blocks[i])
-			if err != nil {
-				return nil, err
-			}
-
-			logs = slices.Concat(logs, moreLogs)
-		}
-	}
-
-	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
-	if err != nil {
-		logger.WithError(err).Warn("Failed to query last observed nonce")
-		return nil, err
-	}
+	var events []chain.SkywayEventer
+	var evt chain.SkywayEventer
+	var err error
 
 	logger.WithField("skwyway_nonce", lastSkywayNonce).
 		WithField("logs", len(logs)).
 		Debug("Ready to parse events")
-
-	var events []chain.SkywayEventer
-	var evt chain.SkywayEventer
 
 	for _, ethLog := range logs {
 		switch ethLog.Topics[0] {
@@ -1101,6 +1069,70 @@ func (t *compass) GetSkywayEvents(
 		}
 
 		events = append(events, evt)
+	}
+
+	return events, nil
+}
+
+func (t *compass) GetSkywayEvents(
+	ctx context.Context,
+	orchestrator string,
+) ([]chain.SkywayEventer, error) {
+	logger := liblog.WithContext(ctx)
+
+	logger.Debug("Querying compass events")
+
+	lastSkywayNonce, err := t.paloma.QueryLastObservedSkywayNonceByAddr(ctx, t.ChainReferenceID, orchestrator)
+	if err != nil {
+		logger.WithError(err).Warn("Failed to query last observed nonce")
+		return nil, err
+	}
+
+	blocks, err := t.paloma.QueryUnobservedBlocksByValidator(ctx, t.ChainReferenceID, orchestrator)
+	if err != nil {
+		logger.WithError(err).Warn("Failed to query unobserved blocks")
+		return nil, err
+	}
+
+	var logs []ethtypes.Log
+	var toBlock uint64
+	var events []chain.SkywayEventer
+
+	if len(blocks) > 0 {
+		var moreLogs []ethtypes.Log
+		for i := range blocks {
+			logger.WithField("block", blocks[i]).
+				Debug("Getting logs from block")
+
+			moreLogs, toBlock, err = t.getLogs(ctx, logger, blocks[i], blocks[i])
+			if err != nil {
+				// If there's an error, we just skip this block and move on.
+				// If it was a block with a legitimate event, we'll eventually
+				// process it again, otherwise we can just skip it
+				continue
+			}
+
+			logs = slices.Concat(logs, moreLogs)
+		}
+
+		events, err = t.getEvents(ctx, logger, lastSkywayNonce, logs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(events) == 0 {
+		// If we can't find any logs from the blocks we get from paloma, we
+		// resume to search from the last seen block
+		logs, toBlock, err = t.getLogs(ctx, logger, 0, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		events, err = t.getEvents(ctx, logger, lastSkywayNonce, logs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	t.lastObservedBlockHeight = toBlock
