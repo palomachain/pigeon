@@ -373,6 +373,11 @@ func callSmartContract(
 			txOpts.GasLimit = args.gasEstimate.Uint64()
 		}
 
+		// Add an additional buffer to cover the cost of gas verification
+		// on Compass.
+		// See https://github.com/VolumeFi/paloma/issues/2299
+		txOpts.GasLimit = txOpts.GasLimit + 100_000
+
 		if args.txType == 2 {
 			txOpts.GasFeeCap = gasPrice
 			txOpts.GasTipCap = gasTipCap
