@@ -136,7 +136,7 @@ func TestExecutingSmartContract(t *testing.T) {
 				ethMock.On("EstimateGas", mock.Anything, mock.Anything).Return(uint64(222), nil)
 
 				mevMock := newMockMevClient(t)
-				mevMock.On("Relay", mock.Anything, mock.Anything, mock.Anything).Return(common.HexToHash("0x2383690e509c7a7210257a9c713baf03561ee562bdc35f5acba138e5c15acb6c"), nil)
+				mevMock.On("Relay", mock.Anything, mock.Anything, mock.Anything).Return(common.HexToHash("0xfaa694dd01565c673ecc8aaa70da7abd2e1ea3f7c46a60594bb2768f39603087"), nil)
 
 				args.ethClient = ethMock
 				args.mevClient = mevMock
