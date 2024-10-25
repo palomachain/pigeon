@@ -251,7 +251,7 @@ paloma:
   validator-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
   gas-adjustment: 10.0
-  gas-prices: 0.01ugrain
+  gas-prices: 0.001ugrain
   account-prefix: paloma
 
 evm:
