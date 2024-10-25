@@ -250,7 +250,7 @@ paloma:
   keyring-type: os
   validator-key: ${VALIDATOR}
   base-rpc-url: http://localhost:26657
-  gas-adjustment: 3.0
+  gas-adjustment: 10.0
   gas-prices: 0.01ugrain
   account-prefix: paloma
 
