@@ -1517,8 +1517,10 @@ func (t compass) skywayEstimateBatches(ctx context.Context, batches []chain.Skyw
 			return nil, fmt.Errorf("failed to estimate batch: %w", err)
 		}
 
-		logger.WithField("estimate", tx.Gas()).Debug("Estimated gas for batch")
-		estimates = append(estimates, tx.Gas())
+		if tx != nil {
+			logger.WithField("estimate", tx.Gas()).Debug("Estimated gas for batch")
+			estimates = append(estimates, tx.Gas())
+		}
 	}
 
 	return estimates, nil
