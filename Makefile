@@ -3,7 +3,7 @@
 BRANCH               := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT               := $(shell git log -1 --format='%H')
 BUILD_DIR            ?= $(CURDIR)/build
-GOLANGCILINT_VERSION := 1.51.2
+GOLANGCILINT_VERSION := 1.63.4
 
 .PHONY: install-linter install-abigen build build-linux
 
