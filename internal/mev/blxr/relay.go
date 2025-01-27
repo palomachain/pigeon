@@ -73,10 +73,10 @@ func (c *Client) Relay(ctx context.Context, chainID *big.Int, tx *types.Transact
 
 	if res.StatusCode() != http.StatusOK {
 		if len(r.Error.Message) > 0 {
-			return nilHash, fmt.Errorf(r.Error.Message)
+			return nilHash, fmt.Errorf("%s", r.Error.Message)
 		}
 
-		return nilHash, fmt.Errorf(string(res.Body()))
+		return nilHash, fmt.Errorf("%s", string(res.Body()))
 	}
 
 	if len(r.Result.Txhash) < 1 {
