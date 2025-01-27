@@ -7,7 +7,7 @@ on:
 
 jobs:
   buildx:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # stick with older LTS release for continued debian support
     steps:
       -
         name: Checkout

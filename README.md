@@ -91,6 +91,9 @@ mkdir ~/.pigeon
 
 ### To build pigeon using latest
 
+> [!IMPORTANT]  
+> Always make sure you're building against the latest released version of Go.
+
 ```shell
 git clone https://github.com/palomachain/pigeon.git
 cd pigeon
