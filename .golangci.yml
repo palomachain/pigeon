@@ -1,5 +1,5 @@
 run:
-  go: '1.22.2'
+  go: '1.23.5'
   issues-exit-code: 1
   timeout: 10m
   modules-download-mode: readonly
@@ -38,3 +38,4 @@ issues:
     # gosec
     - G101 # Potential hardcoded credentials
     - G114 # Use of net/http serve function that has no support for setting timeouts
+    - G115 # We use this everywhere (I guess at least if it overflows, it will for everyone...)

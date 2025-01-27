@@ -335,7 +335,6 @@ func (c *Client) wrapArbitrumDeployment(
 		c.config.GasAdjustment,
 		c.config.TxType,
 	)
-
 	if err != nil {
 		logger.WithError(err).Error("failed to deploy contract to arbitrum")
 		return
