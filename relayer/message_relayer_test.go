@@ -117,7 +117,7 @@ func TestRelayMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "if the processor is connected to the wrong chain it returns the error",
+			name: "if the processor is connected to the wrong chain it skips the chain in question",
 			setup: func(t *testing.T) *Relayer {
 				keyringPass := "abcd"
 
@@ -141,9 +141,7 @@ func TestRelayMessages(t *testing.T) {
 						MinOnChainBalance:     "10000",
 					},
 				}, nil)
-
 				factory := mocks.NewEvmFactorier(t)
-
 				factory.On("Build", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(p, nil)
 
 				return New(
@@ -164,7 +162,7 @@ func TestRelayMessages(t *testing.T) {
 					Config{},
 				)
 			},
-			expErr: chain.ErrNotConnectedToRightChain,
+			expErr: nil,
 		},
 	}
 
