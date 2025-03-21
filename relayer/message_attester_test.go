@@ -114,7 +114,7 @@ func TestAttestMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "if the processor is connected to the wrong chain it returns the error",
+			name: "if the processor is connected to the wrong chain it skips the chain in question",
 			setup: func(t *testing.T) *Relayer {
 				keyringPass := "abcd"
 
@@ -161,7 +161,7 @@ func TestAttestMessages(t *testing.T) {
 					Config{},
 				)
 			},
-			expErr: chain.ErrNotConnectedToRightChain,
+			expErr: nil,
 		},
 	}
 
