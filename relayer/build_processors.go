@@ -17,6 +17,7 @@ import (
 
 func (r *Relayer) buildProcessors(ctx context.Context, _ sync.Locker) error {
 	logger := liblog.WithContext(ctx)
+	// TODO: This should live in a short lived cache, it's run very often.
 	queriedChainsInfos, err := r.palomaClient.QueryGetEVMChainInfos(ctx)
 	if err != nil {
 		return err
@@ -48,13 +49,13 @@ func (r *Relayer) buildProcessors(ctx context.Context, _ sync.Locker) error {
 		})
 		processor, err := r.processorFactory(chainInfo)
 		if errors.IsUnrecoverable(err) {
-			logger.WithError(err).Error("unable to build processor, skipping...")
-			continue
+			logger.WithError(err).Error("unable to build processor")
+			return err
 		}
 
 		if err := processor.IsRightChain(ctx); err != nil {
-			logger.WithError(err).Error("incorrect chain, skipping...")
-			continue
+			logger.WithError(err).Error("incorrect chain")
+			return err
 		}
 
 		r.processors = append(r.processors, processor)
