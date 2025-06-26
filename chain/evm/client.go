@@ -38,8 +38,8 @@ import (
 	"github.com/palomachain/pigeon/errors"
 	"github.com/palomachain/pigeon/internal/liblog"
 	"github.com/palomachain/pigeon/util/slice"
-	arbcommon "github.com/roodeag/arbitrum/common"
-	arbclient "github.com/roodeag/arbitrum/ethclient"
+	arbcommon "github.com/palomachain/arbitrum-geth/common"
+	arbclient "github.com/palomachain/arbitrum-geth/ethclient"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )

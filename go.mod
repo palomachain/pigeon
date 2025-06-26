@@ -22,8 +22,8 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
+	github.com/palomachain/arbitrum-geth v0.0.0-20250626200224-ef136c5775a9
 	github.com/palomachain/paloma/v2 v2.3.1
-	github.com/roodeag/arbitrum v0.0.0-20230627104516-b95e4c8ebec0
 	github.com/rs/xid v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
@@ -82,6 +82,7 @@ require (
 	github.com/cosmos/iavl v1.2.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.3 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.3.0 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/crate-crypto/go-kzg-4844 v1.1.0 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
@@ -96,6 +97,7 @@ require (
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
 	github.com/emicklei/dot v1.6.1 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.3 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.0 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -108,7 +110,6 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
@@ -223,7 +224,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240528184218-531527333157 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 	pgregory.net/rapid v1.1.0 // indirect
@@ -231,9 +231,5 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace (
-	// Link to op-geth, which is built on top of go-ethereum
-	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101503.1
-
-	github.com/roodeag/arbitrum => github.com/palomachain/arb-geth v0.0.0-20230824112942-8e77a580a936
-)
+// Link to op-geth, which is built on top of go-ethereum
+replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101503.1
