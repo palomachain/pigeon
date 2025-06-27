@@ -158,6 +158,13 @@ Blast Mainnet (blast-main)
 pigeon evm keys generate-new ~/.pigeon/keys/evm/blast-main
 ```
 
+Celo Mainnet (celo-main)
+
+```
+pigeon evm keys generate-new ~/.pigeon/keys/evm/celo-main
+```
+
+
 ### or import existing you existing Ethereum evm private keys
 
 Ethereum Mainnet (eth-main)
@@ -208,6 +215,12 @@ Blast Mainnet (blast-main)
 pigeon evm keys import ~/.pigeon/keys/evm/blast-main
 ```
 
+Celo Mainnet (celo-main)
+
+```
+pigeon evm keys import ~/.pigeon/keys/evm/celo-main
+```
+
 ### Config setup
 
 **IMPORTANT VALIDATOR NOTE:** `gas-adjustment` is important in your pigeon settings. The gas adjustment values in the example below are set to ensure that your relay is able to increase gas required during periods of high congestion on the target chain. We propose that for `tx-type: 2`, `gas-adjustment` is set to `2` except for `bnb-main` chain. However, given that Paloma assigns messages based on pigeon performance, make sure your gas adjustment for each target chain maximizes your message delivery, while minimizing your relay costs.
@@ -226,6 +239,7 @@ Validators joining the Paloma network for the first time will need to fund the m
 | Gnosis  | base-main  | xDAI  | 10 xDAI  | [PIP 46 - Paloma Mainnet Support for Gnosis EVM blockchain](https://paloma.explorers.guru/proposal/36)|
 | Arbitrum  | arbitrum-main  | ETH  | 0.005 ETH  | [PIP 52 - Paloma Mainnet Support for Arbitrum EVM blockchain](https://paloma.explorers.guru/proposal/43)|
 | BLAST  | blast-main  | ETH  | 0.005 ETH  | [PIP-55 - Paloma Messenger Support for BLAST!](https://paloma.explorers.guru/proposal/46)|
+| CELO  | celo-main  | ETH  | 5 CELO  | [PIP 137 - Paloma Mainnet Support for Celo EVM blockchain](https://paloma.explorers.guru/proposal/198)|
 
 #### Configuration updates
 
@@ -329,6 +343,15 @@ evm:
     keyring-dir: ~/.pigeon/keys/evm/blast-main
     gas-adjustment: 2
     tx-type: 2
+
+ celo-main:
+   chain-id: 42220
+   base-rpc-url: ${CELO_RPC_URL}
+   keyring-pass-env-name: CELO_PASSWORD
+   signing-key: ${CELO_SIGNING_KEY}
+   keyring-dir: ~/.pigeon/keys/evm/celo-main
+   gas-adjustment: 2
+   tx-type: 2
 ```
 
 #### Support for multiple signing keys
@@ -391,6 +414,9 @@ BLAST_SIGNING_KEY=<Your Blast SIGNING KEY>
 OP_RPC_URL=<Your Optimism mainnet RPC URL>
 OP_PASSWORD=<Your Optimism Key Password>
 OP_SIGNING_KEY=<Your Optimism SIGNING KEY>
+CELO_RPC_URL=<Your Celo mainnet RPC URL>
+CELO_PASSWORD=<Your Celo Key Password>
+CELO_SIGNING_KEY=<Your Celo SIGNING KEY>
 VALIDATOR=<VALIDATOR NAME>
 EOT
 ```
